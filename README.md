@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Handz On Auto Care — digital plattform
 
-## Getting Started
+Ny digital plattform for Handz On Auto Care: markedsnettside, 7-stegs bookingflyt,
+kundeportal («Min side»), mersalgsmotor og automatisert kommunikasjon — for en
+franchisekjede med 15 avdelinger, hver med eget org.nummer.
 
-First, run the development server:
+## Innhold i repoet
+
+| | |
+|---|---|
+| [`docs/KRAV.md`](docs/KRAV.md) | Kravregister (FR/NFR) med sporbarhet til demo og plan |
+| [`docs/IMPLEMENTASJONSPLAN.md`](docs/IMPLEMENTASJONSPLAN.md) | Omfattende implementasjonsplan: arkitektur, teknologivalg, datamodell, integrasjoner, sikkerhet/GDPR, drift, fremdrift, fastpris og risiko |
+| `app/`, `components/`, `lib/` | **Kjørbar demo** (mobil først) på mock-adaptere — ingen database nødvendig |
+
+## Demoen
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Åpne [http://localhost:3000](http://localhost:3000) — helst i mobil-viewport.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Forside** — hero, populære tjenester med «Bestill denne», social proof
+- **/avdelinger** — søk (by/postnummer) + forenklet kartvisning; egen side per avdeling med åpningstider, lokale priser og kampanjer
+- **/booking** — 7-stegs bookingtrakt: avdeling → regnr (mock SVV-oppslag, prøv `EB12345`; `FE11111` demonstrerer fallback) → tjeneste → tidspunkt → tillegg («ofte valgt sammen») → oppsummering m/ mva og org.nr → bekreftelse
+- **/min-side** — mock Vipps-innlogging: kommende avtaler, historikk per regnr, kvitteringer, «Slett meg»
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All bookinglogikk går gjennom `BookingAdapter`-grensesnittet i
+[`lib/booking-adapter.ts`](lib/booking-adapter.ts) — porten som i produksjon får
+en Avio-implementasjon (spor A) eller egen bookingmotor (spor B), se plan kap. 1.2.
 
-## Learn More
+Alle data er fiktive.
 
-To learn more about Next.js, take a look at the following resources:
+## Teknologi
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS 4. Produksjonsarkitektur
+(Payload CMS, PostgreSQL, Redis/BullMQ, Hetzner/Coolify) beskrives i implementasjonsplanen.

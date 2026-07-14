@@ -1,65 +1,213 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ButtonLink } from "@/components/ui/Button";
+import { Badge, Card } from "@/components/ui/Card";
+import { formatDuration, formatOre } from "@/lib/format";
+import { locations, services } from "@/lib/mock-data";
 
-export default function Home() {
+export const metadata: Metadata = {
+  description:
+    "Bestill profesjonell bilpleie på under ett minutt. Utvendig og innvendig bilpleie, polering og keramisk coating – 15 avdelinger over hele Norge.",
+};
+
+const steps = [
+  {
+    title: "Velg avdeling og tjeneste",
+    text: "Finn din nærmeste avdeling og velg blant våre profesjonelle bilpleietjenester.",
+  },
+  {
+    title: "Tast inn regnummeret",
+    text: "Vi henter bilens merke og modell automatisk, så prisen alltid stemmer.",
+  },
+  {
+    title: "Velg tidspunkt – ferdig",
+    text: "Se ledige tider i sanntid og få bekreftelse på SMS med én gang.",
+  },
+];
+
+const testimonials = [
+  {
+    name: "Marius, Oslo",
+    text: "Bilen så bedre ut enn da den var ny. Bestilling tok meg under ett minutt på mobilen.",
+  },
+  {
+    name: "Ingrid, Bergen",
+    text: "Endelig en bilpleiekjede der jeg ser pris og ledige tider før jeg bestiller. Aldri mer telefonkø.",
+  },
+  {
+    name: "Thomas, Trondheim",
+    text: "Keramisk coating hos Handz On var verdt hver krone. Proff jobb og påminnelse på SMS.",
+  },
+];
+
+export default function HomePage() {
+  const popularServices = services.filter((service) => service.popular);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(227,176,75,0.14),transparent_60%)]"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:py-28">
+          <Badge>15 avdelinger over hele Norge</Badge>
+          <h1 className="mt-5 max-w-2xl text-4xl font-bold leading-tight tracking-tight sm:text-6xl">
+            Bilpleie på øverste hylle.{" "}
+            <span className="text-accent">Bestilt på under ett minutt.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-5 max-w-xl text-lg text-muted">
+            Profesjonell utvendig og innvendig bilpleie, polering og keramisk
+            coating — utført av fagfolk, booket av deg. Se pris og ledige tider
+            med én gang.
           </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/booking" className="text-lg">
+              Bestill bilpleie
+            </ButtonLink>
+            <ButtonLink href="/avdelinger" variant="secondary">
+              Finn din avdeling
+            </ButtonLink>
+          </div>
+          <dl className="mt-12 grid max-w-lg grid-cols-3 gap-4 text-center sm:text-left">
+            {[
+              ["15", "avdelinger"],
+              ["120 000+", "biler behandlet"],
+              ["4,8 av 5", "kundescore"],
+            ].map(([value, label]) => (
+              <div key={label}>
+                <dd className="text-xl font-bold text-foreground sm:text-2xl">
+                  {value}
+                </dd>
+                <dt className="text-xs uppercase tracking-wide text-muted">
+                  {label}
+                </dt>
+              </div>
+            ))}
+          </dl>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* Populære tjenester */}
+      <section id="tjenester" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14">
+        <h2 className="text-2xl font-bold sm:text-3xl">Populære tjenester</h2>
+        <p className="mt-2 text-muted">
+          Faste priser, ingen overraskelser. Lokale avvik vises per avdeling.
+        </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {popularServices.map((service) => (
+            <Card key={service.id} className="flex flex-col">
+              <div className="flex items-start justify-between gap-3">
+                <h3 className="text-lg font-semibold">{service.name}</h3>
+                <Badge>{service.category}</Badge>
+              </div>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
+                {service.description}
+              </p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p>
+                  <span className="text-xl font-bold">
+                    fra {formatOre(service.priceOre)}
+                  </span>
+                  <span className="ml-2 text-sm text-muted">
+                    · {formatDuration(service.durationMin)}
+                  </span>
+                </p>
+                <ButtonLink
+                  href={`/booking?tjeneste=${service.slug}`}
+                  variant="secondary"
+                  className="!min-h-10 !px-4 text-sm"
+                >
+                  Bestill denne
+                </ButtonLink>
+              </div>
+            </Card>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Slik fungerer det */}
+      <section className="border-y border-border bg-surface">
+        <div className="mx-auto max-w-6xl px-4 py-14">
+          <h2 className="text-2xl font-bold sm:text-3xl">Slik fungerer det</h2>
+          <ol className="mt-8 grid gap-6 sm:grid-cols-3">
+            {steps.map((step, index) => (
+              <li key={step.title} className="flex gap-4">
+                <span
+                  aria-hidden
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-bold text-accent-contrast"
+                >
+                  {index + 1}
+                </span>
+                <div>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  <p className="mt-1 text-sm text-muted">{step.text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* Social proof */}
+      <section className="mx-auto max-w-6xl px-4 py-14">
+        <h2 className="text-2xl font-bold sm:text-3xl">
+          Over 120 000 fornøyde bileiere
+        </h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {testimonials.map((testimonial) => (
+            <Card key={testimonial.name}>
+              <p aria-hidden className="text-accent">
+                ★★★★★
+              </p>
+              <blockquote className="mt-3 text-sm leading-relaxed">
+                «{testimonial.text}»
+              </blockquote>
+              <p className="mt-3 text-sm font-semibold text-muted">
+                {testimonial.name}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Avdelinger-teaser */}
+      <section className="mx-auto max-w-6xl px-4 pb-14">
+        <Card className="flex flex-col items-start gap-5 bg-gradient-to-br from-surface-raised to-surface p-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-bold sm:text-2xl">
+              Fra Kristiansand i sør til Tromsø i nord
+            </h2>
+            <p className="mt-2 max-w-xl text-sm text-muted">
+              {locations.length} avdelinger drevet av lokale fagfolk. Finn din og
+              se lokale priser, åpningstider og kampanjer.
+            </p>
+          </div>
+          <ButtonLink href="/avdelinger" variant="secondary">
+            Se alle avdelinger
+          </ButtonLink>
+        </Card>
+      </section>
+
+      {/* CTA */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 text-center">
+        <h2 className="text-2xl font-bold sm:text-3xl">Klar for en renere bil?</h2>
+        <p className="mt-2 text-muted">
+          Bestill nå — du velger tidspunktet, vi gjør resten.
+        </p>
+        <div className="mt-6">
+          <ButtonLink href="/booking" className="text-lg">
+            Bestill bilpleie
+          </ButtonLink>
+        </div>
+        <p className="mt-4 text-sm text-muted">
+          Har du bestilt før?{" "}
+          <Link href="/min-side" className="text-accent hover:underline">
+            Logg inn på Min side
+          </Link>
+        </p>
+      </section>
     </div>
   );
 }
