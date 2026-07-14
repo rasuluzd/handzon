@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button, ButtonLink } from "@/components/ui/Button";
-import { formatDistance, getBrowserPosition, sortByDistance } from "@/lib/geo";
+import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import { locations } from "@/lib/mock-data";
 
@@ -63,25 +63,19 @@ export function LocationList() {
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [locating, setLocating] = useState(false);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    const matches = term
-      ? locations.filter(
-          (location) =>
-            location.name.toLowerCase().includes(term) ||
-            location.city.toLowerCase().includes(term) ||
-            location.postalCode.startsWith(term) ||
-            location.region.toLowerCase().includes(term),
-        )
-      : locations;
-    // FR-1.2: med posisjonstillatelse sorteres listen etter geografisk nærhet.
-    return position ? sortByDistance(matches, position) : matches;
-  }, [query, position]);
-
-  const highlighted = useMemo(
-    () => new Set(query.trim() ? filtered.map((location) => location.id) : []),
-    [filtered, query],
+  // FR-1.2: et søk sorterer etter nærhet i stedet for å tømme listen.
+  const ranking = useMemo(
+    () => rankLocations(locations, query, position),
+    [query, position],
   );
+
+  const highlighted = useMemo(() => {
+    if (!query.trim()) return new Set<string>();
+    // Marker direkte treff på kartet; ellers den nærmeste avdelingen.
+    if (ranking.matchedIds.size > 0) return ranking.matchedIds;
+    const nearest = ranking.results[0];
+    return new Set(nearest ? [nearest.id] : []);
+  }, [ranking, query]);
 
   async function handleLocate() {
     setLocating(true);
@@ -112,14 +106,12 @@ export function LocationList() {
             </Button>
           </div>
         </label>
-        {position && (
-          <p className="mt-2 text-sm text-muted">
-            Sortert etter avstand fra posisjonen din.
-          </p>
+        {ranking.note && (
+          <p className="mt-2 text-sm text-muted">{ranking.note}</p>
         )}
 
         <ul className="mt-6 space-y-3">
-          {filtered.map((location) => (
+          {ranking.results.map((location) => (
             <li key={location.id}>
               <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -128,7 +120,7 @@ export function LocationList() {
                     className="text-lg font-semibold hover:text-accent"
                   >
                     Handz On {location.name}
-                    {"distanceKm" in location && (
+                    {ranking.showDistance && "distanceKm" in location && (
                       <span className="ml-2 text-sm font-normal text-accent">
                         {formatDistance(location.distanceKm as number)}
                       </span>
@@ -161,11 +153,6 @@ export function LocationList() {
               </Card>
             </li>
           ))}
-          {filtered.length === 0 && (
-            <li className="rounded-2xl border border-border p-6 text-muted">
-              Ingen avdelinger matcher «{query}». Prøv et annet søk.
-            </li>
-          )}
         </ul>
       </div>
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge, Card } from "@/components/ui/Card";
 import { bookingAdapter, MEMBER_DISCOUNT_RATE } from "@/lib/booking-adapter";
-import { formatDistance, getBrowserPosition, sortByDistance } from "@/lib/geo";
+import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import {
   formatDuration,
@@ -291,19 +291,11 @@ function StepLocation({
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [locating, setLocating] = useState(false);
 
-  const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    const matches = term
-      ? locations.filter(
-          (location) =>
-            location.name.toLowerCase().includes(term) ||
-            location.city.toLowerCase().includes(term) ||
-            location.postalCode.startsWith(term),
-        )
-      : locations;
-    // FR-2.1 steg 1: med posisjon foreslås nærmeste avdeling øverst.
-    return position ? sortByDistance(matches, position) : matches;
-  }, [query, position]);
+  // FR-2.1 steg 1: et søk sorterer etter nærhet i stedet for å tømme lista.
+  const ranking = useMemo(
+    () => rankLocations(locations, query, position),
+    [query, position],
+  );
 
   async function handleLocate() {
     setLocating(true);
@@ -330,13 +322,11 @@ function StepLocation({
           {locating ? "Finner…" : "📍 Nær meg"}
         </Button>
       </div>
-      {position && (
-        <p className="mt-2 text-sm text-muted">
-          Sortert etter avstand fra posisjonen din — nærmeste avdeling øverst.
-        </p>
+      {ranking.note && (
+        <p className="mt-2 text-sm text-muted">{ranking.note}</p>
       )}
       <ul className="mt-4 space-y-2">
-        {filtered.map((location) => (
+        {ranking.results.map((location) => (
           <li key={location.id}>
             <button
               type="button"
@@ -349,7 +339,7 @@ function StepLocation({
             >
               <span className="flex items-baseline justify-between gap-3">
                 <span className="font-semibold">Handz On {location.name}</span>
-                {"distanceKm" in location && (
+                {ranking.showDistance && "distanceKm" in location && (
                   <span className="shrink-0 text-sm text-accent">
                     {formatDistance(location.distanceKm as number)}
                   </span>
