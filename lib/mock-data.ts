@@ -210,7 +210,7 @@ export const addOns: AddOn[] = [
 ];
 
 /**
- * «Ofte valgt sammen» — mersalgsmatrise (FR-2.3): tilleggstjenester i anbefalt
+ * «Ofte valgt sammen» — mersalgsmatrise (FR-3.2): tilleggstjenester i anbefalt
  * rekkefølge per hovedtjeneste. I produksjon beregnes denne fra ordrehistorikk.
  */
 export const addOnAffinity: Record<string, string[]> = {

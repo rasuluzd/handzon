@@ -9,7 +9,9 @@ import {
 } from "./mock-data";
 
 /**
- * Porten mellom bookingflyten og booking-backenden (FR-3.1).
+ * Porten mellom bookingflyten og booking-backenden (T-3). Kravspesifikasjonen
+ * forutsetter Avio ED/POS som «Single Source of Truth» (spor A); spor B er
+ * beredskap dersom API-tilgang ikke innvilges.
  *
  * To produksjonsimplementasjoner er planlagt bak dette grensesnittet
  * (docs/IMPLEMENTASJONSPLAN.md kap. 1.2):
@@ -19,6 +21,13 @@ import {
  * Demoen kjører MockBookingAdapter. UI-koden kjenner kun dette grensesnittet,
  * så sporvalget endrer ikke én linje i bookingflyten.
  */
+export interface PriceBreakdown {
+  totalOre: number;
+  vatOre: number;
+  /** Kundeklubb-rabatt (FR-2.2) — 0 uten medlemskap eller ved fallback (NFR-3). */
+  memberDiscountOre: number;
+}
+
 export interface BookingAdapter {
   getAvailableSlots(
     locationId: string,
@@ -31,8 +40,16 @@ export interface BookingAdapter {
     locationId: string,
     serviceId: string,
     addOnIds: string[],
-  ): { totalOre: number; vatOre: number };
+    options?: { member?: boolean },
+  ): PriceBreakdown;
 }
+
+/**
+ * Kundeklubb-rabatt (FR-2.2): i produksjon hentes lojalitetsstatus fra ekstern
+ * kundedatabase etter Vipps-innlogging; er tjenesten nede brukes standard
+ * prisliste (NFR-3). Demoen bruker en flat medlemsrabatt på hovedtjenesten.
+ */
+export const MEMBER_DISCOUNT_RATE = 0.1;
 
 /** Deterministisk PRNG (mulberry32) — samme input gir alltid samme tidsluker. */
 function mulberry32(seed: number): () => number {
@@ -121,15 +138,20 @@ export class MockBookingAdapter implements BookingAdapter {
     locationId: string,
     serviceId: string,
     addOnIds: string[],
-  ): { totalOre: number; vatOre: number } {
+    options?: { member?: boolean },
+  ): PriceBreakdown {
     const servicePrice = getEffectivePrice(serviceId, locationId);
     const addOnTotal = addOns
       .filter((addOn) => addOnIds.includes(addOn.id))
       .reduce((sum, addOn) => sum + addOn.priceOre, 0);
-    const totalOre = servicePrice + addOnTotal;
+    // Rabatten rundes til hele kroner så medlemsprisen blir «pen».
+    const memberDiscountOre = options?.member
+      ? Math.round((servicePrice * MEMBER_DISCOUNT_RATE) / 100) * 100
+      : 0;
+    const totalOre = servicePrice + addOnTotal - memberDiscountOre;
     // Priser er inkl. 25 % mva; mva-andelen er total × 0,25 / 1,25.
     const vatOre = Math.round(totalOre / 5);
-    return { totalOre, vatOre };
+    return { totalOre, vatOre, memberDiscountOre };
   }
 
   async createBooking(request: BookingRequest): Promise<Booking> {
@@ -139,6 +161,7 @@ export class MockBookingAdapter implements BookingAdapter {
       request.locationId,
       request.serviceId,
       request.addOnIds,
+      { member: request.member },
     );
     const reference = `HOAC-${(hashString(
       `${request.locationId}:${request.regNr}:${request.date}:${request.time}`,

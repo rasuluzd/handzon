@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge, Card } from "@/components/ui/Card";
-import { bookingAdapter } from "@/lib/booking-adapter";
+import { bookingAdapter, MEMBER_DISCOUNT_RATE } from "@/lib/booking-adapter";
+import { formatDistance, getBrowserPosition, sortByDistance } from "@/lib/geo";
+import type { GeoPoint } from "@/lib/geo";
 import {
   formatDuration,
   formatIsoDate,
@@ -50,11 +52,14 @@ interface WizardState {
   time: string | null;
   addOnIds: string[];
   contact: { name: string; phone: string };
+  /** Kundeklubb-medlem etter Vipps-innlogging (FR-2.2) — påvirker pris i steg 3 og 6. */
+  member: boolean;
   booking: Booking | null;
 }
 
 type WizardAction =
   | { type: "goto"; step: number }
+  | { type: "vippsLogin" }
   | { type: "selectLocation"; locationId: string }
   | { type: "setRegNr"; regNr: string }
   | { type: "setVehicle"; vehicle: Vehicle | null }
@@ -69,6 +74,17 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case "goto":
       return { ...state, step: action.step };
+    case "vippsLogin":
+      // Mock av Vipps + kundeklubb-oppslag (FR-2.2): identitet hentes og
+      // lojalitetsstatus aktiverer medlemspriser i steg 3 og 6.
+      return {
+        ...state,
+        member: true,
+        contact: {
+          name: state.contact.name || "Kari Nordmann",
+          phone: state.contact.phone || "91234567",
+        },
+      };
     case "selectLocation":
       // Bytte av avdeling nullstiller tidspunkt (kapasiteten er lokal),
       // men beholder bil og tjeneste.
@@ -129,6 +145,7 @@ export function BookingWizard({
     time: null,
     addOnIds: [],
     contact: { name: "", phone: "" },
+    member: false,
     booking: null,
   });
 
@@ -187,6 +204,8 @@ export function BookingWizard({
           <StepService
             locationId={location.id}
             selectedId={state.serviceId}
+            member={state.member}
+            onVippsLogin={() => dispatch({ type: "vippsLogin" })}
             onSelect={(serviceId) => dispatch({ type: "selectService", serviceId })}
           />
         )}
@@ -269,26 +288,53 @@ function StepLocation({
   onSelect: (locationId: string) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [position, setPosition] = useState<GeoPoint | null>(null);
+  const [locating, setLocating] = useState(false);
+
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return locations;
-    return locations.filter(
-      (location) =>
-        location.name.toLowerCase().includes(term) ||
-        location.city.toLowerCase().includes(term) ||
-        location.postalCode.startsWith(term),
-    );
-  }, [query]);
+    const matches = term
+      ? locations.filter(
+          (location) =>
+            location.name.toLowerCase().includes(term) ||
+            location.city.toLowerCase().includes(term) ||
+            location.postalCode.startsWith(term),
+        )
+      : locations;
+    // FR-2.1 steg 1: med posisjon foreslås nærmeste avdeling øverst.
+    return position ? sortByDistance(matches, position) : matches;
+  }, [query, position]);
+
+  async function handleLocate() {
+    setLocating(true);
+    setPosition(await getBrowserPosition());
+    setLocating(false);
+  }
 
   return (
     <section aria-label="Velg avdeling">
-      <input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Søk på by eller postnummer"
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
-      />
+      <div className="flex gap-2">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Søk på by eller postnummer"
+          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
+        />
+        <Button
+          variant="secondary"
+          className="shrink-0 !px-4"
+          disabled={locating}
+          onClick={handleLocate}
+        >
+          {locating ? "Finner…" : "📍 Nær meg"}
+        </Button>
+      </div>
+      {position && (
+        <p className="mt-2 text-sm text-muted">
+          Sortert etter avstand fra posisjonen din — nærmeste avdeling øverst.
+        </p>
+      )}
       <ul className="mt-4 space-y-2">
         {filtered.map((location) => (
           <li key={location.id}>
@@ -301,7 +347,14 @@ function StepLocation({
                   : "border-border bg-surface"
               }`}
             >
-              <span className="font-semibold">Handz On {location.name}</span>
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="font-semibold">Handz On {location.name}</span>
+                {"distanceKm" in location && (
+                  <span className="shrink-0 text-sm text-accent">
+                    {formatDistance(location.distanceKm as number)}
+                  </span>
+                )}
+              </span>
               <span className="mt-0.5 block text-sm text-muted">
                 {location.address}, {location.postalCode} {location.city}
               </span>
@@ -451,19 +504,37 @@ function StepVehicle({
   );
 }
 
-/* Steg 3 — tjeneste (FR-5.2: lokal pris) */
+/* Steg 3 — tjeneste (FR-5.2: lokal pris · FR-2.2: medlemspris) */
 function StepService({
   locationId,
   selectedId,
+  member,
+  onVippsLogin,
   onSelect,
 }: {
   locationId: string;
   selectedId: string | null;
+  member: boolean;
+  onVippsLogin: () => void;
   onSelect: (serviceId: string) => void;
 }) {
   const categories = [...new Set(services.map((service) => service.category))];
   return (
     <section aria-label="Velg tjeneste" className="space-y-6">
+      {member ? (
+        <Card className="border-accent/40 bg-accent/10 !py-3 text-sm">
+          Kundeklubb-medlem — medlemsprisene under er oppdatert automatisk.
+        </Card>
+      ) : (
+        <Card className="flex items-center justify-between gap-3 !py-3">
+          <p className="text-sm text-muted">
+            Medlem i kundeklubben? Logg inn, så oppdateres prisene automatisk.
+          </p>
+          <Button variant="vipps" className="!min-h-10 shrink-0 !px-4 text-sm" onClick={onVippsLogin}>
+            Logg inn med Vipps
+          </Button>
+        </Card>
+      )}
       {categories.map((category) => {
         const items = services.filter(
           (service) =>
@@ -478,6 +549,8 @@ function StepService({
             <ul className="mt-2 space-y-2">
               {items.map((service) => {
                 const price = getEffectivePrice(service.id, locationId);
+                const memberPrice =
+                  price - Math.round((price * MEMBER_DISCOUNT_RATE) / 100) * 100;
                 return (
                   <li key={service.id}>
                     <button
@@ -491,7 +564,18 @@ function StepService({
                     >
                       <span className="flex items-baseline justify-between gap-3">
                         <span className="font-semibold">{service.name}</span>
-                        <span className="shrink-0 font-bold">{formatOre(price)}</span>
+                        {member ? (
+                          <span className="shrink-0 text-right">
+                            <span className="block text-xs text-muted line-through">
+                              {formatOre(price)}
+                            </span>
+                            <span className="font-bold text-accent">
+                              {formatOre(memberPrice)}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="shrink-0 font-bold">{formatOre(price)}</span>
+                        )}
                       </span>
                       <span className="mt-1 block text-sm text-muted">
                         {service.description}
@@ -511,7 +595,7 @@ function StepService({
   );
 }
 
-/* Steg 4 — tidspunkt (FR-2.1.4) */
+/* Steg 4 — tidspunkt (FR-2.1 steg 4) */
 function StepTime({
   state,
   dispatch,
@@ -620,7 +704,7 @@ function StepTime({
   );
 }
 
-/* Steg 5 — tilleggstjenester («ofte valgt sammen», FR-2.3) */
+/* Steg 5 — tilleggstjenester («ofte valgt sammen», FR-3.2) */
 function StepAddOns({
   state,
   dispatch,
@@ -677,7 +761,7 @@ function StepAddOns({
   );
 }
 
-/* Steg 6 — oppsummering med mva-spesifikasjon (FR-2.4, NFR-6) */
+/* Steg 6 — oppsummering med mva-spesifikasjon (FR-2.1 steg 6, T-1) */
 function StepSummary({
   state,
   dispatch,
@@ -691,10 +775,11 @@ function StepSummary({
   const organization = getOrganization(location.orgId);
   const chosenAddOns = addOns.filter((addOn) => state.addOnIds.includes(addOn.id));
   const servicePrice = getEffectivePrice(service.id, location.id);
-  const { totalOre, vatOre } = bookingAdapter.calculateTotal(
+  const { totalOre, vatOre, memberDiscountOre } = bookingAdapter.calculateTotal(
     location.id,
     service.id,
     state.addOnIds,
+    { member: state.member },
   );
   const contactValid =
     state.contact.name.trim().length > 1 && state.contact.phone.trim().length >= 8;
@@ -710,6 +795,7 @@ function StepSummary({
       date: state.date!,
       time: state.time!,
       contact: state.contact,
+      member: state.member,
     });
     dispatch({ type: "confirmed", booking });
   }
@@ -759,6 +845,12 @@ function StepSummary({
               <dd>{formatOre(addOn.priceOre)}</dd>
             </div>
           ))}
+          {memberDiscountOre > 0 && (
+            <div className="flex justify-between gap-4 text-accent">
+              <dt>Kundeklubb-rabatt (10 %)</dt>
+              <dd>− {formatOre(memberDiscountOre)}</dd>
+            </div>
+          )}
           <div className="flex justify-between gap-4 border-t border-border pt-2 text-muted">
             <dt>Herav mva. (25 %)</dt>
             <dd>{formatOreExact(vatOre)}</dd>
@@ -803,18 +895,15 @@ function StepSummary({
             placeholder="Mobilnummer"
             className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-accent focus:outline-none"
           />
-          <Button
-            variant="vipps"
-            fullWidth
-            onClick={() =>
-              dispatch({
-                type: "setContact",
-                contact: { name: "Kari Nordmann", phone: "91234567" },
-              })
-            }
-          >
-            Fyll ut med Vipps
-          </Button>
+          {!state.member && (
+            <Button
+              variant="vipps"
+              fullWidth
+              onClick={() => dispatch({ type: "vippsLogin" })}
+            >
+              Fyll ut med Vipps
+            </Button>
+          )}
         </div>
       </Card>
 

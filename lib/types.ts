@@ -106,6 +106,8 @@ export interface BookingRequest {
   date: string;
   time: string;
   contact: { name: string; phone: string };
+  /** Kundeklubb-medlem identifisert via Vipps (FR-2.2). */
+  member?: boolean;
 }
 
 export interface Booking {

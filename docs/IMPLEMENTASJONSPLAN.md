@@ -50,7 +50,7 @@ Eksterne: Vipps Logg inn (OIDC) · SVV regnr-oppslag · Sveve/LINK SMS · Resend
           · Google Maps · Meta/Google Consent Mode v2
 ```
 
-### 1.2 Port/adapter for booking — spor A og spor B (FR-3.1)
+### 1.2 Port/adapter for booking — spor A og spor B (T-3)
 
 Avio-tilgang (MYO0/ED/POS-API) er uavklart. All bookinglogikk programmeres derfor mot ett
 grensesnitt — `BookingAdapter` — med to implementasjoner:
@@ -76,27 +76,27 @@ produksjonsoppsettet (Payload, Postgres, BullMQ, ekte integrasjoner) etableres i
 ## 2. Teknologivalg med begrunnelse
 
 Styrende prinsipp: **billigst og mest effektivt over tid** — fastpris fremfor usage-fakturering,
-selveid fremfor SaaS, ingen innlåsing (NFR-8).
+selveid fremfor SaaS, ingen innlåsing (T-2/T-4).
 
 | Område | Valg | Hvorfor / forkastet |
 |---|---|---|
 | Språk | TypeScript i hele stacken | Ett språk for web, backend-logikk, worker og evt. app (React Native). Go/C# forkastet: splitter kompetanse uten gevinst på denne lasten |
 | Frontend | Next.js 16 (App Router, SSR/ISR), self-hosted standalone i Docker | Best SSR/ISR for Lighthouse ≥ 90 (NFR-2), størst talent-pool, deler React-kode med evt. app. Astro forkastet (bookingflyt er app-aktig), SvelteKit forkastet (mindre økosystem/talent) |
-| CMS (FR-1.3) | Payload CMS 3, innebygd i Next.js-appen, data i egen Postgres | Gratis og selvhostet — ingen per-seat SaaS-kostnad, full dataeierskap, admin-UI følger med. Sanity forkastet: løpende lisens + data hos tredjepart |
+| CMS (FR-1.1/FR-1.3/FR-3.1) | Payload CMS 3, innebygd i Next.js-appen, data i egen Postgres | Gratis og selvhostet — ingen per-seat SaaS-kostnad, full dataeierskap, admin-UI følger med. Sanity forkastet: løpende lisens + data hos tredjepart |
 | Database | PostgreSQL 16, selvdriftet på egen Hetzner-node | Håndterer volumet med stor margin i årevis; fastpris ~100–200 kr/mnd. Multi-tenant via `org_id` på alle rader + row-level security (kap. 3.3). Supabase/Neon forkastet: usage-prising + innlåsing |
 | Kø/jobber | Redis + BullMQ i egen worker-container | Gratis, selvhostet, retries/idempotens/forsinkede jobber innebygd (FR-5.3). QStash/Vercel Cron forkastet (usage-priset, innlåsing) |
-| Hosting | Hetzner Cloud EU + Coolify (Docker-deploy m/ CI/CD), Cloudflare foran | ~400–700 kr/mnd totalt, fastpris, EU-dataresidens (NFR-4), null innlåsing. Vercel forkastet (usage-kost ved vekst), Azure forkastet (5–10× pris for samme last) |
-| Filer | Hetzner Object Storage (S3-kompatibelt API) | PDF-kvitteringer 6 år (bokføringsloven, FR-4.4), lifecycle-regler, bucket-prefiks per org.nummer |
+| Hosting | Hetzner Cloud EU + Coolify (Docker-deploy m/ CI/CD), Cloudflare foran | ~400–700 kr/mnd totalt, fastpris, EU-dataresidens (T-5), null innlåsing. Vercel forkastet (usage-kost ved vekst), Azure forkastet (5–10× pris for samme last) |
+| Filer | Hetzner Object Storage (S3-kompatibelt API) | PDF-kvitteringer 6 år (bokføringsloven, FR-4.3), lifecycle-regler, bucket-prefiks per org.nummer |
 | Auth (FR-2.2/FR-4.1) | Vipps Logg inn (OIDC) via Auth.js v5 + passordløs OTP (SMS/e-post); httpOnly secure cookies | Vipps er de facto standard i Norge. Keycloak forkastet: driftstung overkill for to innloggingsmetoder |
-| Regnr (FR-2.1.2) | SVV «Enkeltoppslag i motorvognregisteret» (gratis REST-API, API-nøkkel) | Offisiell kilde; auto-uppercase/trim + `inputmode`-tastatur i UI; manuell fallback (NFR-3) |
+| Regnr (FR-2.1 steg 2, NFR-1) | SVV «Enkeltoppslag i motorvognregisteret» (gratis REST-API, API-nøkkel) | Offisiell kilde; auto-uppercase/trim + `inputmode`-tastatur i UI; manuell fallback (NFR-3) |
 | SMS/E-post (FR-5.3) | Sveve eller LINK Mobility (SMS, norsk avsendernavn) + Resend (e-post) | Trigges fra BullMQ-domenehendelser; leverandør bak eget `MessageProvider`-grensesnitt så bytte er trivielt |
 | Kart (FR-1.2) | Google Maps Platform (statisk kart + lenker; JS-API kun der det trengs) | Gratiskvoten dekker normal trafikk; forenklet i demo |
-| Samtykke (NFR-4) | Consent Mode v2 (Google/Meta) m/ egen samtykkebanner | Kreves for annonsemåling i EU |
+| Samtykke (konverteringssporing, kravspes kap. 2.1) | Consent Mode v2 (Google/Meta) m/ egen samtykkebanner | Kreves for annonsemåling i EU |
 | App (opsjon) | PWA inkludert i web; native = Expo (React Native), gjenbruker API + designtokens | Prises som fastpris-opsjon (kap. 9) |
 
 ## 3. Datamodell — multi-tenant med juridisk skille
 
-### 3.1 Prinsipp (NFR-6, FR-5.1)
+### 3.1 Prinsipp (T-1, FR-5.1)
 
 Hver av de 15 franchisetakerne er egen juridisk enhet med eget org.nummer. Alt økonomisk
 (ordre, kvittering, bokføringsdata, fremtidige betalingsavtaler) må derfor være entydig knyttet
@@ -180,7 +180,7 @@ erDiagram
 scopet til org), `resources` (hall/fagarbeider m/ kapabiliteter), `opening_hours`
 (ukemønster + datounntak), `consents` (formål, tidspunkt, kilde), `message_triggers`
 (hendelse → mal → kanal → forsinkelse), `message_log` (idempotensnøkkel, status, leverandør-ref),
-`audit_log` (hvem så/endret persondata, NFR-5).
+`audit_log` (hvem så/endret persondata, T-5).
 
 ### 3.3 Håndheving av tenant-skille
 
@@ -189,7 +189,7 @@ scopet til org), `resources` (hall/fagarbeider m/ kapabiliteter), `opening_hours
   sesjoner. Kjede-superadmin bruker egen rolle som omgår policyen.
 - Kvitteringer genereres med utstedende org.nummer, juridisk navn og adresse i dokumentet, og
   lagres under `receipts/{org_nr}/{år}/`-prefiks med 6 års object-lock (bokføringsloven § 13).
-- Ved «Slett meg» (FR-4.5) anonymiseres kunderaden, men kvitteringer og bokføringspliktige
+- Ved «Slett meg» (FR-4.1) anonymiseres kunderaden, men kvitteringer og bokføringspliktige
   ordredata beholdes til retention utløper (hjemmel: bokføringsloven; kommuniseres i flyten).
 
 ## 4. Integrasjonskart
@@ -199,23 +199,34 @@ scopet til org), `resources` (hall/fagarbeider m/ kapabiliteter), `opening_hours
 | **Avio MYO0/ED/POS** (spor A) | Begge | REST (avklares) | Retry m/ backoff; ved nede: les fra siste synkroniserte kapasitetscache, kø ordre-skriving; sirkuitbryter |
 | **Vipps Logg inn** | Inn | OIDC (Auth.js) | Fallback: OTP via SMS/e-post |
 | **SVV motorvognregister** | Ut | REST enkeltoppslag | Ved feil/timeout (>2 s): manuell inntasting av merke/modell — booking stopper aldri |
-| **Kundeklubb/medlemsregister** | Ut | REST (avklares) | **Fallback til standard prisliste** (FR-5.4/NFR-3); medlemsrabatt etterberegnes ev. i etterkant |
+| **Kundeklubb/medlemsregister** | Ut | REST (avklares) | **Fallback til standard prisliste** (FR-2.2/NFR-3); medlemsrabatt etterberegnes ev. i etterkant |
 | **Sveve/LINK (SMS)** | Ut | REST | BullMQ-retry (5×, eksponentiell backoff), idempotensnøkkel per melding, DLQ m/ varsling |
 | **Resend (e-post)** | Ut | REST | Som SMS; e-post er sekundærkanal |
 | **Google Maps** | Ut | Statisk/JS-API | Kart degraderer til adresseliste + lenke |
 | **Consent Mode v2** | Ut | gtag/pixel | Uten samtykke: ingen sporing, siden fungerer fullt |
 
-### Kommunikasjonsmotor (FR-5.3)
+### Kommunikasjonsmotor (FR-5.3, FR-2.3, FR-3.3)
 
 Domenehendelser (`booking.confirmed`, `booking.reminder_24h`, `booking.reminder_2h`,
 `booking.ready`, `booking.completed`, `customer.inactive_90d`) publiseres til BullMQ.
 Worker-containeren konsumerer, slår opp aktiv `message_trigger` (redigerbar mal per kanal i
-Payload-admin), renderer og sender. Alle utsendelser logges i `message_log` med
-idempotensnøkkel `{booking_id}:{trigger}` slik at retry aldri dobbelsender.
+Payload-admin, med avdelingsspesifikk tekstoverstyring per FR-5.1), renderer og sender.
+Alle utsendelser logges i `message_log` med idempotensnøkkel `{booking_id}:{trigger}` slik
+at retry aldri dobbelsender.
+
+- **Bekreftelsen** (`booking.confirmed`) inneholder en **unik, signert
+  endrings-/avbestillingslenke** (FR-2.3). Lenken håndhever den sentralt definerte fristen
+  (f.eks. 24 t): etter fristen viser siden avdelingens telefonnummer i stedet for
+  avbestillingsknapp.
+- **Post-checkout** (`booking.completed`, trigget fra POS ved ferdigstilt bil) sender takk +
+  kvitteringsvarsel + unikt gjenkjøpstilbud («gjenta innen 6 uker, 15 % rabatt», FR-3.3) med
+  sporbar tilbudskode.
+- **Feilruting**: kritiske feil (DLQ-treff, integrasjon nede > terskel, feilede utsendelser)
+  ruter kopi på e-post til hovedkontoret (FR-5.3), i tillegg til driftsvarsling i kap. 7.
 
 ## 5. Kapasitetslogikk (spor B — egen bookingmotor)
 
-Tilgjengelige tidsluker for tjeneste *T* ved avdeling *L* på dato *D* (FR-2.1.4):
+Tilgjengelige tidsluker for tjeneste *T* ved avdeling *L* på dato *D* (FR-2.1 steg 4):
 
 1. **Åpningsvindu**: faste åpningstider for *L* på *D*, minus datounntak (helligdager, avvik).
 2. **Ressursmatrise**: *T* krever ressurstyper (f.eks. 1 hall + 1 fagarbeider m/ kapabilitet
@@ -233,7 +244,7 @@ invalidering ved ny booking. `MockBookingAdapter` i demoen genererer luker etter
 
 ## 6. Sikkerhet, personvern og GDPR
 
-### 6.1 Sikkerhet (NFR-5)
+### 6.1 Sikkerhet (NFR-3, T-5)
 
 - TLS 1.3 ende til ende (Cloudflare strict + origin-sertifikat), HSTS.
 - CSP og security headers (nonce-basert script-policy, `frame-ancestors 'none'`).
@@ -245,17 +256,17 @@ invalidering ved ny booking. `MockBookingAdapter` i demoen genererer luker etter
 - OS: unattended-upgrades; Coolify- og imageoppdateringer månedlig (driftsavtale).
 - Ekstern pentest før lansering; funn P1/P2 lukkes før go-live.
 
-### 6.2 Personvern (NFR-4)
+### 6.2 Personvern (FR-4.1, T-5)
 
 - EU-dataresidens for all persondata (Hetzner DE/FI, Cloudflare EU-only-modus vurderes).
 - Databehandleravtaler (DPA): Hetzner, Cloudflare, Sveve/LINK, Resend, Google, Vipps.
 - Samtykker registreres per formål i `consents`; Consent Mode v2 styrer all markedssporing.
-- «Slett meg» (FR-4.5): selvbetjent; anonymiserer kundedata umiddelbart, bokføringspliktige
+- «Slett meg» (FR-4.1): selvbetjent; anonymiserer kundedata umiddelbart, bokføringspliktige
   bilag beholdes til 6-årsfristen per org (kommuniseres tydelig i flyten).
 - Dataminimering: regnr + kontaktinfo er kjernen; ingen unødvendige felter.
 - Behandlingsprotokoll og DPIA-utkast leveres som del av fase 5.
 
-### 6.3 Backup og gjenoppretting (NFR-7)
+### 6.3 Backup og gjenoppretting (T-2)
 
 - PostgreSQL: kontinuerlig WAL-arkivering (PITR) til Hetzner Object Storage + nattlig full dump.
   RPO ≤ 5 min, RTO ≤ 2 t. **Månedlig restore-test** til isolert node, dokumentert i driftslogg.
@@ -278,7 +289,7 @@ invalidering ved ny booking. `MockBookingAdapter` i demoen genererer luker etter
 ### 7.2 Skalering og exit
 
 Ved vekst: CPX31 → CPX41/51 (vertikalt, minutter), les-replika for rapportering, worker på egen
-node. Exit-plan (NFR-8): alt er Docker + Postgres + S3-API — kan flyttes til enhver leverandør
+node. Exit-plan (T-4): alt er Docker + Postgres + S3-API — kan flyttes til enhver leverandør
 med `pg_dump` + `rclone` + DNS-bytte på under en dag.
 
 ### 7.3 Kostnadstabell (månedlig, eks. mva)
@@ -298,17 +309,19 @@ Sammenlignet med Vercel + Supabase + Sanity-stack (~2 000–8 000 kr/mnd og stig
 
 ## 8. Fremdriftsplan mot lansering september 2026
 
-| Fase | Innhold | Periode | Milepæl |
-|---|---|---|---|
-| 1 | Avklaringer og fundament: Avio-dialog (spor A/B-beslutning), design-system, innholdsmodell, miljøoppsett (Coolify/Postgres/CI) | juli 2026 | **Beslutningspunkt Avio senest 31. juli** |
-| 2 | Markedsnettside: forside, tjenester, avdelingssider, CMS (Payload), SEO-grunnmur | aug uke 1–2 | Innhold redigerbart av kjeden |
-| 3 | Bookingflyt: 7 steg, SVV-integrasjon, valgt spor (A/B), Vipps/OTP-innlogging | aug uke 1–3 (parallelt) | Ende-til-ende booking i staging |
-| 4 | Min side + kommunikasjonsmotor: portal, kvitteringer, SMS/e-post-triggere | aug uke 3–4 | Full kundereise i staging |
-| 5 | Herding: pentest, GDPR-leveranser, Lighthouse-optimalisering, restore-test, pilot på 2 avdelinger | sep uke 1–2 | Go/no-go |
-| 6 | Lansering: utrulling alle 15 avdelinger, opplæring franchise-admin, hypercare 2 uker | sep uke 3–4 | **Lansert september 2026** |
+Fasene følger kravspesifikasjonens kap. 5 (den iterative modellen):
 
-Kritisk sti: Avio-avklaringen (fase 1) → bookingflyt (fase 3). Spor B-bygging starter uansett
-med adapter-grensesnittet, så en sen Avio-avklaring forsinker ikke UX-arbeidet.
+| Fase (kravspes) | Innhold i dette prosjektet | Periode | Milepæl |
+|---|---|---|---|
+| 1 Foranalyse | Endelig låsing av kravspesifikasjonen, Avio-dialog (spor A/B-beslutning), miljøoppsett (Coolify/Postgres/CI) | juli 2026 | **Kravspes låst + beslutningspunkt Avio senest 31. juli** |
+| 2 Design & UX | Wireframes mobil + desktop, design-system, innholdsmodell (CMS-kolleksjoner). Demoen i dette repoet er utgangspunktet | juli–aug uke 1 | Godkjente wireframes |
+| 3 Utvikling | Markedsnettside + CMS (Payload), 7-stegs booking, SVV, Vipps/OTP, valgt spor (A/B), Min side, kommunikasjonsmotor | aug uke 1–3 (parallelle spor) | Ende-til-ende kundereise i staging |
+| 4 Innhold | Avdelingsdata for 15 avdelinger, bilder, kalender-/ressursoppsett, meldingsmaler (inkl. avdelingsspesifikke tekster) | aug uke 3–4 | Alt innhold produksjonsklart |
+| 5 Testing | Ende-til-ende-test av booking, Vipps-pålogging og SMS-varsler; pentest, Lighthouse-måling (NFR-2), restore-test, pilot på 2 avdelinger | sep uke 1–2 | Go/no-go |
+| 6 Lansering | Produksjonssetting, utrulling alle 15 avdelinger, opplæring franchise-admin, hypercare 2 uker, overlevering | sep uke 3–4 | **Lansert innen utgangen av september 2026** |
+
+Kritisk sti: Avio-avklaringen (fase 1) → utvikling av bookingflyt (fase 3). Spor B-bygging
+starter uansett med adapter-grensesnittet, så en sen Avio-avklaring forsinker ikke UX-arbeidet.
 
 ## 9. Fastprismatrise
 
@@ -337,14 +350,18 @@ usikkerhet i integrasjonsdekning og innholdsproduksjon.
 | 5 | GDPR-funn sent i løpet | Lav×Høy | DPIA i fase 1–2, ikke fase 5; DPA-liste vedlikeholdes løpende |
 | 6 | Nøkkelpersonavhengighet i drift | Med×Med | Infrastruktur som kode, runbooks, Coolify-standardoppsett |
 
-### 10.2 Fase 2-klargjøring
+### 10.2 Fase 2-klargjøring (NFR-4)
 
-Datamodellen og adapterlaget er forberedt for:
+Datamodellen og adapterlaget er forberedt for utvidelsene i kravspesifikasjonens NFR-4:
 
-- **Vipps ePayment per org.nummer**: `organizations.payment_config` holder MSN/API-nøkler per
-  juridisk enhet; betalingsstrøm og oppgjør går da direkte til riktig franchisetaker.
-- **Nøkkelskap**: `booking.status`-maskinen har allerede `ready`-tilstand; nøkkelskap-hendelser
-  (innlevering/henting) kobles på som integrasjonsadapter + meldingstriggere.
-- **Dekkhotell**: egen modul med `vehicles`-kobling (lagringsplass, sesongbytte-booking
-  gjenbruker kapasitetslogikken).
+- **Integrert betaling**: Vipps ePayment **per org.nummer** — `organizations.payment_config`
+  holder MSN/API-nøkler per juridisk enhet, så betalingsstrøm og oppgjør går direkte til riktig
+  franchisetaker. PSP for kredittkort (f.eks. Nets/Adyen) kobles på bak samme
+  `PaymentProvider`-grensesnitt, også det org-scopet.
+- **Automatisk nøkkelutlevering**: `booking.status`-maskinen har allerede `ready`-tilstand;
+  smarte nøkkelskap (innlevering/henting utenom åpningstid) kobles på som integrasjonsadapter
+  + meldingstriggere.
+- **Dekkskift/dekkhotell**: dekkskift-booking gjenbruker kapasitetslogikken (kap. 5);
+  dekkhotell-modul med `vehicles`-kobling (lagringsplass, sesongbytte) og **lagersaldo på
+  fysiske dekk** som egen lagerentitet per avdeling.
 - **Kundeklubb v2**: medlemsnivåer og priser via `location_service_overrides`-mekanismen.

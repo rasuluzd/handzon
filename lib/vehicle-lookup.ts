@@ -1,7 +1,7 @@
 import type { Vehicle } from "./types";
 
 /**
- * Mock av Statens vegvesens «Enkeltoppslag i motorvognregisteret» (FR-2.1.2).
+ * Mock av Statens vegvesens «Enkeltoppslag i motorvognregisteret» (FR-2.1 steg 2).
  * I produksjon byttes denne mot et kall til SVV REST-API med API-nøkkel,
  * cache og 2 s timeout med manuell fallback (NFR-3).
  */

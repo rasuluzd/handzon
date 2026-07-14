@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { formatDistance, getBrowserPosition, sortByDistance } from "@/lib/geo";
+import type { GeoPoint } from "@/lib/geo";
 import { locations } from "@/lib/mock-data";
 
 /**
@@ -58,37 +60,63 @@ function MiniMap({ highlighted }: { highlighted: Set<string> }) {
 
 export function LocationList() {
   const [query, setQuery] = useState("");
+  const [position, setPosition] = useState<GeoPoint | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return locations;
-    return locations.filter(
-      (location) =>
-        location.name.toLowerCase().includes(term) ||
-        location.city.toLowerCase().includes(term) ||
-        location.postalCode.startsWith(term) ||
-        location.region.toLowerCase().includes(term),
-    );
-  }, [query]);
+    const matches = term
+      ? locations.filter(
+          (location) =>
+            location.name.toLowerCase().includes(term) ||
+            location.city.toLowerCase().includes(term) ||
+            location.postalCode.startsWith(term) ||
+            location.region.toLowerCase().includes(term),
+        )
+      : locations;
+    // FR-1.2: med posisjonstillatelse sorteres listen etter geografisk nærhet.
+    return position ? sortByDistance(matches, position) : matches;
+  }, [query, position]);
 
   const highlighted = useMemo(
     () => new Set(query.trim() ? filtered.map((location) => location.id) : []),
     [filtered, query],
   );
 
+  async function handleLocate() {
+    setLocating(true);
+    setPosition(await getBrowserPosition());
+    setLocating(false);
+  }
+
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_280px]">
       <div>
         <label className="block">
           <span className="text-sm font-semibold">Søk etter avdeling</span>
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="By eller postnummer, f.eks. Bergen eller 0668"
-            className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
-          />
+          <div className="mt-2 flex gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="By eller postnummer, f.eks. Bergen eller 0668"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
+            />
+            <Button
+              variant="secondary"
+              className="shrink-0 !px-4"
+              disabled={locating}
+              onClick={handleLocate}
+            >
+              {locating ? "Finner…" : "📍 Nær meg"}
+            </Button>
+          </div>
         </label>
+        {position && (
+          <p className="mt-2 text-sm text-muted">
+            Sortert etter avstand fra posisjonen din.
+          </p>
+        )}
 
         <ul className="mt-6 space-y-3">
           {filtered.map((location) => (
@@ -100,6 +128,11 @@ export function LocationList() {
                     className="text-lg font-semibold hover:text-accent"
                   >
                     Handz On {location.name}
+                    {"distanceKm" in location && (
+                      <span className="ml-2 text-sm font-normal text-accent">
+                        {formatDistance(location.distanceKm as number)}
+                      </span>
+                    )}
                   </Link>
                   <p className="mt-0.5 text-sm text-muted">
                     {location.address}, {location.postalCode} {location.city}

@@ -155,6 +155,10 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold sm:text-3xl">
           Over 120 000 fornøyde bileiere
         </h2>
+        <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted">
+          <span aria-hidden>✓</span> Alle avdelinger er registrert i
+          Arbeidstilsynets godkjenningsordning for bilpleie
+        </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {testimonials.map((testimonial) => (
             <Card key={testimonial.name}>
