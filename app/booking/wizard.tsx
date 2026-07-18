@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Badge, Card } from "@/components/ui/Card";
 import { bookingAdapter, MEMBER_DISCOUNT_RATE } from "@/lib/booking-adapter";
 import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import {
+  formatDayParts,
   formatDuration,
   formatIsoDate,
-  formatIsoDateShort,
   formatOre,
   formatOreExact,
   formatOrgNr,
@@ -27,8 +27,9 @@ import { isValidRegNr, lookupVehicle, normalizeRegNr } from "@/lib/vehicle-looku
 import type { Booking, TimeSlot, Vehicle } from "@/lib/types";
 
 /**
- * 7-stegs lukket bookingtrakt (FR-2.1). All tilstand ligger i én reducer, så
- * tilbake-navigasjon aldri mister data. Kjenner kun BookingAdapter-grensesnittet.
+ * 7-stegs lukket bookingtrakt (FR-2.1) i designet fra reference-prototypen.
+ * All tilstand ligger i én reducer, så tilbake-navigasjon aldri mister data.
+ * UI-koden kjenner kun BookingAdapter-grensesnittet (spor A/B-uavhengig).
  */
 
 const STEP_LABELS = [
@@ -41,6 +42,21 @@ const STEP_LABELS = [
   "Bekreftelse",
 ] as const;
 
+/* Delte kortstiler (speiler prototypens selCard/tick). */
+const selCard = (selected: boolean): string =>
+  `cursor-pointer rounded-[10px] px-[18px] py-[17px] transition-colors ${
+    selected
+      ? "border-2 border-navy bg-navy/6"
+      : "border-2 border-line-strong bg-surface hover:border-navy/40"
+  }`;
+
+const tickCls = (selected: boolean): string =>
+  `flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[14px] ${
+    selected
+      ? "bg-navy text-white"
+      : "border-2 border-[rgba(20,32,58,0.18)] text-transparent"
+  }`;
+
 interface WizardState {
   step: number;
   locationId: string | null;
@@ -52,7 +68,6 @@ interface WizardState {
   time: string | null;
   addOnIds: string[];
   contact: { name: string; phone: string };
-  /** Kundeklubb-medlem etter Vipps-innlogging (FR-2.2) — påvirker pris i steg 3 og 6. */
   member: boolean;
   booking: Booking | null;
 }
@@ -75,8 +90,6 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
     case "goto":
       return { ...state, step: action.step };
     case "vippsLogin":
-      // Mock av Vipps + kundeklubb-oppslag (FR-2.2): identitet hentes og
-      // lojalitetsstatus aktiverer medlemspriser i steg 3 og 6.
       return {
         ...state,
         member: true,
@@ -86,8 +99,6 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
         },
       };
     case "selectLocation":
-      // Bytte av avdeling nullstiller tidspunkt (kapasiteten er lokal),
-      // men beholder bil og tjeneste.
       return {
         ...state,
         locationId: action.locationId,
@@ -151,147 +162,68 @@ export function BookingWizard({
 
   const location = locations.find((item) => item.id === state.locationId);
   const service = services.find((item) => item.id === state.serviceId);
-
-  const stepDone = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return state.locationId !== null;
-      case 2:
-        return isValidRegNr(state.regNr);
-      case 3:
-        return state.serviceId !== null;
-      case 4:
-        return state.date !== null && state.time !== null;
-      case 5:
-        return true;
-      case 6:
-        return state.contact.name.trim().length > 1 && state.contact.phone.trim().length >= 8;
-      default:
-        return false;
-    }
-  };
-
-  const maxReachableStep = (): number => {
-    for (let step = 1; step <= 6; step += 1) {
-      if (!stepDone(step)) return step;
-    }
-    return 6;
-  };
+  const backVisible = state.step > 1 && state.step < 7;
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold sm:text-3xl">
-        {state.step === 7 ? "Takk for bestillingen!" : "Bestill time"}
-      </h1>
-
-      <Stepper
-        currentStep={state.step}
-        maxReachable={state.booking ? 0 : maxReachableStep()}
-        onNavigate={(step) => dispatch({ type: "goto", step })}
-      />
-
-      <div className="mt-6">
-        {state.step === 1 && (
-          <StepLocation
-            selectedId={state.locationId}
-            onSelect={(locationId) => dispatch({ type: "selectLocation", locationId })}
-          />
-        )}
-        {state.step === 2 && (
-          <StepVehicle state={state} dispatch={dispatch} />
-        )}
-        {state.step === 3 && location && (
-          <StepService
-            locationId={location.id}
-            selectedId={state.serviceId}
-            member={state.member}
-            onVippsLogin={() => dispatch({ type: "vippsLogin" })}
-            onSelect={(serviceId) => dispatch({ type: "selectService", serviceId })}
-          />
-        )}
-        {state.step === 4 && location && service && (
-          <StepTime state={state} dispatch={dispatch} />
-        )}
-        {state.step === 5 && service && (
-          <StepAddOns state={state} dispatch={dispatch} />
-        )}
-        {state.step === 6 && location && service && (
-          <StepSummary state={state} dispatch={dispatch} />
-        )}
-        {state.step === 7 && state.booking && <StepConfirmation booking={state.booking} />}
-      </div>
-
-      {state.step > 1 && state.step < 7 && (
-        <div className="mt-6">
-          <Button
-            variant="ghost"
-            onClick={() => dispatch({ type: "goto", step: state.step - 1 })}
+    <div className="mx-auto max-w-[680px] pb-10 pt-4">
+      {/* Chrome: tilbake, stegteller, progresjon */}
+      <div className="px-6 pb-[22px] pt-1.5">
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => backVisible && dispatch({ type: "goto", step: state.step - 1 })}
+            className={`text-[16px] text-body-soft hover:text-navy ${backVisible ? "" : "invisible"}`}
           >
             ← Tilbake
-          </Button>
+          </button>
+          <span className="font-heading text-[15px] font-medium text-muted">
+            Steg {state.step} av 7
+          </span>
         </div>
+        <div className="flex gap-1.5">
+          {STEP_LABELS.map((label, index) => (
+            <div
+              key={label}
+              className={`h-[5px] flex-1 rounded-[3px] ${
+                index + 1 <= state.step ? "bg-navy" : "bg-line-strong"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="mt-3 font-heading text-[14px] font-medium text-muted">
+          {STEP_LABELS[state.step - 1]}
+        </p>
+      </div>
+
+      {state.step === 1 && <StepLocation state={state} dispatch={dispatch} />}
+      {state.step === 2 && <StepVehicle state={state} dispatch={dispatch} />}
+      {state.step === 3 && location && <StepService state={state} dispatch={dispatch} />}
+      {state.step === 4 && location && service && (
+        <StepTime state={state} dispatch={dispatch} />
+      )}
+      {state.step === 5 && service && <StepAddOns state={state} dispatch={dispatch} />}
+      {state.step === 6 && location && service && (
+        <StepSummary state={state} dispatch={dispatch} />
+      )}
+      {state.step === 7 && state.booking && (
+        <StepConfirmation booking={state.booking} />
       )}
     </div>
   );
 }
 
-function Stepper({
-  currentStep,
-  maxReachable,
-  onNavigate,
-}: {
-  currentStep: number;
-  maxReachable: number;
-  onNavigate: (step: number) => void;
-}) {
-  return (
-    <nav aria-label="Bestillingssteg" className="mt-5">
-      <ol className="flex gap-1.5">
-        {STEP_LABELS.map((label, index) => {
-          const step = index + 1;
-          const isCurrent = step === currentStep;
-          const isDone = step < currentStep;
-          const clickable = step <= maxReachable && step !== currentStep && currentStep < 7;
-          return (
-            <li key={label} className="flex-1">
-              <button
-                type="button"
-                disabled={!clickable}
-                onClick={() => onNavigate(step)}
-                aria-current={isCurrent ? "step" : undefined}
-                className={`block h-1.5 w-full rounded-full transition-colors ${
-                  isCurrent || isDone ? "bg-accent" : "bg-border"
-                } ${clickable ? "cursor-pointer hover:bg-accent-strong" : ""}`}
-                title={`${step}. ${label}`}
-              >
-                <span className="sr-only">
-                  Steg {step}: {label}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      <p className="mt-2 text-sm text-muted">
-        Steg {Math.min(currentStep, 7)} av 7 · {STEP_LABELS[currentStep - 1]}
-      </p>
-    </nav>
-  );
-}
-
-/* Steg 1 — avdeling */
+/* ---------- Steg 1: avdeling ---------- */
 function StepLocation({
-  selectedId,
-  onSelect,
+  state,
+  dispatch,
 }: {
-  selectedId: string | null;
-  onSelect: (locationId: string) => void;
+  state: WizardState;
+  dispatch: React.Dispatch<WizardAction>;
 }) {
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [locating, setLocating] = useState(false);
 
-  // FR-2.1 steg 1: et søk sorterer etter nærhet i stedet for å tømme lista.
   const ranking = useMemo(
     () => rankLocations(locations, query, position),
     [query, position],
@@ -304,59 +236,71 @@ function StepLocation({
   }
 
   return (
-    <section aria-label="Velg avdeling">
-      <div className="flex gap-2">
+    <div className="px-6 pt-2">
+      <h2 className="mb-1.5 font-heading text-[25px] font-bold text-ink">
+        Velg avdeling
+      </h2>
+      <p className="mb-[18px] text-[16px] text-muted">
+        Der du leverer og henter bilen.
+      </p>
+      <div className="mb-2 flex gap-2.5">
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Søk på by eller postnummer"
-          className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPosition(null);
+          }}
+          placeholder="By eller postnummer"
+          className="min-w-0 flex-1 rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface px-4 py-3.5 text-[16px] text-ink outline-none placeholder:text-muted-light focus:border-navy"
         />
-        <Button
-          variant="secondary"
-          className="shrink-0 !px-4"
-          disabled={locating}
+        <button
+          type="button"
           onClick={handleLocate}
+          disabled={locating}
+          className="shrink-0 rounded-[8px] border border-navy/30 bg-surface px-4 font-heading text-[15px] font-semibold text-navy hover:bg-surface-alt disabled:opacity-60"
         >
           {locating ? "Finner…" : "📍 Nær meg"}
-        </Button>
+        </button>
       </div>
       {ranking.note && (
-        <p className="mt-2 text-sm text-muted">{ranking.note}</p>
+        <p className="mx-0.5 mb-3.5 mt-1.5 text-[14px] text-muted">{ranking.note}</p>
       )}
-      <ul className="mt-4 space-y-2">
-        {ranking.results.map((location) => (
-          <li key={location.id}>
+      <div className="mt-3 flex flex-col gap-2.5">
+        {ranking.results.map((item) => {
+          const selected = state.locationId === item.id;
+          return (
             <button
+              key={item.id}
               type="button"
-              onClick={() => onSelect(location.id)}
-              className={`w-full rounded-xl border p-4 text-left transition-colors hover:border-accent ${
-                selectedId === location.id
-                  ? "border-accent bg-accent/10"
-                  : "border-border bg-surface"
-              }`}
+              onClick={() => dispatch({ type: "selectLocation", locationId: item.id })}
+              className={`text-left ${selCard(selected)}`}
             >
-              <span className="flex items-baseline justify-between gap-3">
-                <span className="font-semibold">Handz On {location.name}</span>
-                {ranking.showDistance && "distanceKm" in location && (
-                  <span className="shrink-0 text-sm text-accent">
-                    {formatDistance(location.distanceKm as number)}
-                  </span>
-                )}
-              </span>
-              <span className="mt-0.5 block text-sm text-muted">
-                {location.address}, {location.postalCode} {location.city}
-              </span>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-heading text-[17px] font-semibold text-ink">
+                    Handz On {item.name}
+                    {ranking.showDistance && "distanceKm" in item && (
+                      <span className="ml-2 text-[14px] font-normal text-navy">
+                        {formatDistance(item.distanceKm as number)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-[3px] text-[13.5px] text-muted">
+                    {item.address}, {item.postalCode} {item.city}
+                  </div>
+                </div>
+                <span className={tickCls(selected)}>✓</span>
+              </div>
             </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
-/* Steg 2 — registreringsnummer (FR-2.1.2, NFR-3) */
+/* ---------- Steg 2: bil ---------- */
 function StepVehicle({
   state,
   dispatch,
@@ -382,7 +326,6 @@ function StepVehicle({
         setStatus("error");
       }
     } catch {
-      // SVV nede: manuell inntasting tar over (NFR-3).
       setStatus("error");
       dispatch({ type: "setManualVehicle", manual: true });
     }
@@ -404,34 +347,43 @@ function StepVehicle({
   }
 
   return (
-    <section aria-label="Registreringsnummer">
-      <label className="block">
-        <span className="text-sm font-semibold">Bilens registreringsnummer</span>
-        <input
-          type="text"
-          inputMode="text"
-          autoCapitalize="characters"
-          autoComplete="off"
-          spellCheck={false}
-          maxLength={8}
-          value={state.regNr}
-          onChange={(event) => {
-            setStatus("idle");
-            dispatch({ type: "setRegNr", regNr: normalizeRegNr(event.target.value) });
-          }}
-          placeholder="EB12345"
-          className="mt-2 w-full rounded-xl border border-border bg-surface px-4 py-4 text-center font-mono text-2xl uppercase tracking-[0.3em] placeholder:text-muted/40 focus:border-accent focus:outline-none"
-        />
+    <div className="px-6 pt-2">
+      <h2 className="mb-1.5 font-heading text-[25px] font-bold text-ink">
+        Bilen din
+      </h2>
+      <p className="mb-5 text-[16px] text-muted">
+        Vi henter merke og modell fra Statens vegvesen.
+      </p>
+      <label
+        htmlFor="regnr"
+        className="mb-2 block text-[15px] font-semibold text-ink"
+      >
+        Registreringsnummer
       </label>
-      <p className="mt-2 text-sm text-muted">
-        Vi henter bilens merke og modell fra Statens vegvesen. To bokstaver og
-        fem sifre, f.eks. EB12345.
+      <input
+        id="regnr"
+        type="text"
+        inputMode="text"
+        autoCapitalize="characters"
+        autoComplete="off"
+        spellCheck={false}
+        maxLength={8}
+        value={state.regNr}
+        onChange={(event) => {
+          setStatus("idle");
+          dispatch({ type: "setRegNr", regNr: normalizeRegNr(event.target.value) });
+        }}
+        placeholder="EB12345"
+        className="w-full rounded-[10px] border-[1.5px] border-[rgba(20,32,58,0.16)] bg-surface p-[18px] text-center font-heading text-[28px] font-bold uppercase tracking-[0.28em] text-ink outline-none placeholder:text-muted-light/50 focus:border-navy"
+      />
+      <p className="mt-2.5 text-[14px] text-muted-light">
+        To bokstaver og fem sifre. Prøv f.eks. EB12345.
       </p>
 
       {status !== "found" && (
         <Button
           fullWidth
-          className="mt-4"
+          className="mt-4 py-[18px] text-[18px]"
           disabled={!valid || status === "loading"}
           onClick={handleLookup}
         >
@@ -441,21 +393,21 @@ function StepVehicle({
 
       {status === "found" && state.vehicle && (
         <>
-          <Card className="mt-4 border-accent/40">
-            <p className="text-sm text-muted">Vi fant bilen din:</p>
-            <p className="mt-1 text-lg font-semibold">
+          <div className="mt-[18px] rounded-[12px] border-[1.5px] border-navy/35 bg-navy/5 p-[18px]">
+            <div className="text-[14px] text-muted">Vi fant bilen din</div>
+            <div className="mt-1 font-heading text-[20px] font-bold text-ink">
               {state.vehicle.make} {state.vehicle.model}
               {state.vehicle.year ? ` (${state.vehicle.year})` : ""}
-            </p>
+            </div>
             {state.vehicle.fuel && (
-              <p className="text-sm text-muted">
+              <div className="mt-[3px] text-[14.5px] text-muted">
                 {state.vehicle.fuel} · {state.vehicle.color}
-              </p>
+              </div>
             )}
-          </Card>
+          </div>
           <Button
             fullWidth
-            className="mt-4"
+            className="mt-4 py-[18px] text-[18px]"
             onClick={() => dispatch({ type: "goto", step: 3 })}
           >
             Dette stemmer — gå videre
@@ -464,128 +416,145 @@ function StepVehicle({
       )}
 
       {status === "error" && (
-        <Card className="mt-4 border-danger/40">
-          <p className="text-sm">
+        <div className="mt-[18px] rounded-[12px] border-[1.5px] border-[rgba(190,70,70,0.4)] bg-[rgba(190,70,70,0.05)] p-[18px]">
+          <p className="mb-3.5 text-[15px] leading-[1.5] text-body-strong">
             Vi fikk ikke svar fra motorvognregisteret. Fyll inn bilinfo manuelt,
             så går bestillingen like fint.
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
               value={manualMake}
               onChange={(event) => setManualMake(event.target.value)}
               placeholder="Merke"
-              className="rounded-xl border border-border bg-surface px-3 py-2.5 focus:border-accent focus:outline-none"
+              className="rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface p-3.5 text-[15.5px] text-ink outline-none focus:border-navy"
             />
             <input
               type="text"
               value={manualModel}
               onChange={(event) => setManualModel(event.target.value)}
               placeholder="Modell"
-              className="rounded-xl border border-border bg-surface px-3 py-2.5 focus:border-accent focus:outline-none"
+              className="rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface p-3.5 text-[15.5px] text-ink outline-none focus:border-navy"
             />
           </div>
-          <Button fullWidth className="mt-3" disabled={!valid} onClick={handleManualContinue}>
+          <Button
+            fullWidth
+            className="mt-3.5"
+            disabled={!valid}
+            onClick={handleManualContinue}
+          >
             Fortsett uten oppslag
           </Button>
-        </Card>
+        </div>
       )}
-    </section>
+    </div>
   );
 }
 
-/* Steg 3 — tjeneste (FR-5.2: lokal pris · FR-2.2: medlemspris) */
+/* ---------- Steg 3: tjeneste ---------- */
 function StepService({
-  locationId,
-  selectedId,
-  member,
-  onVippsLogin,
-  onSelect,
+  state,
+  dispatch,
 }: {
-  locationId: string;
-  selectedId: string | null;
-  member: boolean;
-  onVippsLogin: () => void;
-  onSelect: (serviceId: string) => void;
+  state: WizardState;
+  dispatch: React.Dispatch<WizardAction>;
 }) {
+  const locationId = state.locationId!;
   const categories = [...new Set(services.map((service) => service.category))];
+
   return (
-    <section aria-label="Velg tjeneste" className="space-y-6">
-      {member ? (
-        <Card className="border-accent/40 bg-accent/10 !py-3 text-sm">
-          Kundeklubb-medlem — medlemsprisene under er oppdatert automatisk.
-        </Card>
+    <div className="px-6 pt-2">
+      <h2 className="mb-4 font-heading text-[25px] font-bold text-ink">
+        Velg tjeneste
+      </h2>
+
+      {state.member ? (
+        <div className="mb-[18px] rounded-[10px] border border-navy/30 bg-navy/6 px-4 py-3.5 text-[14.5px] text-navy">
+          Kundeklubb-medlem — medlemsprisene under er oppdatert.
+        </div>
       ) : (
-        <Card className="flex items-center justify-between gap-3 !py-3">
-          <p className="text-sm text-muted">
-            Medlem i kundeklubben? Logg inn, så oppdateres prisene automatisk.
-          </p>
-          <Button variant="vipps" className="!min-h-10 shrink-0 !px-4 text-sm" onClick={onVippsLogin}>
-            Logg inn med Vipps
-          </Button>
-        </Card>
+        <div className="mb-[18px] flex items-center justify-between gap-3 rounded-[10px] border border-line-strong px-4 py-3.5">
+          <span className="text-[14px] text-body-soft">
+            Medlem? Logg inn for medlemspris.
+          </span>
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "vippsLogin" })}
+            className="shrink-0 rounded-[7px] bg-vipps px-3.5 py-2.5 font-heading text-[14px] font-semibold text-white hover:brightness-110"
+          >
+            Vipps
+          </button>
+        </div>
       )}
+
       {categories.map((category) => {
         const items = services.filter(
           (service) =>
-            service.category === category && isServiceAvailable(service.id, locationId),
+            service.category === category &&
+            isServiceAvailable(service.id, locationId),
         );
         if (items.length === 0) return null;
         return (
-          <div key={category}>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+          <div key={category} className="mb-[22px]">
+            <h3 className="mb-2.5 font-heading text-[13px] font-semibold uppercase tracking-[0.06em] text-muted-light">
               {category}
-            </h2>
-            <ul className="mt-2 space-y-2">
+            </h3>
+            <div className="flex flex-col gap-2.5">
               {items.map((service) => {
+                const selected = state.serviceId === service.id;
                 const price = getEffectivePrice(service.id, locationId);
                 const memberPrice =
                   price - Math.round((price * MEMBER_DISCOUNT_RATE) / 100) * 100;
                 return (
-                  <li key={service.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(service.id)}
-                      className={`w-full rounded-xl border p-4 text-left transition-colors hover:border-accent ${
-                        selectedId === service.id
-                          ? "border-accent bg-accent/10"
-                          : "border-border bg-surface"
-                      }`}
-                    >
-                      <span className="flex items-baseline justify-between gap-3">
-                        <span className="font-semibold">{service.name}</span>
-                        {member ? (
-                          <span className="shrink-0 text-right">
-                            <span className="block text-xs text-muted line-through">
+                  <button
+                    key={service.id}
+                    type="button"
+                    onClick={() =>
+                      dispatch({ type: "selectService", serviceId: service.id })
+                    }
+                    className={`text-left ${selCard(selected)}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-heading text-[17px] font-semibold text-ink">
+                          {service.name}
+                        </div>
+                        <div className="mt-[3px] text-[13.5px] text-muted">
+                          {service.description}
+                        </div>
+                        <div className="mt-[5px] text-[13px] text-muted-light">
+                          Varighet ca. {formatDuration(service.durationMin)}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        {state.member ? (
+                          <>
+                            <div className="text-[13px] text-muted-light line-through">
                               {formatOre(price)}
-                            </span>
-                            <span className="font-bold text-accent">
+                            </div>
+                            <div className="font-heading text-[16px] font-bold text-navy">
                               {formatOre(memberPrice)}
-                            </span>
-                          </span>
+                            </div>
+                          </>
                         ) : (
-                          <span className="shrink-0 font-bold">{formatOre(price)}</span>
+                          <div className="font-heading text-[16px] font-bold text-ink">
+                            {formatOre(price)}
+                          </div>
                         )}
-                      </span>
-                      <span className="mt-1 block text-sm text-muted">
-                        {service.description}
-                      </span>
-                      <span className="mt-1 block text-xs text-muted">
-                        Varighet ca. {formatDuration(service.durationMin)}
-                      </span>
-                    </button>
-                  </li>
+                      </div>
+                    </div>
+                  </button>
                 );
               })}
-            </ul>
+            </div>
           </div>
         );
       })}
-    </section>
+    </div>
   );
 }
 
-/* Steg 4 — tidspunkt (FR-2.1 steg 4) */
+/* ---------- Steg 4: tidspunkt ---------- */
 function StepTime({
   state,
   dispatch,
@@ -594,107 +563,143 @@ function StepTime({
   dispatch: React.Dispatch<WizardAction>;
 }) {
   const [days, setDays] = useState<string[]>([]);
-  const [selectedDay, setSelectedDay] = useState<string | null>(state.date);
   const [slotsByDay, setSlotsByDay] = useState<Record<string, TimeSlot[]>>({});
+  const [selectedDay, setSelectedDay] = useState<string | null>(state.date);
+  const [loading, setLoading] = useState(true);
+  const addOnKey = state.addOnIds.join(",");
 
-  // Datoene beregnes på klienten (i en mikrotask) for å unngå
-  // SSR-/hydreringsavvik rundt «i dag».
   useEffect(() => {
     let cancelled = false;
-    Promise.resolve().then(() => {
+    const today = new Date();
+    const upcoming: string[] = [];
+    for (let offset = 1; offset <= 14; offset += 1) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + offset);
+      upcoming.push(day.toISOString().slice(0, 10));
+    }
+    setDays(upcoming);
+    setLoading(true);
+    Promise.all(
+      upcoming.map((day) =>
+        bookingAdapter.getAvailableSlots(
+          state.locationId!,
+          state.serviceId!,
+          state.addOnIds,
+          day,
+        ),
+      ),
+    ).then((results) => {
       if (cancelled) return;
-      const today = new Date();
-      const upcoming: string[] = [];
-      for (let offset = 1; offset <= 14; offset += 1) {
-        const day = new Date(today);
-        day.setDate(today.getDate() + offset);
-        upcoming.push(day.toISOString().slice(0, 10));
-      }
-      setDays(upcoming);
-      setSelectedDay((current) => current ?? upcoming[0]);
+      const map: Record<string, TimeSlot[]> = {};
+      upcoming.forEach((day, index) => {
+        map[day] = results[index];
+      });
+      setSlotsByDay(map);
+      setSelectedDay(
+        (current) =>
+          current ?? upcoming.find((day) => map[day].length > 0) ?? upcoming[0],
+      );
+      setLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.locationId, state.serviceId, addOnKey]);
 
-  useEffect(() => {
-    if (!selectedDay || !state.locationId || !state.serviceId) return;
-    let cancelled = false;
-    bookingAdapter
-      .getAvailableSlots(state.locationId, state.serviceId, [], selectedDay)
-      .then((result) => {
-        if (!cancelled) {
-          setSlotsByDay((cache) => ({ ...cache, [selectedDay]: result }));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedDay, state.locationId, state.serviceId]);
-
-  const slots = selectedDay ? (slotsByDay[selectedDay] ?? null) : null;
+  const activeDay = selectedDay ?? days[0] ?? null;
+  const slots = activeDay ? (slotsByDay[activeDay] ?? []) : [];
 
   return (
-    <section aria-label="Velg tidspunkt">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-        Velg dag
-      </h2>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
-        {days.map((day) => (
-          <button
-            key={day}
-            type="button"
-            onClick={() => setSelectedDay(day)}
-            className={`shrink-0 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
-              selectedDay === day
-                ? "border-accent bg-accent/10 text-foreground"
-                : "border-border bg-surface text-muted hover:border-accent"
-            }`}
-          >
-            {formatIsoDateShort(day)}
-          </button>
-        ))}
+    <div className="pt-2">
+      <div className="px-6">
+        <h2 className="mb-1.5 font-heading text-[25px] font-bold text-ink">
+          Velg tidspunkt
+        </h2>
+        <p className="mb-[18px] text-[16px] text-muted">
+          Vi tar bilen mens du er på senteret.
+        </p>
       </div>
 
-      <h2 className="mt-5 text-sm font-semibold uppercase tracking-wide text-muted">
-        Ledige tider{selectedDay ? ` ${formatIsoDate(selectedDay)}` : ""}
-      </h2>
-      {slots === null ? (
-        <p className="mt-3 text-sm text-muted">Henter ledige tider…</p>
-      ) : slots.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">
-          Ingen ledige tider denne dagen — prøv en annen dag.
-        </p>
-      ) : (
-        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {slots.map((slot) => (
-            <li key={slot.time}>
-              <button
-                type="button"
-                onClick={() =>
-                  dispatch({ type: "selectSlot", date: slot.date, time: slot.time })
-                }
-                className={`w-full rounded-xl border px-2 py-3 font-semibold transition-colors hover:border-accent ${
-                  state.date === slot.date && state.time === slot.time
-                    ? "border-accent bg-accent/10"
-                    : "border-border bg-surface"
-                }`}
+      <div className="hz-scroll flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-6 pb-5 pt-0.5">
+        {days.map((day) => {
+          const parts = formatDayParts(day);
+          const selected = activeDay === day;
+          return (
+            <button
+              key={day}
+              type="button"
+              onClick={() => setSelectedDay(day)}
+              className={`w-[66px] shrink-0 snap-start rounded-[10px] py-[13px] text-center transition-all ${
+                selected
+                  ? "border border-navy bg-navy"
+                  : "border border-[rgba(20,32,58,0.14)] bg-surface"
+              }`}
+            >
+              <div className={`text-[13px] ${selected ? "text-white/85" : "text-muted"}`}>
+                {parts.wd}
+              </div>
+              <div
+                className={`my-[3px] font-heading text-[22px] font-bold ${selected ? "text-white" : "text-ink"}`}
               >
-                {slot.time}
-                <span className="block text-[11px] font-normal text-muted">
-                  {slot.capacityLeft === 1 ? "1 plass igjen" : `${slot.capacityLeft} plasser`}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+                {parts.dd}
+              </div>
+              <div className={`text-[12px] ${selected ? "text-white/85" : "text-muted"}`}>
+                {parts.mon}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="px-6">
+        <div className="mb-3.5 text-[15px] text-body-soft">
+          Ledige tider{activeDay ? ` ${formatIsoDate(activeDay)}` : ""}
+        </div>
+        {loading ? (
+          <p className="py-2 text-[15px] text-muted">Henter ledige tider…</p>
+        ) : slots.length === 0 ? (
+          <p className="py-2 text-[15px] text-muted">
+            Ingen ledige tider denne dagen — prøv en annen dag.
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2.5">
+            {slots.map((slot) => {
+              const selected = state.date === slot.date && state.time === slot.time;
+              return (
+                <button
+                  key={slot.time}
+                  type="button"
+                  onClick={() =>
+                    dispatch({ type: "selectSlot", date: slot.date, time: slot.time })
+                  }
+                  className={`rounded-[9px] py-3 text-center transition-all ${
+                    selected
+                      ? "border border-navy bg-navy text-white"
+                      : "border border-[rgba(20,32,58,0.14)] bg-surface text-ink"
+                  }`}
+                >
+                  <div className="font-heading text-[17px] font-semibold">
+                    {slot.time}
+                  </div>
+                  <div
+                    className={`mt-0.5 text-[11px] ${selected ? "text-white/85" : "text-muted-light"}`}
+                  >
+                    {slot.capacityLeft === 1
+                      ? "1 plass igjen"
+                      : `${slot.capacityLeft} plasser`}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
-/* Steg 5 — tilleggstjenester («ofte valgt sammen», FR-3.2) */
+/* ---------- Steg 5: tillegg ---------- */
 function StepAddOns({
   state,
   dispatch,
@@ -710,48 +715,71 @@ function StepAddOns({
   });
 
   return (
-    <section aria-label="Tilleggstjenester">
-      <p className="text-sm text-muted">
-        Gjør det skikkelig når bilen først er inne — dette velger andre kunder
-        sammen med tjenesten din.
-      </p>
-      <ul className="mt-4 space-y-2">
-        {sorted.map((addOn) => {
-          const selected = state.addOnIds.includes(addOn.id);
-          const recommended = recommendedIds.includes(addOn.id);
-          return (
-            <li key={addOn.id}>
+    <>
+      <div className="px-6 pt-2">
+        <h2 className="mb-1.5 font-heading text-[25px] font-bold text-ink">
+          Tilleggstjenester
+        </h2>
+        <p className="mb-5 text-[16px] text-muted">
+          Gjør det skikkelig når bilen først er inne — dette velger andre sammen
+          med tjenesten din.
+        </p>
+        <div className="flex flex-col gap-2.5">
+          {sorted.map((addOn) => {
+            const selected = state.addOnIds.includes(addOn.id);
+            const recommended = recommendedIds.includes(addOn.id);
+            return (
               <button
+                key={addOn.id}
                 type="button"
-                aria-pressed={selected}
                 onClick={() => dispatch({ type: "toggleAddOn", addOnId: addOn.id })}
-                className={`w-full rounded-xl border p-4 text-left transition-colors hover:border-accent ${
-                  selected ? "border-accent bg-accent/10" : "border-border bg-surface"
-                }`}
+                className={`text-left ${selCard(selected)}`}
               >
-                <span className="flex items-baseline justify-between gap-3">
-                  <span className="font-semibold">
-                    {addOn.name}
-                    {recommended && <Badge className="ml-2 align-middle">Ofte valgt sammen</Badge>}
-                  </span>
-                  <span className="shrink-0 font-bold">+ {formatOre(addOn.priceOre)}</span>
-                </span>
-                <span className="mt-1 block text-sm text-muted">{addOn.description}</span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-heading text-[17px] font-semibold text-ink">
+                        {addOn.name}
+                      </span>
+                      {recommended && (
+                        <span className="rounded-full bg-navy/10 px-2.5 py-[3px] text-[11.5px] font-semibold text-navy">
+                          Ofte valgt sammen
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-[13.5px] text-muted">
+                      {addOn.description}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2.5">
+                    <span className="whitespace-nowrap font-heading text-[15px] font-bold text-navy">
+                      + {formatOre(addOn.priceOre)}
+                    </span>
+                    <span className={tickCls(selected)}>✓</span>
+                  </div>
+                </div>
               </button>
-            </li>
-          );
-        })}
-      </ul>
-      <Button fullWidth className="mt-5" onClick={() => dispatch({ type: "goto", step: 6 })}>
-        {state.addOnIds.length > 0
-          ? `Gå videre med ${state.addOnIds.length} tillegg`
-          : "Gå videre uten tillegg"}
-      </Button>
-    </section>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 z-30 mt-7 bg-gradient-to-b from-surface/0 from-0% to-surface to-[34%] px-6 pb-[22px] pt-4">
+        <Button
+          fullWidth
+          className="py-[18px] text-[18px]"
+          onClick={() => dispatch({ type: "goto", step: 6 })}
+        >
+          {state.addOnIds.length > 0
+            ? `Gå videre med ${state.addOnIds.length} tillegg`
+            : "Gå videre uten tillegg"}
+        </Button>
+      </div>
+    </>
   );
 }
 
-/* Steg 6 — oppsummering med mva-spesifikasjon (FR-2.1 steg 6, T-1) */
+/* ---------- Steg 6: oppsummering ---------- */
 function StepSummary({
   state,
   dispatch,
@@ -791,79 +819,93 @@ function StepSummary({
   }
 
   return (
-    <section aria-label="Oppsummering" className="space-y-4">
-      <Card>
-        <h2 className="font-semibold">Din bestilling</h2>
-        <dl className="mt-3 space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Avdeling</dt>
-            <dd className="text-right">
-              Handz On {location.name}
-              <span className="block text-xs text-muted">
-                {location.address}, {location.postalCode} {location.city}
-              </span>
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Bil</dt>
-            <dd className="text-right">
-              {state.vehicle
-                ? `${state.vehicle.make} ${state.vehicle.model}`.trim()
-                : "—"}
-              <span className="block font-mono text-xs text-muted">{state.regNr}</span>
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Tidspunkt</dt>
-            <dd className="text-right">
-              {state.date ? formatIsoDate(state.date) : ""} kl. {state.time}
-            </dd>
-          </div>
-        </dl>
-      </Card>
+    <div className="px-6 pt-2">
+      <h2 className="mb-[18px] font-heading text-[25px] font-bold text-ink">
+        Oppsummering
+      </h2>
 
-      <Card>
-        <h2 className="font-semibold">Prisspesifikasjon</h2>
-        <dl className="mt-3 space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt>{service.name}</dt>
-            <dd>{formatOre(servicePrice)}</dd>
+      {/* Bestillingsdetaljer */}
+      <div className="overflow-hidden rounded-[12px] border border-line-strong bg-surface">
+        <SummaryRow
+          label="Avdeling"
+          value={`Handz On ${location.name}`}
+          sub={`${location.address}, ${location.postalCode} ${location.city}`}
+          onEdit={() => dispatch({ type: "goto", step: 1 })}
+        />
+        <SummaryRow
+          label="Bil"
+          value={
+            state.vehicle
+              ? `${state.vehicle.make} ${state.vehicle.model}`.trim() || "—"
+              : "—"
+          }
+          sub={state.regNr}
+          subMono
+          onEdit={() => dispatch({ type: "goto", step: 2 })}
+        />
+        <SummaryRow
+          label="Tidspunkt"
+          value={
+            state.date ? `${formatIsoDate(state.date)} kl. ${state.time}` : "—"
+          }
+          onEdit={() => dispatch({ type: "goto", step: 4 })}
+          last
+        />
+      </div>
+
+      {/* Prisspesifikasjon */}
+      <div className="mt-3.5 rounded-[12px] border border-line-strong bg-surface p-[18px]">
+        <div className="mb-3 font-heading text-[16px] font-semibold text-ink">
+          Prisspesifikasjon
+        </div>
+        <div className="flex justify-between py-1.5 text-[15px] text-body-strong">
+          <span>{service.name}</span>
+          <span>{formatOre(servicePrice)}</span>
+        </div>
+        {chosenAddOns.map((addOn) => (
+          <div
+            key={addOn.id}
+            className="flex justify-between py-1.5 text-[15px] text-body-strong"
+          >
+            <span>{addOn.name}</span>
+            <span>{formatOre(addOn.priceOre)}</span>
           </div>
-          {chosenAddOns.map((addOn) => (
-            <div key={addOn.id} className="flex justify-between gap-4">
-              <dt>{addOn.name}</dt>
-              <dd>{formatOre(addOn.priceOre)}</dd>
-            </div>
-          ))}
-          {memberDiscountOre > 0 && (
-            <div className="flex justify-between gap-4 text-accent">
-              <dt>Kundeklubb-rabatt (10 %)</dt>
-              <dd>− {formatOre(memberDiscountOre)}</dd>
-            </div>
-          )}
-          <div className="flex justify-between gap-4 border-t border-border pt-2 text-muted">
-            <dt>Herav mva. (25 %)</dt>
-            <dd>{formatOreExact(vatOre)}</dd>
+        ))}
+        {memberDiscountOre > 0 && (
+          <div className="flex justify-between py-1.5 text-[15px] text-navy">
+            <span>Kundeklubb-rabatt (10 %)</span>
+            <span>− {formatOre(memberDiscountOre)}</span>
           </div>
-          <div className="flex justify-between gap-4 text-base font-bold">
-            <dt>Å betale ved henting</dt>
-            <dd>{formatOre(totalOre)}</dd>
-          </div>
-        </dl>
+        )}
+        <div className="mt-1 flex justify-between border-t border-line pb-1.5 pt-2 text-[13.5px] text-muted-light">
+          <span>Herav mva. (25 %)</span>
+          <span>{formatOreExact(vatOre)}</span>
+        </div>
+        <div className="flex items-baseline justify-between pt-2">
+          <span className="font-heading text-[17px] font-semibold text-ink">
+            Å betale ved henting
+          </span>
+          <span className="font-heading text-[24px] font-bold text-ink">
+            {formatOre(totalOre)}
+          </span>
+        </div>
         {organization && (
-          <p className="mt-3 text-xs text-muted">
-            Selger: {organization.legalName}, org.nr {formatOrgNr(organization.orgNr)}.
-            Kvittering med full spesifikasjon sendes på e-post og finnes på Min side.
+          <p className="mt-3 text-[12.5px] text-muted-light">
+            Selger: {organization.legalName}, org.nr{" "}
+            {formatOrgNr(organization.orgNr)}. Kvittering sendes på e-post.
           </p>
         )}
-      </Card>
+      </div>
 
-      <Card>
-        <h2 className="font-semibold">Kontaktinfo</h2>
-        <p className="mt-1 text-sm text-muted">
+      {/* Kontaktinfo */}
+      <div className="mt-3.5 rounded-[12px] border border-line-strong bg-surface p-[18px]">
+        <div className="mb-1 font-heading text-[16px] font-semibold text-ink">
+          Kontaktinfo
+        </div>
+        <p className="mb-3.5 text-[13.5px] text-muted">
           Vi sender bekreftelse og påminnelse på SMS.
         </p>
-        <div className="mt-3 space-y-3">
+        <div className="flex flex-col gap-3">
           <input
             type="text"
             autoComplete="name"
@@ -872,7 +914,7 @@ function StepSummary({
               dispatch({ type: "setContact", contact: { name: event.target.value } })
             }
             placeholder="Navn"
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-accent focus:outline-none"
+            className="w-full rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface px-4 py-3.5 text-[16px] text-ink outline-none focus:border-navy"
           />
           <input
             type="tel"
@@ -883,110 +925,194 @@ function StepSummary({
               dispatch({ type: "setContact", contact: { phone: event.target.value } })
             }
             placeholder="Mobilnummer"
-            className="w-full rounded-xl border border-border bg-surface px-4 py-3 focus:border-accent focus:outline-none"
+            className="w-full rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface px-4 py-3.5 text-[16px] text-ink outline-none focus:border-navy"
           />
           {!state.member && (
-            <Button
-              variant="vipps"
-              fullWidth
+            <button
+              type="button"
               onClick={() => dispatch({ type: "vippsLogin" })}
+              className="w-full rounded-[8px] bg-vipps py-3.5 font-heading text-[15px] font-semibold text-white hover:brightness-110"
             >
               Fyll ut med Vipps
-            </Button>
+            </button>
           )}
         </div>
-      </Card>
+      </div>
 
-      <Button fullWidth disabled={!contactValid || submitting} onClick={handleConfirm}>
+      <Button
+        fullWidth
+        className="mt-[18px] py-[18px] text-[18px]"
+        disabled={!contactValid || submitting}
+        onClick={handleConfirm}
+      >
         {submitting ? "Bekrefter…" : `Bekreft bestilling – ${formatOre(totalOre)}`}
       </Button>
-      <p className="text-center text-xs text-muted">
+      <p className="mt-3 text-center text-[13px] text-muted-light">
         Gratis avbestilling frem til 24 timer før avtalt tid.
       </p>
-    </section>
+    </div>
   );
 }
 
-/* Steg 7 — bekreftelse */
+function SummaryRow({
+  label,
+  value,
+  sub,
+  subMono,
+  onEdit,
+  last,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  subMono?: boolean;
+  onEdit: () => void;
+  last?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-start justify-between px-[18px] py-4 ${last ? "" : "border-b border-line"}`}
+    >
+      <div>
+        <div className="mb-1 text-[13px] text-muted-light">{label}</div>
+        <div className="font-heading text-[16px] font-semibold text-ink">
+          {value}
+        </div>
+        {sub && (
+          <div
+            className={`mt-0.5 text-[13px] text-muted ${subMono ? "font-heading tracking-[0.05em]" : ""}`}
+          >
+            {sub}
+          </div>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-[15px] font-semibold text-navy hover:text-navy-hover"
+      >
+        Endre
+      </button>
+    </div>
+  );
+}
+
+/* ---------- Steg 7: bekreftelse ---------- */
 function StepConfirmation({ booking }: { booking: Booking }) {
   const location = locations.find((item) => item.id === booking.locationId);
   const service = services.find((item) => item.id === booking.serviceId);
   const chosenAddOns = addOns.filter((addOn) => booking.addOnIds.includes(addOn.id));
 
   return (
-    <section aria-label="Bekreftelse" className="space-y-4">
-      <Card className="border-success/40 text-center">
-        <p aria-hidden className="text-4xl">✓</p>
-        <p className="mt-2 text-lg font-semibold">Bestillingen er bekreftet</p>
-        <p className="mt-1 text-sm text-muted">
-          Referanse <span className="font-mono font-semibold text-foreground">{booking.reference}</span>
+    <div className="px-6 pt-5">
+      <div className="mb-6 flex flex-col items-center text-center">
+        <div className="mb-[18px] flex h-[72px] w-[72px] items-center justify-center rounded-full bg-navy/10">
+          <span className="text-[34px] leading-none text-navy">✓</span>
+        </div>
+        <h2 className="mb-2 font-heading text-[27px] font-bold text-ink">
+          Takk for bestillingen!
+        </h2>
+        <p className="max-w-[320px] text-[16px] text-body-soft">
+          Referanse{" "}
+          <span className="font-heading font-bold text-ink">
+            {booking.reference}
+          </span>
+          . Bekreftelse er sendt på SMS.
         </p>
-      </Card>
+      </div>
 
-      <Card>
-        <dl className="space-y-2 text-sm">
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Tjeneste</dt>
-            <dd>
-              {service?.name}
-              {chosenAddOns.length > 0 && (
-                <span className="block text-xs text-muted">
-                  + {chosenAddOns.map((addOn) => addOn.name).join(", ")}
-                </span>
-              )}
-            </dd>
+      {/* Digital kvittering */}
+      <div className="overflow-hidden rounded-[12px] border border-[rgba(20,32,58,0.14)] bg-surface">
+        <div className="flex items-center justify-between bg-navy px-[22px] py-[18px]">
+          <div className="font-heading text-[18px] font-bold text-white">
+            Handz On Auto Care
           </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Tidspunkt</dt>
-            <dd>
-              {formatIsoDate(booking.date)} kl. {booking.time}
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Avdeling</dt>
-            <dd className="text-right">
-              Handz On {location?.name}
-              <span className="block text-xs text-muted">
-                {location?.address}, {location?.postalCode} {location?.city}
+          <div className="text-[13px] text-on-navy-soft">Kvittering</div>
+        </div>
+        <div className="px-[22px] py-[18px]">
+          <ReceiptRow label="Referanse" value={booking.reference} />
+          <ReceiptRow label="Tjeneste" value={service?.name ?? ""} alignRight />
+          {chosenAddOns.length > 0 && (
+            <div className="flex justify-between gap-4 pb-2 pt-1 text-[13.5px]">
+              <span className="text-muted-light">Tillegg</span>
+              <span className="text-right text-muted">
+                {chosenAddOns.map((addOn) => addOn.name).join(", ")}
               </span>
-            </dd>
-          </div>
-          <div className="flex justify-between gap-4">
-            <dt className="text-muted">Bil</dt>
-            <dd className="font-mono">{booking.regNr}</dd>
-          </div>
-          <div className="flex justify-between gap-4 border-t border-border pt-2 font-bold">
-            <dt>Å betale</dt>
-            <dd>{formatOre(booking.totalOre)}</dd>
-          </div>
-        </dl>
-        <p className="mt-3 text-xs text-muted">
-          Utstedes av org.nr {formatOrgNr(booking.orgNr)}. Du får SMS-bekreftelse
-          nå og en påminnelse dagen før. Kvitteringen legges på Min side etter
-          utført behandling.
+            </div>
+          )}
+          <ReceiptRow
+            label="Avdeling"
+            value={`Handz On ${location?.name ?? ""}`}
+            alignRight
+          />
+          <ReceiptRow
+            label="Tidspunkt"
+            value={`${formatIsoDate(booking.date)} kl. ${booking.time}`}
+            alignRight
+          />
+          <ReceiptRow label="Bil" value={booking.regNr} mono />
+        </div>
+        <div className="flex items-baseline justify-between border-t border-dashed border-[rgba(20,32,58,0.22)] px-[22px] py-3.5">
+          <span className="text-[15px] text-muted">Å betale ved henting</span>
+          <span className="font-heading text-[24px] font-bold text-ink">
+            {formatOre(booking.totalOre)}
+          </span>
+        </div>
+        <div
+          className="mx-[22px] mb-[18px] h-[52px] rounded-[2px] opacity-90"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(90deg, #16223A 0 2px, transparent 2px 4px, #16223A 4px 5px, transparent 5px 9px)",
+          }}
+        />
+        <p className="mx-[22px] mb-[18px] text-[12px] text-muted-light">
+          Utstedes av org.nr {formatOrgNr(booking.orgNr)}. Kvitteringen legges på
+          Min side etter utført behandling.
         </p>
-      </Card>
+      </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="mt-[22px] flex flex-col gap-3">
         <Button
           variant="secondary"
           fullWidth
-          onClick={() => {
-            window.location.href = "/min-side";
-          }}
+          onClick={() => window.print()}
         >
-          Gå til Min side
+          Last ned kvittering (PDF)
         </Button>
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={() => {
-            window.location.href = "/";
-          }}
-        >
+        <Button variant="primary" fullWidth onClick={() => (window.location.href = "/")}>
           Til forsiden
         </Button>
       </div>
-    </section>
+      <p className="mt-4 text-center text-[13px] text-muted-light">
+        Avtalen, endring/avbestilling og kvitteringen finner du på{" "}
+        <Link href="/min-side" className="font-semibold text-navy hover:text-navy-hover">
+          Min side
+        </Link>
+        .
+      </p>
+    </div>
+  );
+}
+
+function ReceiptRow({
+  label,
+  value,
+  alignRight,
+  mono,
+}: {
+  label: string;
+  value: string;
+  alignRight?: boolean;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex justify-between gap-4 py-2 text-[15px]">
+      <span className="text-muted">{label}</span>
+      <span
+        className={`font-heading font-semibold text-ink ${alignRight ? "text-right" : ""} ${mono ? "tracking-[0.05em]" : ""}`}
+      >
+        {value}
+      </span>
+    </div>
   );
 }

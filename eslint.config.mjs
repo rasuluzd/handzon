@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Designreferanse (prototype-runtime, skal ikke portes eller lintes).
+    "reference/**",
   ]),
 ]);
 

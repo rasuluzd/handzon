@@ -1,27 +1,32 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
+import { RevealProvider } from "@/components/site/RevealProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const barlow = Barlow({
   subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-barlow",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-source",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.handzonautocare.no"),
   title: {
-    default: "Handz On Auto Care – Profesjonell bilpleie på 15 steder i Norge",
+    default: "Handz On Auto Care – Lever nøkkelen, hent bilen ren",
     template: "%s | Handz On Auto Care",
   },
   description:
-    "Norges ledende bilpleiekjede. Bestill utvendig og innvendig bilpleie, polering og keramisk coating på under ett minutt – hos 15 avdelinger over hele landet.",
+    "Book bilpleie mens du handler på senteret. Grundig bilpleie gjort for hånd, hos 15 avdelinger over hele Norge. Se pris og ledige tider med én gang.",
   openGraph: {
     siteName: "Handz On Auto Care",
     locale: "nb_NO",
@@ -30,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0b0e",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
@@ -41,12 +46,24 @@ export default function RootLayout({
   return (
     <html
       lang="nb"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${barlow.variable} ${sourceSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="min-h-full">
+        {/* Aktiverer reveal-animasjonen kun når JS er tilgjengelig (unngår skjult innhold). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.add('js')",
+          }}
+        />
+        <div className="flex min-h-screen justify-center bg-canvas">
+          <div className="relative flex min-h-screen w-full max-w-[1180px] flex-col bg-surface shadow-[0_0_60px_rgba(20,32,58,0.14)]">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </div>
+        <RevealProvider />
       </body>
     </html>
   );
