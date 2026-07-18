@@ -13,7 +13,7 @@
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export function GoogleBranchMap({
-  query = "Handz On Auto Care",
+  query = "Handz On",
   mode = "search",
 }: {
   query?: string;
