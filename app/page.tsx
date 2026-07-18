@@ -6,6 +6,7 @@ import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { formatDuration, formatOre } from "@/lib/format";
 import { locations, services } from "@/lib/mock-data";
+import { serviceImages } from "@/lib/service-images";
 import heroImage from "@/public/hero-hjulskift.webp";
 
 export const metadata: Metadata = {
@@ -142,7 +143,19 @@ export default function HomePage() {
               href={`/tjenester/${service.slug}`}
               className="flex items-center gap-4 rounded-[10px] border border-line-strong bg-surface p-4 transition-colors hover:border-navy"
             >
-              <ImagePlaceholder className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[8px]" />
+              {serviceImages[service.slug] ? (
+                <div className="relative h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[8px]">
+                  <Image
+                    src={serviceImages[service.slug].thumb}
+                    alt={service.name}
+                    fill
+                    sizes="60px"
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <ImagePlaceholder className="h-[60px] w-[60px] shrink-0 overflow-hidden rounded-[8px]" />
+              )}
               <div className="min-w-0 flex-1">
                 <div className="font-heading text-[18px] font-semibold text-ink">
                   {service.name}
