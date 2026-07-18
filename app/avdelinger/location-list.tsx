@@ -1,0 +1,164 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import { Card } from "@/components/ui/Card";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
+import type { GeoPoint } from "@/lib/geo";
+import { locations } from "@/lib/mock-data";
+
+/**
+ * Forenklet «kartvisning» (FR-1.2): avdelingene plottes som punkter i et
+ * stilisert koordinatsystem basert på reelle lat/lng. I produksjon byttes
+ * dette mot Google Maps.
+ */
+function MiniMap({ highlighted }: { highlighted: Set<string> }) {
+  const lats = locations.map((location) => location.geo.lat);
+  const lngs = locations.map((location) => location.geo.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  return (
+    <svg
+      viewBox="0 0 100 130"
+      role="img"
+      aria-label="Kart over Norge med avdelingene markert"
+      className="h-full w-full"
+    >
+      <rect width="100" height="130" rx="8" className="fill-surface-raised" />
+      {locations.map((location) => {
+        const x = 12 + ((location.geo.lng - minLng) / (maxLng - minLng)) * 76;
+        const y = 118 - ((location.geo.lat - minLat) / (maxLat - minLat)) * 106;
+        const active = highlighted.has(location.id);
+        return (
+          <g key={location.id}>
+            <circle
+              cx={x}
+              cy={y}
+              r={active ? 3 : 1.8}
+              className={active ? "fill-accent" : "fill-muted/50"}
+            />
+            {active && (
+              <text
+                x={x}
+                y={y - 4.5}
+                textAnchor="middle"
+                className="fill-foreground text-[4px] font-semibold"
+              >
+                {location.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export function LocationList() {
+  const [query, setQuery] = useState("");
+  const [position, setPosition] = useState<GeoPoint | null>(null);
+  const [locating, setLocating] = useState(false);
+
+  // FR-1.2: et søk sorterer etter nærhet i stedet for å tømme listen.
+  const ranking = useMemo(
+    () => rankLocations(locations, query, position),
+    [query, position],
+  );
+
+  const highlighted = useMemo(() => {
+    if (!query.trim()) return new Set<string>();
+    // Marker direkte treff på kartet; ellers den nærmeste avdelingen.
+    if (ranking.matchedIds.size > 0) return ranking.matchedIds;
+    const nearest = ranking.results[0];
+    return new Set(nearest ? [nearest.id] : []);
+  }, [ranking, query]);
+
+  async function handleLocate() {
+    setLocating(true);
+    setPosition(await getBrowserPosition());
+    setLocating(false);
+  }
+
+  return (
+    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_280px]">
+      <div>
+        <label className="block">
+          <span className="text-sm font-semibold">Søk etter avdeling</span>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="By eller postnummer, f.eks. Bergen eller 0668"
+              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
+            />
+            <Button
+              variant="secondary"
+              className="shrink-0 !px-4"
+              disabled={locating}
+              onClick={handleLocate}
+            >
+              {locating ? "Finner…" : "📍 Nær meg"}
+            </Button>
+          </div>
+        </label>
+        {ranking.note && (
+          <p className="mt-2 text-sm text-muted">{ranking.note}</p>
+        )}
+
+        <ul className="mt-6 space-y-3">
+          {ranking.results.map((location) => (
+            <li key={location.id}>
+              <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Link
+                    href={`/avdelinger/${location.slug}`}
+                    className="text-lg font-semibold hover:text-accent"
+                  >
+                    Handz On {location.name}
+                    {ranking.showDistance && "distanceKm" in location && (
+                      <span className="ml-2 text-sm font-normal text-accent">
+                        {formatDistance(location.distanceKm as number)}
+                      </span>
+                    )}
+                  </Link>
+                  <p className="mt-0.5 text-sm text-muted">
+                    {location.address}, {location.postalCode} {location.city}
+                  </p>
+                  {location.campaign && (
+                    <p className="mt-1 text-sm font-medium text-accent">
+                      {location.campaign}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <ButtonLink
+                    href={`/avdelinger/${location.slug}`}
+                    variant="secondary"
+                    className="!min-h-10 !px-4 text-sm"
+                  >
+                    Se avdeling
+                  </ButtonLink>
+                  <ButtonLink
+                    href={`/booking?avdeling=${location.slug}`}
+                    className="!min-h-10 !px-4 text-sm"
+                  >
+                    Bestill
+                  </ButtonLink>
+                </div>
+              </Card>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="order-first h-64 lg:order-none lg:h-auto lg:max-h-[520px]">
+        <MiniMap highlighted={highlighted} />
+      </div>
+    </div>
+  );
+}
