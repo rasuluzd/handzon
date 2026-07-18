@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BranchMap } from "@/components/site/BranchMap";
+import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
 import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import { locations } from "@/lib/mock-data";
@@ -21,12 +21,7 @@ export function LocationList() {
     [query, position],
   );
 
-  const highlighted = useMemo(() => {
-    if (!query.trim()) return new Set<string>();
-    if (ranking.matchedIds.size > 0) return ranking.matchedIds;
-    const nearest = ranking.results[0];
-    return new Set(nearest ? [nearest.id] : []);
-  }, [ranking, query]);
+  const highlightedId = query.trim() || position ? ranking.results[0]?.id : undefined;
 
   async function handleLocate() {
     setLocating(true);
@@ -36,8 +31,8 @@ export function LocationList() {
 
   return (
     <div>
-      <div className="mb-[18px] flex h-[clamp(230px,26vw,380px)] items-center justify-center overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5] p-2.5">
-        <BranchMap highlighted={highlighted} />
+      <div className="mb-[18px] h-[clamp(260px,30vw,440px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
+        <GoogleBranchMap highlightedId={highlightedId} />
       </div>
 
       <div className="mb-2 flex gap-2.5">
@@ -86,6 +81,14 @@ export function LocationList() {
                 <div className="mt-1 text-[14.5px] text-muted">
                   {location.address}, {location.postalCode} {location.city}
                 </div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${location.geo.lat},${location.geo.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block text-[13px] font-semibold text-navy hover:text-navy-hover"
+                >
+                  Åpne i Google Maps →
+                </a>
               </div>
               <div className="flex shrink-0 items-center gap-1.5 rounded-[6px] bg-navy/8 px-[11px] py-1.5">
                 <span className="h-[7px] w-[7px] rounded-full bg-navy" />

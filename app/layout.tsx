@@ -49,20 +49,16 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${barlow.variable} ${sourceSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
+      <body className="flex min-h-full flex-col bg-surface">
         {/* Aktiverer reveal-animasjonen kun når JS er tilgjengelig (unngår skjult innhold). */}
         <script
           dangerouslySetInnerHTML={{
             __html: "document.documentElement.classList.add('js')",
           }}
         />
-        <div className="flex min-h-screen justify-center bg-canvas">
-          <div className="relative flex min-h-screen w-full max-w-[1180px] flex-col bg-surface shadow-[0_0_60px_rgba(20,32,58,0.14)]">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-        </div>
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
         <RevealProvider />
       </body>
     </html>

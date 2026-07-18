@@ -24,6 +24,8 @@ import {
   services,
 } from "@/lib/mock-data";
 import { isValidRegNr, lookupVehicle, normalizeRegNr } from "@/lib/vehicle-lookup";
+import { downloadReceiptPdf } from "@/lib/receipt";
+import type { ReceiptLine } from "@/lib/receipt";
 import type { Booking, TimeSlot, Vehicle } from "@/lib/types";
 
 /**
@@ -1003,6 +1005,52 @@ function StepConfirmation({ booking }: { booking: Booking }) {
   const service = services.find((item) => item.id === booking.serviceId);
   const chosenAddOns = addOns.filter((addOn) => booking.addOnIds.includes(addOn.id));
 
+  function handleDownloadReceipt() {
+    const servicePrice = service
+      ? getEffectivePrice(service.id, booking.locationId)
+      : 0;
+    const addOnTotal = chosenAddOns.reduce((sum, addOn) => sum + addOn.priceOre, 0);
+    const discountOre = servicePrice + addOnTotal - booking.totalOre;
+    const lines: ReceiptLine[] = [
+      { label: service?.name ?? "Tjeneste", amount: formatOre(servicePrice) },
+      ...chosenAddOns.map((addOn) => ({
+        label: addOn.name,
+        amount: formatOre(addOn.priceOre),
+      })),
+    ];
+    if (discountOre > 0) {
+      lines.push({
+        label: "Kundeklubb-rabatt (10 %)",
+        amount: `− ${formatOre(discountOre)}`,
+        accent: true,
+      });
+    }
+    const organization = location ? getOrganization(location.orgId) : undefined;
+    const issuedAt = new Intl.DateTimeFormat("nb-NO", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+    void downloadReceiptPdf({
+      reference: booking.reference,
+      sellerName: organization?.legalName ?? "Handz On Auto Care",
+      orgNr: formatOrgNr(booking.orgNr),
+      address: location
+        ? `${location.address}, ${location.postalCode} ${location.city}`
+        : "",
+      branchName: `Handz On ${location?.name ?? ""}`,
+      when: `${formatIsoDate(booking.date)} kl. ${booking.time}`,
+      regNr: booking.regNr,
+      vehicle: booking.vehicle
+        ? `${booking.vehicle.make} ${booking.vehicle.model}`.trim()
+        : "",
+      lines,
+      vat: formatOreExact(booking.vatOre),
+      total: formatOre(booking.totalOre),
+      issuedAt,
+    });
+  }
+
   return (
     <div className="px-6 pt-5">
       <div className="mb-6 flex flex-col items-center text-center">
@@ -1072,11 +1120,7 @@ function StepConfirmation({ booking }: { booking: Booking }) {
       </div>
 
       <div className="mt-[22px] flex flex-col gap-3">
-        <Button
-          variant="secondary"
-          fullWidth
-          onClick={() => window.print()}
-        >
+        <Button variant="secondary" fullWidth onClick={handleDownloadReceipt}>
           Last ned kvittering (PDF)
         </Button>
         <Button variant="primary" fullWidth onClick={() => (window.location.href = "/")}>

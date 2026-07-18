@@ -24,7 +24,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-white/94 backdrop-blur-md">
-      <div className="mx-auto flex items-center justify-between px-[clamp(20px,4vw,48px)] py-3.5">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-[clamp(20px,4vw,48px)] py-3.5">
         <Link href="/" aria-label="Handz On Auto Care – til forsiden">
           <Image
             src={logo}

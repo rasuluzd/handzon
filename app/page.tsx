@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
-import { BranchMap } from "@/components/site/BranchMap";
+import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { formatDuration, formatOre } from "@/lib/format";
 import { locations, services } from "@/lib/mock-data";
+import heroImage from "@/public/hero-hjulskift.webp";
 
 export const metadata: Metadata = {
   description:
@@ -37,9 +39,13 @@ export default function HomePage() {
         <div className="flex flex-col hz:grid hz:grid-cols-[1.05fr_0.95fr] hz:items-stretch">
           {/* Bilde */}
           <div className="relative order-1 h-[300px] hz:order-2 hz:h-auto hz:min-h-[clamp(440px,40vw,580px)]">
-            <ImagePlaceholder
-              label="Bilpleie i arbeid"
-              className="absolute inset-0 h-full w-full"
+            <Image
+              src={heroImage}
+              alt="Hjul- og dekkskift hos Handz On Auto Care"
+              fill
+              priority
+              sizes="(min-width: 900px) 560px, 100vw"
+              className="object-cover"
             />
           </div>
           {/* Marineblått panel */}
@@ -94,6 +100,7 @@ export default function HomePage() {
         </div>
       </section>
 
+      <div className="mx-auto max-w-[1200px]">
       {/* SLIK GJØR DU */}
       <section data-reveal className="px-6 pb-2 pt-11">
         <p className="mb-[22px] font-heading text-[14px] font-semibold uppercase tracking-[0.1em] text-navy">
@@ -171,8 +178,8 @@ export default function HomePage() {
         <p className="mb-5 text-[16.5px] text-body-soft">
           15 avdelinger fra Kristiansand i sør til Tromsø i nord.
         </p>
-        <div className="mb-4 flex h-[clamp(200px,24vw,340px)] items-center justify-center overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5] p-2.5">
-          <BranchMap />
+        <div className="mb-4 h-[clamp(220px,26vw,380px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
+          <GoogleBranchMap />
         </div>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-3">
           {topBranches.map((branch) => (
@@ -234,6 +241,7 @@ export default function HomePage() {
           </ButtonLink>
         </div>
       </section>
+      </div>
     </div>
   );
 }
