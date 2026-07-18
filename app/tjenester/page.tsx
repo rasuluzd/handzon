@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { formatDuration, formatOre } from "@/lib/format";
 import { services } from "@/lib/mock-data";
+import { serviceImages } from "@/lib/service-images";
 import type { ServiceCategory } from "@/lib/types";
 
 export const metadata: Metadata = {
@@ -50,7 +52,19 @@ export default function ServicesPage() {
                 href={`/tjenester/${service.slug}`}
                 className="flex items-center gap-4 rounded-[10px] border border-line-strong bg-surface p-4 transition-colors hover:border-navy"
               >
-                <ImagePlaceholder className="h-16 w-16 shrink-0 overflow-hidden rounded-[8px]" />
+                {serviceImages[service.slug] ? (
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[8px]">
+                    <Image
+                      src={serviceImages[service.slug].thumb}
+                      alt={service.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <ImagePlaceholder className="h-16 w-16 shrink-0 overflow-hidden rounded-[8px]" />
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="font-heading text-[18px] font-semibold text-ink">
                     {service.name}

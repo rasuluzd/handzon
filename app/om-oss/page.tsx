@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { ButtonLink } from "@/components/ui/Button";
-import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
+import { aboutHeroImage } from "@/lib/service-images";
 
 export const metadata: Metadata = {
   title: "Om oss",
@@ -27,9 +28,13 @@ export default function AboutPage() {
   return (
     <div>
       <div className="relative h-[240px]">
-        <ImagePlaceholder
-          label="Detaljering i arbeid"
-          className="absolute inset-0 h-full w-full"
+        <Image
+          src={aboutHeroImage}
+          alt="Detaljering i arbeid hos Handz On Auto Care"
+          fill
+          priority
+          sizes="(min-width: 900px) 1180px, 100vw"
+          className="object-cover"
         />
       </div>
 

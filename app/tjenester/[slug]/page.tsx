@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 import { formatDuration, formatOre } from "@/lib/format";
 import { addOns, addOnAffinity, getServiceBySlug, services } from "@/lib/mock-data";
+import { getServiceImage } from "@/lib/service-images";
 
 export function generateStaticParams() {
   return services.map((service) => ({ slug: service.slug }));
@@ -30,6 +32,7 @@ export default async function ServiceDetailPage({
   const service = getServiceBySlug(slug);
   if (!service) notFound();
 
+  const image = getServiceImage(slug);
   const priceFrom = `fra ${formatOre(service.priceOre)}`;
   const affinity = (addOnAffinity[service.id] ?? [])
     .slice(0, 3)
@@ -40,10 +43,21 @@ export default async function ServiceDetailPage({
     <div>
       {/* Bilde med flytende tilbake-knapp */}
       <div className="relative h-[220px]">
-        <ImagePlaceholder
-          label="Bilde av tjenesten"
-          className="absolute inset-0 h-full w-full"
-        />
+        {image ? (
+          <Image
+            src={image.hero}
+            alt={service.name}
+            fill
+            priority
+            sizes="(min-width: 900px) 1180px, 100vw"
+            className="object-cover"
+          />
+        ) : (
+          <ImagePlaceholder
+            label="Bilde av tjenesten"
+            className="absolute inset-0 h-full w-full"
+          />
+        )}
         <Link
           href="/tjenester"
           className="absolute left-4 top-4 rounded-[8px] border border-line-strong bg-surface px-4 py-[11px] text-[15px] font-semibold text-navy hover:bg-surface-alt"
