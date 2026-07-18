@@ -4,7 +4,7 @@ import { LocationList } from "./location-list";
 export const metadata: Metadata = {
   title: "Avdelinger",
   description:
-    "Finn din nærmeste Handz On Auto Care-avdeling. 15 avdelinger fra Kristiansand til Tromsø – søk på by eller postnummer, eller bruk posisjonen din.",
+    "Finn din nærmeste Handz On Auto Care-avdeling. 14 avdelinger fra Kristiansand til Ålesund – søk på by eller postnummer, eller bruk posisjonen din.",
 };
 
 export default function LocationsPage() {
@@ -14,7 +14,7 @@ export default function LocationsPage() {
         Avdelinger
       </p>
       <h1 className="mb-5 font-heading text-[32px] font-bold leading-[1.1] text-ink">
-        15 avdelinger i Norge
+        14 avdelinger i Norge
       </h1>
       <LocationList />
     </div>

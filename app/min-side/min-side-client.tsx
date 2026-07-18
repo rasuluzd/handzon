@@ -24,10 +24,10 @@ interface PortalBooking {
 }
 
 const portalBookings: PortalBooking[] = [
-  { reference: "HOAC-4271", locationId: "loc-oslo-alna", serviceId: "svc-komplett", regNr: "EB12345", daysFromNow: 3, time: "10:00", totalOre: 219900, status: "confirmed" },
-  { reference: "HOAC-3966", locationId: "loc-oslo-alna", serviceId: "svc-utvendig-voks", regNr: "EB12345", daysFromNow: -32, time: "12:30", totalOre: 89900, status: "completed" },
-  { reference: "HOAC-3712", locationId: "loc-oslo-skoyen", serviceId: "svc-innvendig-rens", regNr: "DR34567", daysFromNow: -75, time: "09:00", totalOre: 149900, status: "completed" },
-  { reference: "HOAC-3255", locationId: "loc-oslo-alna", serviceId: "svc-utvendig-vask", regNr: "DR34567", daysFromNow: -140, time: "15:30", totalOre: 44900, status: "completed" },
+  { reference: "HOAC-4271", locationId: "loc-lambertseter", serviceId: "svc-komplett", regNr: "EB12345", daysFromNow: 3, time: "10:00", totalOre: 219900, status: "confirmed" },
+  { reference: "HOAC-3966", locationId: "loc-lambertseter", serviceId: "svc-utvendig-voks", regNr: "EB12345", daysFromNow: -32, time: "12:30", totalOre: 89900, status: "completed" },
+  { reference: "HOAC-3712", locationId: "loc-sandvika", serviceId: "svc-innvendig-rens", regNr: "DR34567", daysFromNow: -75, time: "09:00", totalOre: 149900, status: "completed" },
+  { reference: "HOAC-3255", locationId: "loc-lambertseter", serviceId: "svc-utvendig-vask", regNr: "DR34567", daysFromNow: -140, time: "15:30", totalOre: 44900, status: "completed" },
 ];
 
 const dangerButton =

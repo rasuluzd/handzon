@@ -106,7 +106,7 @@ export function Header() {
               Bestill time
             </Link>
             <p className="mt-4 text-center text-[15px] text-muted">
-              15 avdelinger over hele Norge
+              14 avdelinger over hele Norge
             </p>
           </div>
         </div>

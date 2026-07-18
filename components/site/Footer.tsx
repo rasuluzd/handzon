@@ -39,7 +39,7 @@ export function Footer() {
           ))}
         </nav>
         <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted-light">
-          © 2026 Handz On Auto Care · Franchisekjede med 15 lokale avdelinger.
+          © 2026 Handz On Auto Care · Franchisekjede med 14 lokale avdelinger.
           Hver avdeling drives av egen juridisk enhet. Alle avdelinger er
           registrert i Arbeidstilsynets godkjenningsordning for bilpleie.
         </p>

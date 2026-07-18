@@ -5,7 +5,7 @@ import { ImagePlaceholder } from "@/components/ui/ImagePlaceholder";
 export const metadata: Metadata = {
   title: "Om oss",
   description:
-    "Norges største bilpleiekjede. 15 avdelinger drevet av lokale fagfolk, med godkjente prosesser og folk som bryr seg om detaljene.",
+    "Norges største bilpleiekjede. 14 avdelinger drevet av lokale fagfolk, med godkjente prosesser og folk som bryr seg om detaljene.",
 };
 
 const principles = [
@@ -41,7 +41,7 @@ export default function AboutPage() {
           Kvalitet du kan stole på
         </h1>
         <p className="text-[17px] leading-[1.5] text-on-navy">
-          Norges største bilpleiekjede. 15 avdelinger drevet av lokale fagfolk,
+          Norges største bilpleiekjede. 14 avdelinger drevet av lokale fagfolk,
           med godkjente prosesser og folk som bryr seg om detaljene.
         </p>
       </section>
@@ -49,7 +49,7 @@ export default function AboutPage() {
       <section data-reveal className="px-6 pb-2 pt-8">
         <div className="flex gap-3.5">
           <div className="flex-1 rounded-[11px] bg-surface-alt px-[18px] py-[22px]">
-            <div className="font-heading text-[34px] font-bold text-navy">15</div>
+            <div className="font-heading text-[34px] font-bold text-navy">14</div>
             <div className="mt-[5px] text-[14.5px] text-body-soft">
               avdelinger i Norge
             </div>

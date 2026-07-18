@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Handz On Auto Care",
   },
   description:
-    "Book bilpleie mens du handler på senteret. Grundig bilpleie gjort for hånd, hos 15 avdelinger over hele Norge. Se pris og ledige tider med én gang.",
+    "Book bilpleie mens du handler på senteret. Grundig bilpleie gjort for hånd, hos 14 avdelinger over hele Norge. Se pris og ledige tider med én gang.",
   openGraph: {
     siteName: "Handz On Auto Care",
     locale: "nb_NO",

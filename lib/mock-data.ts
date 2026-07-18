@@ -7,9 +7,13 @@ import type {
 } from "./types";
 
 /**
- * Mock-data for demoen: 15 avdelinger, hver drevet av egen juridisk enhet
- * (eget org.nummer) — franchisemodellen fra docs/IMPLEMENTASJONSPLAN.md kap. 3.
- * Org.numrene er fiktive.
+ * Avdelingsdata for de 14 ekte Handz On-avdelingene (kilde: handzon.no/avdelinger,
+ * juli 2026). Navn, adresse, postnr, by og telefon er reelle. Org.numrene er
+ * fiktive plassholdere som demonstrerer franchisemodellen (egen juridisk enhet
+ * per avdeling, jf. docs/IMPLEMENTASJONSPLAN.md kap. 3) — fyll inn ekte org.nr
+ * per franchisetaker fra Brønnøysund i produksjon. Koordinatene er på by-/
+ * senternivå (nok for «Nær meg»-sortering); selve kartet henter eksakte pins
+ * fra Google via Maps Embed API.
  */
 
 const standardHours = [
@@ -30,6 +34,7 @@ interface LocationSeed {
   postalCode: string;
   city: string;
   region: string;
+  phone: string;
   lat: number;
   lng: number;
   maxConcurrentCars: number;
@@ -37,21 +42,20 @@ interface LocationSeed {
 }
 
 const locationSeeds: LocationSeed[] = [
-  { slug: "oslo-alna", name: "Oslo Alna", orgNr: "923456781", address: "Strømsveien 245", postalCode: "0668", city: "Oslo", region: "Østlandet", lat: 59.9284, lng: 10.8465, maxConcurrentCars: 4, campaign: "Sommerkampanje: 20 % på keramisk coating ut juli" },
-  { slug: "oslo-skoyen", name: "Oslo Skøyen", orgNr: "923456782", address: "Drammensveien 165", postalCode: "0277", city: "Oslo", region: "Østlandet", lat: 59.9195, lng: 10.6796, maxConcurrentCars: 3 },
-  { slug: "sandvika", name: "Sandvika", orgNr: "923456783", address: "Industriveien 33", postalCode: "1337", city: "Sandvika", region: "Østlandet", lat: 59.8896, lng: 10.5262, maxConcurrentCars: 3, campaign: "Gratis felgrens ved komplett bilpleie i juli" },
-  { slug: "lillestrom", name: "Lillestrøm", orgNr: "923456784", address: "Depotgata 20", postalCode: "2000", city: "Lillestrøm", region: "Østlandet", lat: 59.9566, lng: 11.0458, maxConcurrentCars: 3 },
-  { slug: "ski", name: "Ski", orgNr: "923456785", address: "Kjeppestadveien 42", postalCode: "1400", city: "Ski", region: "Østlandet", lat: 59.7195, lng: 10.8351, maxConcurrentCars: 2 },
-  { slug: "drammen", name: "Drammen", orgNr: "923456786", address: "Bjørnstjerne Bjørnsons gate 110", postalCode: "3044", city: "Drammen", region: "Østlandet", lat: 59.7378, lng: 10.2050, maxConcurrentCars: 3 },
-  { slug: "fredrikstad", name: "Fredrikstad", orgNr: "923456787", address: "Dikeveien 28", postalCode: "1661", city: "Fredrikstad", region: "Østlandet", lat: 59.2431, lng: 10.9298, maxConcurrentCars: 2 },
-  { slug: "tonsberg", name: "Tønsberg", orgNr: "923456788", address: "Kilengaten 15", postalCode: "3117", city: "Tønsberg", region: "Østlandet", lat: 59.2707, lng: 10.4210, maxConcurrentCars: 2 },
-  { slug: "kristiansand", name: "Kristiansand", orgNr: "923456789", address: "Barstølveien 54", postalCode: "4636", city: "Kristiansand", region: "Sørlandet", lat: 58.1717, lng: 8.0763, maxConcurrentCars: 3 },
-  { slug: "stavanger-forus", name: "Stavanger Forus", orgNr: "923456790", address: "Forusbeen 35", postalCode: "4033", city: "Stavanger", region: "Vestlandet", lat: 58.8908, lng: 5.7118, maxConcurrentCars: 4, campaign: "Ny avdeling: 15 % på første bestilling" },
-  { slug: "bergen-asane", name: "Bergen Åsane", orgNr: "923456791", address: "Åsane Senter 40", postalCode: "5116", city: "Bergen", region: "Vestlandet", lat: 60.4650, lng: 5.3220, maxConcurrentCars: 3 },
-  { slug: "bergen-kokstad", name: "Bergen Kokstad", orgNr: "923456792", address: "Kokstadflaten 5", postalCode: "5257", city: "Bergen", region: "Vestlandet", lat: 60.2917, lng: 5.2648, maxConcurrentCars: 2 },
-  { slug: "alesund", name: "Ålesund", orgNr: "923456793", address: "Langelandsveien 25", postalCode: "6010", city: "Ålesund", region: "Vestlandet", lat: 62.4664, lng: 6.3462, maxConcurrentCars: 2 },
-  { slug: "trondheim-lade", name: "Trondheim Lade", orgNr: "923456794", address: "Haakon VIIs gate 14", postalCode: "7041", city: "Trondheim", region: "Midt-Norge", lat: 63.4468, lng: 10.4568, maxConcurrentCars: 3 },
-  { slug: "tromso", name: "Tromsø", orgNr: "923456795", address: "Stakkevollvegen 51", postalCode: "9010", city: "Tromsø", region: "Nord-Norge", lat: 69.6663, lng: 18.9722, maxConcurrentCars: 2 },
+  { slug: "asker", name: "Asker", orgNr: "923456781", address: "Knud Askers vei 26", postalCode: "1383", city: "Asker", region: "Østlandet", phone: "488 43 795", lat: 59.8337, lng: 10.4352, maxConcurrentCars: 3, campaign: "Ny avdeling: 15 % på første bestilling" },
+  { slug: "lagunen", name: "Lagunen", orgNr: "923456782", address: "Laguneveien 1", postalCode: "5239", city: "Rådal", region: "Vestlandet", phone: "479 27 731", lat: 60.2966, lng: 5.3299, maxConcurrentCars: 4, campaign: "Sommerkampanje: 20 % på keramisk coating ut juli" },
+  { slug: "asane", name: "Åsane", orgNr: "923456783", address: "Åsane Storsenter 42, bygg A", postalCode: "5116", city: "Ulset", region: "Vestlandet", phone: "916 74 554", lat: 60.4690, lng: 5.3235, maxConcurrentCars: 3 },
+  { slug: "forus", name: "Forus", orgNr: "923456784", address: "Fabrikkveien 2", postalCode: "4033", city: "Stavanger", region: "Vestlandet", phone: "457 39 525", lat: 58.8918, lng: 5.7195, maxConcurrentCars: 4 },
+  { slug: "jessheim", name: "Jessheim", orgNr: "923456785", address: "Ringenveien 4", postalCode: "2050", city: "Jessheim", region: "Østlandet", phone: "456 52 461", lat: 60.1533, lng: 11.1730, maxConcurrentCars: 3 },
+  { slug: "sorlandssenteret", name: "Sørlandssenteret", orgNr: "923456786", address: "Barstølveien 35", postalCode: "4636", city: "Kristiansand", region: "Sørlandet", phone: "469 86 698", lat: 58.1868, lng: 8.0793, maxConcurrentCars: 3, campaign: "Gratis felgrens ved komplett bilpleie i juli" },
+  { slug: "lambertseter", name: "Lambertseter", orgNr: "923456787", address: "Cecilie Thoresens vei 17–21", postalCode: "1153", city: "Oslo", region: "Østlandet", phone: "479 20 609", lat: 59.8760, lng: 10.8060, maxConcurrentCars: 3 },
+  { slug: "metro", name: "Metro", orgNr: "923456788", address: "Bibliotekgata 30", postalCode: "1473", city: "Lørenskog", region: "Østlandet", phone: "980 53 599", lat: 59.9281, lng: 10.9620, maxConcurrentCars: 3 },
+  { slug: "triaden", name: "Triaden", orgNr: "923456789", address: "Gamleveien 88", postalCode: "1461", city: "Lørenskog", region: "Østlandet", phone: "467 09 966", lat: 59.9500, lng: 11.0010, maxConcurrentCars: 2 },
+  { slug: "sandvika", name: "Sandvika", orgNr: "923456790", address: "Brodtkorbs gate 7", postalCode: "1338", city: "Sandvika", region: "Østlandet", phone: "479 27 724", lat: 59.8883, lng: 10.5210, maxConcurrentCars: 3 },
+  { slug: "skedsmo", name: "Skedsmo", orgNr: "923456791", address: "Furuholtet 1", postalCode: "2020", city: "Skedsmokorset", region: "Østlandet", phone: "484 34 321", lat: 59.9772, lng: 11.0330, maxConcurrentCars: 2 },
+  { slug: "ski", name: "Ski", orgNr: "923456792", address: "Jernbanesvingen 6", postalCode: "1401", city: "Ski", region: "Østlandet", phone: "479 27 723", lat: 59.7195, lng: 10.8360, maxConcurrentCars: 2 },
+  { slug: "strommen", name: "Strømmen", orgNr: "923456793", address: "Stasjonsveien 6", postalCode: "2010", city: "Strømmen", region: "Østlandet", phone: "941 77 814", lat: 59.9457, lng: 11.0060, maxConcurrentCars: 3 },
+  { slug: "moa", name: "Moa", orgNr: "923456794", address: "Moaveien 1", postalCode: "6018", city: "Ålesund", region: "Vestlandet", phone: "920 72 829", lat: 62.4665, lng: 6.2430, maxConcurrentCars: 2 },
 ];
 
 export const organizations: Organization[] = locationSeeds.map((seed) => ({
@@ -69,8 +73,8 @@ export const locations: Location[] = locationSeeds.map((seed) => ({
   postalCode: seed.postalCode,
   city: seed.city,
   region: seed.region,
-  phone: "40 00 00 00",
-  email: `${seed.slug.replace(/-/g, ".")}@handzonautocare.no`,
+  phone: seed.phone,
+  email: "post@handzon.no",
   openingHours: standardHours,
   maxConcurrentCars: seed.maxConcurrentCars,
   geo: { lat: seed.lat, lng: seed.lng },
@@ -229,12 +233,12 @@ export const addOnAffinity: Record<string, string[]> = {
  * tilgjengelighet for egen avdeling. Utvalg for demoen:
  */
 export const locationServiceOverrides: LocationServiceOverride[] = [
-  { locationId: "loc-oslo-skoyen", serviceId: "svc-komplett", priceOre: 239900 },
-  { locationId: "loc-oslo-skoyen", serviceId: "svc-utvendig-vask", priceOre: 44900 },
-  { locationId: "loc-tromso", serviceId: "svc-coating", unavailable: true },
+  { locationId: "loc-lambertseter", serviceId: "svc-komplett", priceOre: 239900 },
+  { locationId: "loc-lambertseter", serviceId: "svc-utvendig-vask", priceOre: 44900 },
+  { locationId: "loc-moa", serviceId: "svc-coating", unavailable: true },
   { locationId: "loc-ski", serviceId: "svc-polering", unavailable: true },
-  { locationId: "loc-stavanger-forus", serviceId: "svc-komplett", priceOre: 199900 },
-  { locationId: "loc-sandvika", serviceId: "svc-coating", priceOre: 749900 },
+  { locationId: "loc-forus", serviceId: "svc-komplett", priceOre: 199900 },
+  { locationId: "loc-lagunen", serviceId: "svc-coating", priceOre: 749900 },
 ];
 
 export function getLocationBySlug(slug: string): Location | undefined {

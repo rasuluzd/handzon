@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
+import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
 import { Badge, Card } from "@/components/ui/Card";
 import { formatDuration, formatOre, formatOrgNr } from "@/lib/format";
 import {
@@ -83,6 +84,13 @@ export default async function LocationPage({
           <p className="mt-1 text-[15px] text-body">{location.campaign}</p>
         </div>
       )}
+
+      <div className="mt-6 h-[clamp(220px,26vw,320px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
+        <GoogleBranchMap
+          mode="place"
+          query={`Handz On ${location.name}, ${location.address}, ${location.postalCode} ${location.city}`}
+        />
+      </div>
 
       <div className="mt-8 grid gap-8 hz:grid-cols-[280px_1fr]">
         <Card className="self-start">

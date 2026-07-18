@@ -21,8 +21,6 @@ export function LocationList() {
     [query, position],
   );
 
-  const highlightedId = query.trim() || position ? ranking.results[0]?.id : undefined;
-
   async function handleLocate() {
     setLocating(true);
     setPosition(await getBrowserPosition());
@@ -32,7 +30,7 @@ export function LocationList() {
   return (
     <div>
       <div className="mb-[18px] h-[clamp(260px,30vw,440px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
-        <GoogleBranchMap highlightedId={highlightedId} />
+        <GoogleBranchMap />
       </div>
 
       <div className="mb-2 flex gap-2.5">
@@ -82,7 +80,9 @@ export function LocationList() {
                   {location.address}, {location.postalCode} {location.city}
                 </div>
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${location.geo.lat},${location.geo.lng}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `Handz On Auto Care ${location.name}`,
+                  )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-1 inline-block text-[13px] font-semibold text-navy hover:text-navy-hover"

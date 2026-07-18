@@ -10,7 +10,7 @@ import heroImage from "@/public/hero-hjulskift.webp";
 
 export const metadata: Metadata = {
   description:
-    "Lever nøkkelen, gjør ærendene dine, hent en skinnende ren bil. Book bilpleie på senteret hos 15 avdelinger over hele Norge — grundig, gjort for hånd.",
+    "Lever nøkkelen, gjør ærendene dine, hent en skinnende ren bil. Book bilpleie på senteret hos 14 avdelinger over hele Norge — grundig, gjort for hånd.",
 };
 
 const steps = [
@@ -83,7 +83,7 @@ export default function HomePage() {
         {/* Statstripe */}
         <div className="flex border-b border-line">
           {[
-            ["15", "avdelinger"],
+            ["14", "avdelinger"],
             ["120 000+", "biler behandlet"],
             ["4,8", "av 5 i score"],
           ].map(([value, label], index) => (
@@ -176,7 +176,7 @@ export default function HomePage() {
           Finn din avdeling
         </h2>
         <p className="mb-5 text-[16.5px] text-body-soft">
-          15 avdelinger fra Kristiansand i sør til Tromsø i nord.
+          14 avdelinger fra Kristiansand i sør til Ålesund i nord.
         </p>
         <div className="mb-4 h-[clamp(220px,26vw,380px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
           <GoogleBranchMap />
@@ -208,7 +208,7 @@ export default function HomePage() {
           fullWidth
           className="mt-4"
         >
-          Se alle 15 avdelinger
+          Se alle 14 avdelinger
         </ButtonLink>
       </section>
 
