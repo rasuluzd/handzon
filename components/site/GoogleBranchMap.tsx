@@ -4,9 +4,11 @@
  *   Hver pin er klikkbar og åpner stedet i Google Maps.
  * - `place`-modus: viser én bestemt avdeling (brukt på avdelingssiden).
  *
- * Nøkkelen leses fra NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (settes i .env.local lokalt
- * og som miljøvariabel på Vercel). Uten nøkkel brukes et nøkkelfritt Google
- * Maps-innbygg, så kartet alltid vises.
+ * Nøkkel: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (Vercel env / .env.local). MED nøkkel
+ * brukes Embed API — search-modus viser de ekte avdelingene som pins. UTEN nøkkel
+ * brukes et nøkkelfritt Google-innbygg som alltid rendrer: avdelingssiden viser
+ * adressen (place), oversikten viser kart over Norge (et bredt firmasøk uten
+ * nøkkel rendrer ikke pins). Sett nøkkelen på Vercel for pins i oversikten.
  */
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -17,10 +19,12 @@ export function GoogleBranchMap({
   query?: string;
   mode?: "search" | "place";
 }) {
-  const encoded = encodeURIComponent(query);
+  // Nøkkelfritt innbygg rendrer ikke et bredt firmasøk — bruk adressen (place)
+  // eller et geografisk søk (oversikt) som fallback.
+  const keylessQuery = mode === "place" ? query : "Norge";
   const src = MAPS_KEY
-    ? `https://www.google.com/maps/embed/v1/${mode}?key=${MAPS_KEY}&q=${encoded}&language=nb&region=NO`
-    : `https://maps.google.com/maps?q=${encoded}&z=5&hl=nb&output=embed`;
+    ? `https://www.google.com/maps/embed/v1/${mode}?key=${MAPS_KEY}&q=${encodeURIComponent(query)}&language=nb&region=NO`
+    : `https://maps.google.com/maps?q=${encodeURIComponent(keylessQuery)}&z=${mode === "place" ? 15 : 5}&hl=nb&output=embed`;
 
   return (
     <iframe

@@ -50,12 +50,6 @@ export default function HomePage() {
           </div>
           {/* Marineblått panel */}
           <div className="order-2 flex flex-col justify-center bg-navy px-6 py-[30px] text-white hz:order-1 hz:px-[clamp(36px,4vw,60px)] hz:py-[clamp(48px,4vw,76px)]">
-            <div className="mb-6 inline-flex items-center gap-2.5 self-start rounded-[6px] border border-white/28 px-3.5 py-2">
-              <span className="h-2 w-2 rounded-full bg-white" />
-              <span className="whitespace-nowrap text-[15px] text-on-navy-bright">
-                Book mens du handler
-              </span>
-            </div>
             <h1 className="font-heading text-[38px] font-bold leading-[1.08] hz:text-[clamp(42px,3.6vw,58px)] hz:leading-[1.04]">
               Lever nøkkelen.
               <br />
