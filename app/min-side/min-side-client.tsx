@@ -198,7 +198,7 @@ function UpcomingBookings({
             {!isCancelled ? (
               <div className="mt-4 flex gap-2">
                 <Link
-                  href={`/booking?avdeling=${location?.slug}`}
+                  href={`/booking?avdeling=${location?.slug}&tjeneste=${service?.slug}&regnr=${booking.regNr}&steg=tid`}
                   className={smallButton}
                 >
                   Endre tid

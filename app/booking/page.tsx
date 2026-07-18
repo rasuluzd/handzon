@@ -20,10 +20,17 @@ export default async function BookingPage({ searchParams }: PageProps<"/booking"
     ? (getServiceBySlug(serviceSlug)?.id ?? null)
     : null;
 
+  // «Endre tid» fra Min side: start på tidspunkt-steget med regnr forhåndsutfylt.
+  const regNr = typeof query.regnr === "string" ? query.regnr : undefined;
+  const initialStep =
+    query.steg === "tid" && initialLocationId && initialServiceId ? 4 : undefined;
+
   return (
     <BookingWizard
       initialLocationId={initialLocationId}
       initialServiceId={initialServiceId}
+      initialRegNr={regNr}
+      initialStep={initialStep}
     />
   );
 }

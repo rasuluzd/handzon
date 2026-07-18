@@ -71,26 +71,46 @@ interface WizardState {
   addOnIds: string[];
   contact: { name: string; phone: string };
   member: boolean;
+  /** True mens man redigerer ett valg fra oppsummeringen (steg 6). */
+  editing: boolean;
   booking: Booking | null;
 }
 
 type WizardAction =
   | { type: "goto"; step: number }
+  | { type: "edit"; step: number }
   | { type: "vippsLogin" }
   | { type: "selectLocation"; locationId: string }
   | { type: "setRegNr"; regNr: string }
   | { type: "setVehicle"; vehicle: Vehicle | null }
   | { type: "setManualVehicle"; manual: boolean }
+  | { type: "vehicleContinue" }
   | { type: "selectService"; serviceId: string }
   | { type: "selectSlot"; date: string; time: string }
   | { type: "toggleAddOn"; addOnId: string }
   | { type: "setContact"; contact: Partial<WizardState["contact"]> }
   | { type: "confirmed"; booking: Booking };
 
+/**
+ * Ved redigering fra oppsummeringen: hopp tilbake til oppsummeringen (steg 6) så
+ * snart alt er utfylt. Er noe blitt ugyldig av endringen (f.eks. ny avdeling
+ * nullstiller tidspunktet), rutes man til første steg som mangler data — og
+ * ender på oppsummeringen igjen når det er fylt ut.
+ */
+function routeAfterEdit(state: WizardState): number {
+  if (!state.locationId) return 1;
+  if (!isValidRegNr(state.regNr) || !state.vehicle) return 2;
+  if (!state.serviceId || !isServiceAvailable(state.serviceId, state.locationId)) return 3;
+  if (!state.date || !state.time) return 4;
+  return 6;
+}
+
 function reducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case "goto":
-      return { ...state, step: action.step };
+      return { ...state, step: action.step, editing: false };
+    case "edit":
+      return { ...state, editing: true, step: action.step };
     case "vippsLogin":
       return {
         ...state,
@@ -100,29 +120,55 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
           phone: state.contact.phone || "91234567",
         },
       };
-    case "selectLocation":
-      return {
+    case "selectLocation": {
+      const changed = state.locationId !== action.locationId;
+      const serviceStillAvailable = state.serviceId
+        ? isServiceAvailable(state.serviceId, action.locationId)
+        : true;
+      const next: WizardState = {
         ...state,
         locationId: action.locationId,
-        date: state.locationId === action.locationId ? state.date : null,
-        time: state.locationId === action.locationId ? state.time : null,
-        step: 2,
+        date: changed ? null : state.date,
+        time: changed ? null : state.time,
+        serviceId: serviceStillAvailable ? state.serviceId : null,
       };
+      if (state.editing) {
+        const step = routeAfterEdit(next);
+        return { ...next, step, editing: step !== 6 };
+      }
+      return { ...next, step: 2 };
+    }
     case "setRegNr":
       return { ...state, regNr: action.regNr, vehicle: null, manualVehicle: false };
     case "setVehicle":
       return { ...state, vehicle: action.vehicle };
     case "setManualVehicle":
       return { ...state, manualVehicle: action.manual };
-    case "selectService":
-      return {
+    case "vehicleContinue": {
+      if (state.editing) {
+        const step = routeAfterEdit(state);
+        return { ...state, step, editing: step !== 6 };
+      }
+      return { ...state, step: 3 };
+    }
+    case "selectService": {
+      const changed = state.serviceId !== action.serviceId;
+      const next: WizardState = {
         ...state,
         serviceId: action.serviceId,
-        date: state.serviceId === action.serviceId ? state.date : null,
-        time: state.serviceId === action.serviceId ? state.time : null,
-        step: 4,
+        date: changed ? null : state.date,
+        time: changed ? null : state.time,
       };
+      if (state.editing) {
+        const step = routeAfterEdit(next);
+        return { ...next, step, editing: step !== 6 };
+      }
+      return { ...next, step: 4 };
+    }
     case "selectSlot":
+      if (state.editing) {
+        return { ...state, date: action.date, time: action.time, step: 6, editing: false };
+      }
       return { ...state, date: action.date, time: action.time, step: 5 };
     case "toggleAddOn":
       return {
@@ -141,16 +187,22 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
 interface BookingWizardProps {
   initialLocationId: string | null;
   initialServiceId: string | null;
+  /** «Endre tid» fra Min side: forhåndsutfylt regnr. */
+  initialRegNr?: string;
+  /** «Endre tid» fra Min side: start på tidspunkt-steget (4). */
+  initialStep?: number;
 }
 
 export function BookingWizard({
   initialLocationId,
   initialServiceId,
+  initialRegNr,
+  initialStep,
 }: BookingWizardProps) {
   const [state, dispatch] = useReducer(reducer, {
-    step: initialLocationId ? 2 : 1,
+    step: initialStep ?? (initialLocationId ? 2 : 1),
     locationId: initialLocationId,
-    regNr: "",
+    regNr: initialRegNr ? normalizeRegNr(initialRegNr) : "",
     vehicle: null,
     manualVehicle: false,
     serviceId: initialServiceId,
@@ -159,8 +211,19 @@ export function BookingWizard({
     addOnIds: [],
     contact: { name: "", phone: "" },
     member: false,
+    editing: false,
     booking: null,
   });
+
+  // «Endre tid» fra Min side: slå opp bilen så oppsummeringen viser merke/modell.
+  useEffect(() => {
+    if (initialRegNr) {
+      lookupVehicle(initialRegNr).then((vehicle) => {
+        if (vehicle) dispatch({ type: "setVehicle", vehicle });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const location = locations.find((item) => item.id === state.locationId);
   const service = services.find((item) => item.id === state.serviceId);
@@ -345,7 +408,7 @@ function StepVehicle({
         color: "",
       },
     });
-    dispatch({ type: "goto", step: 3 });
+    dispatch({ type: "vehicleContinue" });
   }
 
   return (
@@ -410,7 +473,7 @@ function StepVehicle({
           <Button
             fullWidth
             className="mt-4 py-[18px] text-[18px]"
-            onClick={() => dispatch({ type: "goto", step: 3 })}
+            onClick={() => dispatch({ type: "vehicleContinue" })}
           >
             Dette stemmer — gå videre
           </Button>
@@ -832,7 +895,7 @@ function StepSummary({
           label="Avdeling"
           value={`Handz On ${location.name}`}
           sub={`${location.address}, ${location.postalCode} ${location.city}`}
-          onEdit={() => dispatch({ type: "goto", step: 1 })}
+          onEdit={() => dispatch({ type: "edit", step: 1 })}
         />
         <SummaryRow
           label="Bil"
@@ -843,14 +906,14 @@ function StepSummary({
           }
           sub={state.regNr}
           subMono
-          onEdit={() => dispatch({ type: "goto", step: 2 })}
+          onEdit={() => dispatch({ type: "edit", step: 2 })}
         />
         <SummaryRow
           label="Tidspunkt"
           value={
             state.date ? `${formatIsoDate(state.date)} kl. ${state.time}` : "—"
           }
-          onEdit={() => dispatch({ type: "goto", step: 4 })}
+          onEdit={() => dispatch({ type: "edit", step: 4 })}
           last
         />
       </div>
