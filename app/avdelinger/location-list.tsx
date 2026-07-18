@@ -2,80 +2,24 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Card } from "@/components/ui/Card";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
 import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import { locations } from "@/lib/mock-data";
 
 /**
- * Forenklet «kartvisning» (FR-1.2): avdelingene plottes som punkter i et
- * stilisert koordinatsystem basert på reelle lat/lng. I produksjon byttes
- * dette mot Google Maps.
+ * Avdelingsoversikt (FR-1.2): kart + søk + «Nær meg». Et søk sorterer etter
+ * nærhet i stedet for å tømme listen (rankLocations i lib/geo).
  */
-function MiniMap({ highlighted }: { highlighted: Set<string> }) {
-  const lats = locations.map((location) => location.geo.lat);
-  const lngs = locations.map((location) => location.geo.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-
-  return (
-    <svg
-      viewBox="0 0 100 130"
-      role="img"
-      aria-label="Kart over Norge med avdelingene markert"
-      className="h-full w-full"
-    >
-      <rect width="100" height="130" rx="8" className="fill-surface-raised" />
-      {locations.map((location) => {
-        const x = 12 + ((location.geo.lng - minLng) / (maxLng - minLng)) * 76;
-        const y = 118 - ((location.geo.lat - minLat) / (maxLat - minLat)) * 106;
-        const active = highlighted.has(location.id);
-        return (
-          <g key={location.id}>
-            <circle
-              cx={x}
-              cy={y}
-              r={active ? 3 : 1.8}
-              className={active ? "fill-accent" : "fill-muted/50"}
-            />
-            {active && (
-              <text
-                x={x}
-                y={y - 4.5}
-                textAnchor="middle"
-                className="fill-foreground text-[4px] font-semibold"
-              >
-                {location.name}
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 export function LocationList() {
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [locating, setLocating] = useState(false);
 
-  // FR-1.2: et søk sorterer etter nærhet i stedet for å tømme listen.
   const ranking = useMemo(
     () => rankLocations(locations, query, position),
     [query, position],
   );
-
-  const highlighted = useMemo(() => {
-    if (!query.trim()) return new Set<string>();
-    // Marker direkte treff på kartet; ellers den nærmeste avdelingen.
-    if (ranking.matchedIds.size > 0) return ranking.matchedIds;
-    const nearest = ranking.results[0];
-    return new Set(nearest ? [nearest.id] : []);
-  }, [ranking, query]);
 
   async function handleLocate() {
     setLocating(true);
@@ -84,80 +28,106 @@ export function LocationList() {
   }
 
   return (
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_280px]">
-      <div>
-        <label className="block">
-          <span className="text-sm font-semibold">Søk etter avdeling</span>
-          <div className="mt-2 flex gap-2">
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="By eller postnummer, f.eks. Bergen eller 0668"
-              className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-base placeholder:text-muted/60 focus:border-accent focus:outline-none"
-            />
-            <Button
-              variant="secondary"
-              className="shrink-0 !px-4"
-              disabled={locating}
-              onClick={handleLocate}
-            >
-              {locating ? "Finner…" : "📍 Nær meg"}
-            </Button>
-          </div>
-        </label>
-        {ranking.note && (
-          <p className="mt-2 text-sm text-muted">{ranking.note}</p>
-        )}
-
-        <ul className="mt-6 space-y-3">
-          {ranking.results.map((location) => (
-            <li key={location.id}>
-              <Card className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <Link
-                    href={`/avdelinger/${location.slug}`}
-                    className="text-lg font-semibold hover:text-accent"
-                  >
-                    Handz On {location.name}
-                    {ranking.showDistance && "distanceKm" in location && (
-                      <span className="ml-2 text-sm font-normal text-accent">
-                        {formatDistance(location.distanceKm as number)}
-                      </span>
-                    )}
-                  </Link>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {location.address}, {location.postalCode} {location.city}
-                  </p>
-                  {location.campaign && (
-                    <p className="mt-1 text-sm font-medium text-accent">
-                      {location.campaign}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <ButtonLink
-                    href={`/avdelinger/${location.slug}`}
-                    variant="secondary"
-                    className="!min-h-10 !px-4 text-sm"
-                  >
-                    Se avdeling
-                  </ButtonLink>
-                  <ButtonLink
-                    href={`/booking?avdeling=${location.slug}`}
-                    className="!min-h-10 !px-4 text-sm"
-                  >
-                    Bestill
-                  </ButtonLink>
-                </div>
-              </Card>
-            </li>
-          ))}
-        </ul>
+    <div>
+      <div className="mb-[18px] h-[clamp(260px,30vw,440px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
+        <GoogleBranchMap />
       </div>
 
-      <div className="order-first h-64 lg:order-none lg:h-auto lg:max-h-[520px]">
-        <MiniMap highlighted={highlighted} />
+      <div className="mb-2 flex gap-2.5">
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setPosition(null);
+          }}
+          placeholder="By eller postnummer, f.eks. Bergen"
+          className="min-w-0 flex-1 rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface px-4 py-3.5 text-[16px] text-ink outline-none placeholder:text-muted-light focus:border-navy"
+        />
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          className="shrink-0 rounded-[8px] border border-navy/30 bg-surface px-4 font-heading text-[15px] font-semibold text-navy hover:bg-surface-alt disabled:opacity-60"
+        >
+          {locating ? "Finner…" : "📍 Nær meg"}
+        </button>
+      </div>
+      {ranking.note && (
+        <p className="mx-0.5 mt-1.5 text-[14px] text-muted">{ranking.note}</p>
+      )}
+
+      <div className="mt-[18px] grid grid-cols-[repeat(auto-fit,minmax(330px,1fr))] gap-3.5">
+        {ranking.results.map((location) => (
+          <div
+            key={location.id}
+            className="rounded-[11px] border border-line-strong bg-surface p-5"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <Link
+                  href={`/avdelinger/${location.slug}`}
+                  className="font-heading text-[20px] font-semibold text-ink hover:text-navy"
+                >
+                  Handz On {location.name}
+                  {ranking.showDistance && "distanceKm" in location && (
+                    <span className="ml-2 text-[14px] font-normal text-navy">
+                      {formatDistance(location.distanceKm as number)}
+                    </span>
+                  )}
+                </Link>
+                <div className="mt-1 text-[14.5px] text-muted">
+                  {location.address}, {location.postalCode} {location.city}
+                </div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `Handz On Auto Care ${location.name}`,
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-block text-[13px] font-semibold text-navy hover:text-navy-hover"
+                >
+                  Åpne i Google Maps →
+                </a>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5 rounded-[6px] bg-navy/8 px-[11px] py-1.5">
+                <span className="h-[7px] w-[7px] rounded-full bg-navy" />
+                <span className="whitespace-nowrap text-[13px] font-semibold text-navy">
+                  Åpen nå
+                </span>
+              </div>
+            </div>
+
+            {location.campaign && (
+              <div className="mt-3 rounded-[8px] bg-navy/6 px-3 py-2.5 text-[13.5px] font-semibold text-navy">
+                {location.campaign}
+              </div>
+            )}
+
+            <div className="my-4 flex gap-7 border-y border-line py-4">
+              <div>
+                <div className="mb-1 text-[13px] text-muted-light">Man–fre</div>
+                <div className="font-heading text-[16px] font-medium text-body-strong">
+                  08–17{" "}
+                  <span className="font-normal text-muted-light">(tors. 18)</span>
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 text-[13px] text-muted-light">Lør / søn</div>
+                <div className="font-heading text-[16px] font-medium text-body-strong">
+                  10–15 / stengt
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href={`/booking?avdeling=${location.slug}`}
+              className="block w-full rounded-[8px] bg-navy py-[15px] text-center font-heading text-[16px] font-semibold text-white transition-colors hover:bg-navy-hover"
+            >
+              Book her
+            </Link>
+          </div>
+        ))}
       </div>
     </div>
   );

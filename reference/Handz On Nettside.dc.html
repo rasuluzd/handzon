@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #DCDEE3;
+    color: #16223A;
+    font-family: 'Source Sans 3', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  a { color: #1e3a70; text-decoration: none; }
+  a:hover { color: #294b8c; }
+  input { font-family: inherit; }
+  ::selection { background: rgba(30,58,112,0.16); }
+  .hz-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+  .hz-scroll::-webkit-scrollbar { height: 0; width: 0; display: none; }
+</style>
+</helmet>
+
+<div style="position:absolute; width:1px; height:1px; overflow:hidden; opacity:0; pointer-events:none; z-index:-1;">
+  <x-import component-from-global-scope="image-slot" from="./image-slot.js" hint-size="1,1"><image-slot id="hz-loader" style="width:1px;height:1px;"></image-slot></x-import>
+</div>
+
+<div style="min-height:100vh; display:flex; justify-content:center; background:#DCDEE3;">
+  <div style="width:100%; max-width:1180px; min-height:100vh; background:#FFFFFF; position:relative; box-shadow:0 0 60px rgba(20,32,58,0.14); overflow:hidden;">
+
+    <!-- HEADER -->
+    <header style="position:sticky; top:0; z-index:40; background:rgba(255,255,255,0.94); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(20,32,58,0.10);">
+      <div style="max-width:1180px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:14px clamp(20px,4vw,48px);">
+        <img src="assets/logo-original.webp" alt="Handz On Auto Care" onClick="{{ goHome }}" style="height:40px; width:auto; cursor:pointer;" />
+        <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ false }}">
+          <nav style="display:flex; align-items:center; gap:32px;">
+            <a onClick="{{ goHome }}" style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; cursor:pointer;">Forside</a>
+            <a onClick="{{ goServices }}" style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; cursor:pointer;">Tjenester</a>
+            <a onClick="{{ goLocations }}" style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; cursor:pointer;">Avdelinger</a>
+            <a onClick="{{ goAbout }}" style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; cursor:pointer;">Om oss</a>
+            <button onClick="{{ startBooking }}" style="background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:12px 22px; font-family:'Barlow'; font-weight:600; font-size:15px; cursor:pointer;" style-hover="background:#294b8c;">Bestill time</button>
+          </nav>
+        </sc-if>
+        <sc-if value="{{ isMobileView }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ toggleNav }}" aria-label="Meny" style="display:flex; flex-direction:column; gap:5px; background:none; border:none; padding:10px; cursor:pointer;">
+            <span style="display:block; width:24px; height:2px; background:#1e3a70; border-radius:2px;"></span>
+            <span style="display:block; width:24px; height:2px; background:#1e3a70; border-radius:2px;"></span>
+            <span style="display:block; width:24px; height:2px; background:#1e3a70; border-radius:2px;"></span>
+          </button>
+        </sc-if>
+      </div>
+    </header>
+
+    <!-- NAV OVERLAY -->
+    <sc-if value="{{ navOpenMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; inset:0; z-index:60; background:#FFFFFF; padding:22px 24px; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:44px;">
+          <img src="assets/logo-original.webp" alt="Handz On" style="height:38px;" />
+          <button onClick="{{ toggleNav }}" aria-label="Lukk" style="background:none; border:none; color:#1e3a70; font-size:30px; line-height:1; cursor:pointer;">✕</button>
+        </div>
+        <nav style="display:flex; flex-direction:column;">
+          <a onClick="{{ goHome }}" style="font-family:'Barlow'; font-weight:600; font-size:26px; color:#16223A; padding:18px 0; border-bottom:1px solid rgba(20,32,58,0.10); cursor:pointer;">Forside</a>
+          <a onClick="{{ goServices }}" style="font-family:'Barlow'; font-weight:600; font-size:26px; color:#16223A; padding:18px 0; border-bottom:1px solid rgba(20,32,58,0.10); cursor:pointer;">Tjenester</a>
+          <a onClick="{{ goLocations }}" style="font-family:'Barlow'; font-weight:600; font-size:26px; color:#16223A; padding:18px 0; border-bottom:1px solid rgba(20,32,58,0.10); cursor:pointer;">Avdelinger</a>
+          <a onClick="{{ goAbout }}" style="font-family:'Barlow'; font-weight:600; font-size:26px; color:#16223A; padding:18px 0; border-bottom:1px solid rgba(20,32,58,0.10); cursor:pointer;">Om oss</a>
+        </nav>
+        <div style="margin-top:auto;">
+          <button onClick="{{ startBooking }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;">Bestill time</button>
+          <p style="text-align:center; color:#737B8A; font-size:15px; margin:16px 0 0;">15 avdelinger over hele Norge</p>
+        </div>
+      </div>
+    </sc-if>
+
+    <main>
+
+      <!-- ============ FORSIDE ============ -->
+      <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <section style="position:relative;">
+          <sc-if value="{{ isMobileView }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="position:relative; height:300px;">
+              <image-slot id="hz-hero" shape="rect" fit="cover" placeholder="Bilde: bilpleie i arbeid" style="width:100%; height:100%;"></image-slot>
+            </div>
+            <div style="background:#1e3a70; color:#FFFFFF; padding:30px 24px 34px;">
+              <div style="display:inline-flex; align-items:center; gap:9px; padding:8px 14px; border:1px solid rgba(255,255,255,0.28); border-radius:6px; margin-bottom:22px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#FFFFFF;"></span>
+                <span style="font-size:15px; color:#EAF0FB; white-space:nowrap;">Book mens du handler</span>
+              </div>
+              <h1 style="font-family:'Barlow'; font-weight:700; font-size:38px; line-height:1.08; margin:0 0 16px; color:#FFFFFF;">Lever nøkkelen.<br>Hent bilen ren.</h1>
+              <p style="font-size:18px; line-height:1.55; color:#D6E0F1; margin:0 0 28px; max-width:340px;">Vi tar bilen mens du gjør ærendene dine på senteret. Grundig bilpleie, gjort for hånd — klar når du er ferdig.</p>
+              <div style="display:grid; gap:12px;">
+                <button onClick="{{ startBooking }}" style="width:100%; background:#FFFFFF; color:#1e3a70; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;" style-hover="background:#EAF0FB;">Bestill time</button>
+                <button onClick="{{ goLocations }}" style="width:100%; background:transparent; color:#FFFFFF; border:1.5px solid rgba(255,255,255,0.4); border-radius:8px; padding:16px; font-family:'Barlow'; font-weight:500; font-size:17px; cursor:pointer;" style-hover="background:rgba(255,255,255,0.1);">Finn din avdeling</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+          <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid; grid-template-columns:1.05fr 0.95fr; align-items:stretch;">
+            <div style="background:#1e3a70; color:#FFFFFF; padding:clamp(48px,4vw,76px) clamp(36px,4vw,60px); display:flex; flex-direction:column; justify-content:center;">
+              <div style="display:inline-flex; align-self:flex-start; align-items:center; gap:9px; padding:8px 14px; border:1px solid rgba(255,255,255,0.28); border-radius:6px; margin-bottom:26px;">
+                <span style="width:8px; height:8px; border-radius:50%; background:#FFFFFF;"></span>
+                <span style="font-size:15px; color:#EAF0FB; white-space:nowrap;">Book mens du handler</span>
+              </div>
+              <h1 style="font-family:'Barlow'; font-weight:700; font-size:clamp(42px,3.6vw,58px); line-height:1.04; margin:0 0 20px; color:#FFFFFF;">Lever nøkkelen.<br>Hent bilen ren.</h1>
+              <p style="font-size:19px; line-height:1.55; color:#D6E0F1; margin:0 0 32px; max-width:440px;">Vi tar bilen mens du gjør ærendene dine på senteret. Grundig bilpleie, gjort for hånd — klar når du er ferdig.</p>
+              <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                <button onClick="{{ startBooking }}" style="background:#FFFFFF; color:#1e3a70; border:none; border-radius:8px; padding:17px 32px; font-family:'Barlow'; font-weight:600; font-size:17px; cursor:pointer;" style-hover="background:#EAF0FB;">Bestill time</button>
+                <button onClick="{{ goLocations }}" style="background:transparent; color:#FFFFFF; border:1.5px solid rgba(255,255,255,0.4); border-radius:8px; padding:16px 30px; font-family:'Barlow'; font-weight:500; font-size:16px; cursor:pointer;" style-hover="background:rgba(255,255,255,0.1);">Finn din avdeling</button>
+              </div>
+            </div>
+            <div style="position:relative; min-height:clamp(440px,40vw,580px); background:#EEF0F3;">
+              <image-slot id="hz-hero" shape="rect" fit="cover" placeholder="Bilde: bilpleie i arbeid" style="width:100%; height:100%;"></image-slot>
+            </div>
+          </div>
+          </sc-if>
+          <div style="display:flex; border-bottom:1px solid rgba(20,32,58,0.10);">
+            <div style="flex:1; text-align:center; padding:18px 6px; border-right:1px solid rgba(20,32,58,0.10);">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70;">15</div>
+              <div style="font-size:12.5px; color:#737B8A; margin-top:2px;">avdelinger</div>
+            </div>
+            <div style="flex:1; text-align:center; padding:18px 6px; border-right:1px solid rgba(20,32,58,0.10);">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70;">120 000+</div>
+              <div style="font-size:12.5px; color:#737B8A; margin-top:2px;">biler behandlet</div>
+            </div>
+            <div style="flex:1; text-align:center; padding:18px 6px;">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70;">4,8</div>
+              <div style="font-size:12.5px; color:#737B8A; margin-top:2px;">av 5 i score</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- KONSEPT -->
+        <section data-reveal style="padding:44px 24px 8px;">
+          <p style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#1e3a70; margin:0 0 22px;">Slik gjør du</p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:0 40px;">
+            <div style="display:flex; gap:18px; padding:22px 0; border-top:1px solid rgba(20,32,58,0.10);">
+              <span style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70; min-width:32px;">1</span>
+              <div>
+                <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 6px; color:#16223A;">Lever nøkkelen</h3>
+                <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Kom innom avdelingen på senteret. Vi tar imot bilen — ingen kø, ingen stress.</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:18px; padding:22px 0; border-top:1px solid rgba(20,32,58,0.10);">
+              <span style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70; min-width:32px;">2</span>
+              <div>
+                <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 6px; color:#16223A;">Gjør ærendene dine</h3>
+                <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Handle, spis lunsj, ta en kaffe. Vi sender deg en melding når bilen er klar.</p>
+              </div>
+            </div>
+            <div style="display:flex; gap:18px; padding:22px 0; border-top:1px solid rgba(20,32,58,0.10); border-bottom:1px solid rgba(20,32,58,0.10);">
+              <span style="font-family:'Barlow'; font-weight:700; font-size:22px; color:#1e3a70; min-width:32px;">3</span>
+              <div>
+                <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 6px; color:#16223A;">Hent en ren bil</h3>
+                <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Bilen står klar, vasket for hånd og tørket. Du betaler når du henter.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TJENESTER UTDRAG -->
+        <section data-reveal style="padding:42px 24px 8px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px;">
+            <h2 style="font-family:'Barlow'; font-weight:700; font-size:28px; margin:0; color:#16223A;">Populære tjenester</h2>
+            <a onClick="{{ goServices }}" style="font-size:16px; font-weight:600; cursor:pointer;">Se alle →</a>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;">
+            <sc-for list="{{ servicesTop }}" as="s" hint-placeholder-count="4">
+              <div onClick="{{ s.open }}" style="display:flex; align-items:center; gap:16px; padding:16px; background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:10px; cursor:pointer;" style-hover="border-color:#1e3a70;">
+                <div style="width:60px; height:60px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#EEF0F3;">
+                  <image-slot id="{{ s.slotId }}" shape="rect" fit="cover" placeholder=" " style="width:100%; height:100%;"></image-slot>
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-family:'Barlow'; font-weight:600; font-size:18px; color:#16223A;">{{ s.name }}</div>
+                  <div style="font-size:14px; color:#737B8A; margin-top:3px;">{{ s.category }} · {{ s.dur }}</div>
+                </div>
+                <div style="text-align:right; flex-shrink:0;">
+                  <div style="font-family:'Barlow'; font-weight:700; font-size:16px; color:#1e3a70;">{{ s.priceFrom }}</div>
+                  <div style="font-size:12px; color:#9AA1AD; margin-top:2px;">Bestill →</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- FINN AVDELING -->
+        <section data-reveal style="padding:44px 24px 8px;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:28px; margin:0 0 8px; color:#16223A;">Finn din avdeling</h2>
+          <p style="font-size:16.5px; color:#5A6273; margin:0 0 20px;">15 avdelinger fra Kristiansand i sør til Tromsø i nord.</p>
+          <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(20,32,58,0.12); margin-bottom:16px; height:clamp(200px,24vw,340px); background:#EEF1F5; display:flex; align-items:center; justify-content:center; padding:10px;">
+            {{ mapHomeEl }}
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px;">
+            <sc-for list="{{ locationsTop }}" as="l" hint-placeholder-count="4">
+              <div onClick="{{ l.book }}" style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:17px 18px; background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:10px; cursor:pointer;" style-hover="border-color:#1e3a70;">
+                <div>
+                  <div style="font-family:'Barlow'; font-weight:600; font-size:17px; color:#16223A;">Handz On {{ l.name }}</div>
+                  <div style="font-size:14px; color:#737B8A; margin-top:2px;">{{ l.city }} · {{ l.region }}</div>
+                </div>
+                <span style="font-size:15px; font-weight:600; color:#1e3a70; white-space:nowrap;">Book →</span>
+              </div>
+            </sc-for>
+          </div>
+          <button onClick="{{ goLocations }}" style="width:100%; margin-top:16px; background:#FFFFFF; color:#1e3a70; border:1.5px solid rgba(30,58,112,0.35); border-radius:8px; padding:16px; font-family:'Barlow'; font-weight:600; font-size:17px; cursor:pointer;" style-hover="background:#F4F5F7;">Se alle 15 avdelinger</button>
+        </section>
+
+        <!-- TRYGGHET -->
+        <section data-reveal style="padding:40px 24px 8px;">
+          <div style="display:flex; align-items:flex-start; gap:12px; padding:16px 18px; border:1px solid rgba(20,32,58,0.12); border-radius:10px; background:#F4F5F7;">
+            <span style="color:#1e3a70; font-size:18px; line-height:1.4;">✓</span>
+            <p style="font-size:15px; line-height:1.5; color:#444C5C; margin:0;">Alle avdelinger er registrert i Arbeidstilsynets godkjenningsordning for bilpleie.</p>
+          </div>
+        </section>
+
+        <!-- KUNDEKLUBB CTA -->
+        <sc-if value="{{ showKundeklubb }}" hint-placeholder-val="{{ true }}">
+        <section data-reveal style="padding:40px 24px 16px;">
+          <div style="border-radius:12px; background:#1e3a70; padding:32px 26px;">
+            <p style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#9EB6E0; margin:0 0 14px;">Kundeklubb</p>
+            <h2 style="font-family:'Barlow'; font-weight:700; font-size:27px; line-height:1.15; margin:0 0 12px; color:#FFFFFF;">10 % på hovedvasken — hver gang</h2>
+            <p style="font-size:16.5px; line-height:1.55; color:#D6E0F1; margin:0 0 24px;">Bli medlem gratis. Logg inn med Vipps i bestillingen, så trekkes medlemsprisen automatisk.</p>
+            <button onClick="{{ startBooking }}" style="width:100%; background:#FFFFFF; color:#1e3a70; border:none; border-radius:8px; padding:17px; font-family:'Barlow'; font-weight:600; font-size:17px; cursor:pointer;" style-hover="background:#EAF0FB;">Bli medlem — gratis</button>
+          </div>
+        </section>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <!-- ============ TJENESTE-DETALJ ============ -->
+      <sc-if value="{{ showService }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="position:relative; height:220px; background:#EEF0F3;">
+          <image-slot id="hz-svc-hero" shape="rect" fit="cover" placeholder="Bilde av tjenesten" style="width:100%; height:100%;"></image-slot>
+          <button onClick="{{ goServices }}" style="position:absolute; top:16px; left:16px; background:#FFFFFF; border:1px solid rgba(20,32,58,0.14); color:#1e3a70; border-radius:8px; padding:11px 16px; font-size:15px; font-weight:600; cursor:pointer;">← Tjenester</button>
+        </div>
+        <section style="padding:26px 24px 8px; max-width:760px; margin:0 auto;">
+          <div style="display:flex; gap:8px; margin-bottom:14px;">
+            <span style="display:inline-flex; padding:6px 12px; background:rgba(30,58,112,0.08); border-radius:6px; font-size:14px; font-weight:600; color:#1e3a70;">{{ detailCategory }}</span>
+            <sc-if value="{{ detailPopular }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex; padding:6px 12px; background:#F4F5F7; border:1px solid rgba(20,32,58,0.12); border-radius:6px; font-size:14px; font-weight:600; color:#5A6273;">Populær</span>
+            </sc-if>
+          </div>
+          <h1 style="font-family:'Barlow'; font-weight:700; font-size:33px; line-height:1.1; margin:0 0 12px; color:#16223A;">{{ detailName }}</h1>
+          <p style="font-size:17px; line-height:1.55; color:#5A6273; margin:0 0 24px;">{{ detailDesc }}</p>
+
+          <div style="display:flex; gap:32px; padding:22px 0; border-top:1px solid rgba(20,32,58,0.10); border-bottom:1px solid rgba(20,32,58,0.10);">
+            <div>
+              <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Pris fra</div>
+              <div style="font-family:'Barlow'; font-weight:700; font-size:28px; color:#16223A;">{{ detailPrice }}</div>
+            </div>
+            <div>
+              <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Varighet</div>
+              <div style="font-family:'Barlow'; font-weight:600; font-size:22px; color:#16223A; padding-top:5px;">{{ detailDur }}</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ detailHasAddons }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:26px;">
+            <h3 style="font-family:'Barlow'; font-weight:600; font-size:19px; color:#16223A; margin:0 0 4px;">Ofte valgt sammen</h3>
+            <p style="font-size:14.5px; color:#737B8A; margin:0 0 14px;">Legg til når bilen først er inne.</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ detailAddons }}" as="a" hint-placeholder-count="3">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border:1px solid rgba(20,32,58,0.12); border-radius:10px;">
+                  <div>
+                    <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A;">{{ a.name }}</div>
+                    <div style="font-size:13.5px; color:#737B8A; margin-top:2px;">{{ a.description }}</div>
+                  </div>
+                  <span style="font-family:'Barlow'; font-weight:700; font-size:15px; color:#1e3a70; white-space:nowrap;">+ {{ a.price }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <p style="font-size:14px; color:#9AA1AD; margin:22px 0 0;">Prisen er kjedens standardpris inkl. mva. Enkelte avdelinger har egne lokalpriser.</p>
+        </section>
+
+        <div style="position:sticky; bottom:0; z-index:30; padding:16px 24px 22px; max-width:760px; margin:0 auto; background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 35%);">
+          <button onClick="{{ addDetailToBooking }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;" style-hover="background:#294b8c;">Legg til i booking · {{ detailPrice }}</button>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ TJENESTELISTE ============ -->
+      <sc-if value="{{ showServices }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:28px clamp(24px,4vw,48px) 40px; max-width:1160px; margin:0 auto;">
+        <p style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#1e3a70; margin:0 0 10px;">Tjenester</p>
+        <h1 style="font-family:'Barlow'; font-weight:700; font-size:32px; line-height:1.1; margin:0 0 8px; color:#16223A;">Alt innen bilpleie</h1>
+        <p style="font-size:16px; color:#5A6273; margin:0 0 26px;">Faste priser, ingen overraskelser. Lokale avvik vises per avdeling.</p>
+        <sc-for list="{{ servicesGrouped }}" as="g" hint-placeholder-count="4">
+          <div style="margin-bottom:26px;">
+            <h2 style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#9AA1AD; margin:0 0 12px;">{{ g.category }}</h2>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px;">
+              <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="2">
+                <div onClick="{{ s.open }}" style="display:flex; align-items:center; gap:16px; padding:16px; background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:10px; cursor:pointer;" style-hover="border-color:#1e3a70;">
+                  <div style="width:64px; height:64px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#EEF0F3;">
+                    <image-slot id="{{ s.slotId }}" shape="rect" fit="cover" placeholder=" " style="width:100%; height:100%;"></image-slot>
+                  </div>
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-family:'Barlow'; font-weight:600; font-size:18px; color:#16223A;">{{ s.name }}</div>
+                    <div style="font-size:14px; color:#737B8A; margin-top:3px;">{{ s.dur }}</div>
+                  </div>
+                  <div style="text-align:right; flex-shrink:0;">
+                    <div style="font-family:'Barlow'; font-weight:700; font-size:16px; color:#1e3a70;">{{ s.priceFrom }}</div>
+                    <div style="font-size:12px; color:#9AA1AD; margin-top:2px;">Se mer →</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ============ AVDELINGER ============ -->
+      <sc-if value="{{ showLocations }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:28px clamp(24px,4vw,48px) 40px; max-width:1160px; margin:0 auto;">
+        <p style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#1e3a70; margin:0 0 10px;">Avdelinger</p>
+        <h1 style="font-family:'Barlow'; font-weight:700; font-size:32px; line-height:1.1; margin:0 0 20px; color:#16223A;">15 avdelinger i Norge</h1>
+        <div style="position:relative; border-radius:12px; overflow:hidden; border:1px solid rgba(20,32,58,0.12); margin-bottom:18px; height:clamp(230px,26vw,380px); background:#EEF1F5; display:flex; align-items:center; justify-content:center; padding:10px;">
+          {{ mapLocationsEl }}
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <input type="search" value="{{ locQuery }}" onInput="{{ onLocQuery }}" placeholder="By eller postnummer, f.eks. Bergen" style="flex:1; min-width:0; border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:14px 16px; font-size:16px; color:#16223A; outline:none;" />
+          <button onClick="{{ locate }}" style="flex-shrink:0; background:#FFFFFF; color:#1e3a70; border:1px solid rgba(30,58,112,0.3); border-radius:8px; padding:0 16px; font-family:'Barlow'; font-weight:600; font-size:15px; cursor:pointer;">📍 Nær meg</button>
+        </div>
+        <sc-if value="{{ hasLocNote }}" hint-placeholder-val="{{ false }}">
+          <p style="font-size:14px; color:#737B8A; margin:6px 2px 0;">{{ locNote }}</p>
+        </sc-if>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:14px; margin-top:18px;">
+          <sc-for list="{{ locationsAll }}" as="l" hint-placeholder-count="6">
+            <div style="padding:20px; background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:11px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                <div>
+                  <div style="font-family:'Barlow'; font-weight:600; font-size:20px; color:#16223A;">Handz On {{ l.name }}<span style="{{ l.distStyle }}">{{ l.dist }}</span></div>
+                  <div style="font-size:14.5px; color:#737B8A; margin-top:4px;">{{ l.address }}, {{ l.postalCode }} {{ l.city }}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:7px; flex-shrink:0; padding:5px 11px; background:rgba(30,58,112,0.08); border-radius:6px;">
+                  <span style="width:7px; height:7px; border-radius:50%; background:#1e3a70;"></span>
+                  <span style="font-size:13px; font-weight:600; color:#1e3a70; white-space:nowrap;">{{ l.openState }}</span>
+                </div>
+              </div>
+              <sc-if value="{{ l.hasCampaign }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:12px; padding:10px 12px; background:rgba(30,58,112,0.06); border-radius:8px; font-size:13.5px; font-weight:600; color:#1e3a70;">{{ l.campaign }}</div>
+              </sc-if>
+              <div style="display:flex; gap:28px; margin:16px 0; padding:16px 0; border-top:1px solid rgba(20,32,58,0.10); border-bottom:1px solid rgba(20,32,58,0.10);">
+                <div>
+                  <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Man–fre</div>
+                  <div style="font-family:'Barlow'; font-weight:500; font-size:16px; color:#333B4A;">08–17 <span style="color:#9AA1AD; font-weight:400;">(tors. 18)</span></div>
+                </div>
+                <div>
+                  <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Lør / søn</div>
+                  <div style="font-family:'Barlow'; font-weight:500; font-size:16px; color:#333B4A;">10–15 / stengt</div>
+                </div>
+              </div>
+              <button onClick="{{ l.book }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:15px; font-family:'Barlow'; font-weight:600; font-size:16px; cursor:pointer;" style-hover="background:#294b8c;">Book her</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ BOOKING ============ -->
+      <sc-if value="{{ showBooking }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 0 40px; max-width:680px; margin:0 auto;">
+        <div style="padding:6px 24px 22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <button onClick="{{ back }}" style="background:none; border:none; color:#5A6273; font-size:16px; cursor:pointer; padding:0; visibility:{{ backVis }};">← Tilbake</button>
+            <span style="font-family:'Barlow'; font-weight:500; font-size:15px; color:#737B8A;">Steg {{ stepNum }} av 7</span>
+          </div>
+          <div style="display:flex; gap:5px;">
+            <sc-for list="{{ progressSegs }}" as="p" hint-placeholder-count="7">
+              <div style="{{ p.style }}"></div>
+            </sc-for>
+          </div>
+          <p style="font-family:'Barlow'; font-weight:500; font-size:14px; color:#737B8A; margin:12px 0 0;">{{ stepLabel }}</p>
+        </div>
+
+        <!-- STEG 1: AVDELING -->
+        <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:8px 24px 0;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 6px; color:#16223A;">Velg avdeling</h2>
+          <p style="font-size:16px; color:#737B8A; margin:0 0 18px;">Der du leverer og henter bilen.</p>
+          <div style="display:flex; gap:10px; margin-bottom:8px;">
+            <input type="search" value="{{ locQuery }}" onInput="{{ onLocQuery }}" placeholder="By eller postnummer" style="flex:1; min-width:0; border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:14px 16px; font-size:16px; color:#16223A; outline:none;" />
+            <button onClick="{{ locate }}" style="flex-shrink:0; background:#FFFFFF; color:#1e3a70; border:1px solid rgba(30,58,112,0.3); border-radius:8px; padding:0 16px; font-family:'Barlow'; font-weight:600; font-size:15px; cursor:pointer;">📍 Nær meg</button>
+          </div>
+          <sc-if value="{{ hasLocNote }}" hint-placeholder-val="{{ false }}">
+            <p style="font-size:14px; color:#737B8A; margin:6px 2px 14px;">{{ locNote }}</p>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:12px;">
+            <sc-for list="{{ locOptions }}" as="l" hint-placeholder-count="6">
+              <div onClick="{{ l.select }}" style="{{ l.cardStyle }}">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                  <div>
+                    <div style="font-family:'Barlow'; font-weight:600; font-size:17px; color:#16223A;">Handz On {{ l.name }}<span style="{{ l.distStyle }}">{{ l.dist }}</span></div>
+                    <div style="font-size:13.5px; color:#737B8A; margin-top:3px;">{{ l.address }}, {{ l.postalCode }} {{ l.city }}</div>
+                  </div>
+                  <span style="{{ l.tick }}">✓</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- STEG 2: BIL -->
+        <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 24px 0;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 6px; color:#16223A;">Bilen din</h2>
+          <p style="font-size:16px; color:#737B8A; margin:0 0 20px;">Vi henter merke og modell fra Statens vegvesen.</p>
+          <label style="display:block; font-size:15px; font-weight:600; color:#16223A; margin-bottom:8px;">Registreringsnummer</label>
+          <input type="text" value="{{ regNr }}" onInput="{{ onRegNr }}" maxlength="8" placeholder="EB12345" autocomplete="off" spellcheck="false" style="width:100%; border:1.5px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:10px; padding:18px; text-align:center; font-family:'Barlow'; font-weight:700; font-size:28px; letter-spacing:0.28em; text-transform:uppercase; color:#16223A; outline:none;" />
+          <p style="font-size:14px; color:#9AA1AD; margin:10px 0 0;">To bokstaver og fem sifre. Prøv f.eks. EB12345.</p>
+
+          <sc-if value="{{ showLookupBtn }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ lookupVehicle }}" disabled="{{ lookupDisabled }}" style="{{ lookupStyle }}">{{ lookupLabel }}</button>
+          </sc-if>
+
+          <sc-if value="{{ vehicleFound }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px; padding:18px; border:1.5px solid rgba(30,58,112,0.35); background:rgba(30,58,112,0.05); border-radius:12px;">
+            <div style="font-size:14px; color:#737B8A;">Vi fant bilen din</div>
+            <div style="font-family:'Barlow'; font-weight:700; font-size:20px; color:#16223A; margin-top:4px;">{{ vehicleName }}</div>
+            <div style="font-size:14.5px; color:#737B8A; margin-top:3px;">{{ vehicleMeta }}</div>
+          </div>
+          <button onClick="{{ vehicleContinue }}" style="width:100%; margin-top:16px; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;" style-hover="background:#294b8c;">Dette stemmer — gå videre</button>
+          </sc-if>
+
+          <sc-if value="{{ vehicleError }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px; padding:18px; border:1.5px solid rgba(190,70,70,0.4); background:rgba(190,70,70,0.05); border-radius:12px;">
+            <p style="font-size:15px; line-height:1.5; color:#333B4A; margin:0 0 14px;">Vi fikk ikke svar fra motorvognregisteret. Fyll inn bilinfo manuelt, så går bestillingen like fint.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+              <input type="text" value="{{ manualMake }}" onInput="{{ onManualMake }}" placeholder="Merke" style="border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:13px; font-size:15.5px; color:#16223A; outline:none;" />
+              <input type="text" value="{{ manualModel }}" onInput="{{ onManualModel }}" placeholder="Modell" style="border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:13px; font-size:15.5px; color:#16223A; outline:none;" />
+            </div>
+            <button onClick="{{ manualContinue }}" style="width:100%; margin-top:14px; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:16px; font-family:'Barlow'; font-weight:600; font-size:16px; cursor:pointer;">Fortsett uten oppslag</button>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <!-- STEG 3: TJENESTE -->
+        <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 24px 0;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 16px; color:#16223A;">Velg tjeneste</h2>
+          <sc-if value="{{ isMember }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:14px 16px; border:1px solid rgba(30,58,112,0.3); background:rgba(30,58,112,0.06); border-radius:10px; font-size:14.5px; color:#1e3a70; margin-bottom:18px;">Kundeklubb-medlem — medlemsprisene under er oppdatert.</div>
+          </sc-if>
+          <sc-if value="{{ notMember }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border:1px solid rgba(20,32,58,0.12); border-radius:10px; margin-bottom:18px;">
+              <span style="font-size:14px; color:#5A6273;">Medlem? Logg inn for medlemspris.</span>
+              <button onClick="{{ vippsLogin }}" style="flex-shrink:0; background:#FF5B24; color:#FFFFFF; border:none; border-radius:7px; padding:10px 14px; font-family:'Barlow'; font-weight:600; font-size:14px; cursor:pointer;">Vipps</button>
+            </div>
+          </sc-if>
+          <sc-for list="{{ svcGroups }}" as="g" hint-placeholder-count="4">
+            <div style="margin-bottom:22px;">
+              <h3 style="font-family:'Barlow'; font-size:13px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#9AA1AD; margin:0 0 10px;">{{ g.category }}</h3>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <sc-for list="{{ g.items }}" as="s" hint-placeholder-count="2">
+                  <div onClick="{{ s.select }}" style="{{ s.cardStyle }}">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                      <div style="flex:1; min-width:0;">
+                        <div style="font-family:'Barlow'; font-weight:600; font-size:17px; color:#16223A;">{{ s.name }}</div>
+                        <div style="font-size:13.5px; color:#737B8A; margin-top:3px;">{{ s.description }}</div>
+                        <div style="font-size:13px; color:#9AA1AD; margin-top:5px;">Varighet ca. {{ s.dur }}</div>
+                      </div>
+                      <div style="text-align:right; flex-shrink:0;">
+                        <sc-if value="{{ s.memberOn }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:13px; color:#9AA1AD; text-decoration:line-through;">{{ s.priceStd }}</div>
+                          <div style="font-family:'Barlow'; font-weight:700; font-size:16px; color:#1e3a70;">{{ s.priceMember }}</div>
+                        </sc-if>
+                        <sc-if value="{{ s.memberOff }}" hint-placeholder-val="{{ true }}">
+                          <div style="font-family:'Barlow'; font-weight:700; font-size:16px; color:#16223A;">{{ s.priceStd }}</div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- STEG 4: TID -->
+        <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 0 0;">
+          <div style="padding:0 24px;">
+            <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 6px; color:#16223A;">Velg tidspunkt</h2>
+            <p style="font-size:16px; color:#737B8A; margin:0 0 18px;">Vi tar bilen mens du er på senteret.</p>
+          </div>
+          <div class="hz-scroll" style="display:flex; gap:10px; overflow-x:auto; padding:2px 24px 20px; scroll-snap-type:x mandatory;">
+            <sc-for list="{{ dayChips }}" as="d" hint-placeholder-count="7">
+              <div onClick="{{ d.select }}" style="{{ d.cardStyle }}">
+                <div style="font-size:13px; color:{{ d.subColor }};">{{ d.wd }}</div>
+                <div style="font-family:'Barlow'; font-weight:700; font-size:22px; color:{{ d.numColor }}; margin:5px 0 2px;">{{ d.dd }}</div>
+                <div style="font-size:12px; color:{{ d.subColor }};">{{ d.mon }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:0 24px;">
+            <div style="font-size:15px; color:#5A6273; margin-bottom:14px;">Ledige tider {{ activeDayLabel }}</div>
+            <sc-if value="{{ hasSlots }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+              <sc-for list="{{ slotOptions }}" as="t" hint-placeholder-count="9">
+                <div onClick="{{ t.select }}" style="{{ t.cardStyle }}">
+                  <div style="font-family:'Barlow'; font-weight:600; font-size:17px;">{{ t.time }}</div>
+                  <div style="font-size:11px; font-weight:400; color:{{ t.capColor }}; margin-top:2px;">{{ t.cap }}</div>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+            <sc-if value="{{ noSlots }}" hint-placeholder-val="{{ false }}">
+              <p style="font-size:15px; color:#737B8A; padding:8px 0;">Ingen ledige tider denne dagen — prøv en annen dag.</p>
+            </sc-if>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- STEG 5: TILLEGG -->
+        <sc-if value="{{ isStep5 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 24px 0;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 6px; color:#16223A;">Tilleggstjenester</h2>
+          <p style="font-size:16px; color:#737B8A; margin:0 0 20px;">Gjør det skikkelig når bilen først er inne — dette velger andre sammen med tjenesten din.</p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <sc-for list="{{ addOnOptions }}" as="a" hint-placeholder-count="6">
+              <div onClick="{{ a.toggle }}" style="{{ a.cardStyle }}">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+                  <div style="flex:1; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                      <span style="font-family:'Barlow'; font-weight:600; font-size:17px; color:#16223A;">{{ a.name }}</span>
+                      <sc-if value="{{ a.recommended }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:11.5px; font-weight:600; color:#1e3a70; background:rgba(30,58,112,0.1); border-radius:999px; padding:3px 9px;">Ofte valgt sammen</span>
+                      </sc-if>
+                    </div>
+                    <div style="font-size:13.5px; color:#737B8A; margin-top:4px;">{{ a.description }}</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                    <span style="font-family:'Barlow'; font-weight:700; font-size:15px; color:#1e3a70; white-space:nowrap;">+ {{ a.price }}</span>
+                    <span style="{{ a.tick }}">✓</span>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- STEG 6: OPPSUMMERING -->
+        <sc-if value="{{ isStep6 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:8px 24px 0;">
+          <h2 style="font-family:'Barlow'; font-weight:700; font-size:25px; margin:0 0 18px; color:#16223A;">Oppsummering</h2>
+          <div style="background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:12px; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid rgba(20,32,58,0.10);">
+              <div>
+                <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Avdeling</div>
+                <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A;">Handz On {{ sumLocation }}</div>
+                <div style="font-size:13px; color:#737B8A; margin-top:2px;">{{ sumLocationAddr }}</div>
+              </div>
+              <a onClick="{{ toStep1 }}" style="font-size:15px; font-weight:600; cursor:pointer;">Endre</a>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1px solid rgba(20,32,58,0.10);">
+              <div>
+                <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Bil</div>
+                <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A;">{{ sumVehicle }}</div>
+                <div style="font-family:'Barlow'; font-size:13px; color:#737B8A; margin-top:2px; letter-spacing:0.05em;">{{ sumRegNr }}</div>
+              </div>
+              <a onClick="{{ toStep2 }}" style="font-size:15px; font-weight:600; cursor:pointer;">Endre</a>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px;">
+              <div>
+                <div style="font-size:13px; color:#9AA1AD; margin-bottom:4px;">Tidspunkt</div>
+                <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A;">{{ sumWhen }}</div>
+              </div>
+              <a onClick="{{ toStep4 }}" style="font-size:15px; font-weight:600; cursor:pointer;">Endre</a>
+            </div>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:12px; padding:18px; margin-top:14px;">
+            <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; margin-bottom:12px;">Prisspesifikasjon</div>
+            <div style="display:flex; justify-content:space-between; font-size:15px; color:#333B4A; padding:6px 0;">
+              <span>{{ sumService }}</span><span>{{ sumServicePrice }}</span>
+            </div>
+            <sc-for list="{{ sumAddOns }}" as="a" hint-placeholder-count="0">
+              <div style="display:flex; justify-content:space-between; font-size:15px; color:#333B4A; padding:6px 0;">
+                <span>{{ a.name }}</span><span>{{ a.price }}</span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ hasDiscount }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex; justify-content:space-between; font-size:15px; color:#1e3a70; padding:6px 0;">
+                <span>Kundeklubb-rabatt (10 %)</span><span>− {{ sumDiscount }}</span>
+              </div>
+            </sc-if>
+            <div style="display:flex; justify-content:space-between; font-size:13.5px; color:#9AA1AD; padding:8px 0 6px; margin-top:4px; border-top:1px solid rgba(20,32,58,0.10);">
+              <span>Herav mva. (25 %)</span><span>{{ sumVat }}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; padding-top:8px;">
+              <span style="font-family:'Barlow'; font-weight:600; font-size:17px; color:#16223A;">Å betale ved henting</span>
+              <span style="font-family:'Barlow'; font-weight:700; font-size:24px; color:#16223A;">{{ sumTotal }}</span>
+            </div>
+            <p style="font-size:12.5px; color:#9AA1AD; margin:12px 0 0;">Selger: {{ sumOrgName }}, org.nr {{ sumOrgNr }}. Kvittering sendes på e-post.</p>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid rgba(20,32,58,0.12); border-radius:12px; padding:18px; margin-top:14px;">
+            <div style="font-family:'Barlow'; font-weight:600; font-size:16px; color:#16223A; margin-bottom:4px;">Kontaktinfo</div>
+            <p style="font-size:13.5px; color:#737B8A; margin:0 0 14px;">Vi sender bekreftelse og påminnelse på SMS.</p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <input type="text" value="{{ contactName }}" onInput="{{ onContactName }}" placeholder="Navn" style="width:100%; border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:14px 16px; font-size:16px; color:#16223A; outline:none;" />
+              <input type="tel" value="{{ contactPhone }}" onInput="{{ onContactPhone }}" placeholder="Mobilnummer" style="width:100%; border:1px solid rgba(20,32,58,0.16); background:#FFFFFF; border-radius:8px; padding:14px 16px; font-size:16px; color:#16223A; outline:none;" />
+              <sc-if value="{{ notMember }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ vippsLogin }}" style="width:100%; background:#FF5B24; color:#FFFFFF; border:none; border-radius:8px; padding:14px; font-family:'Barlow'; font-weight:600; font-size:15px; cursor:pointer;">Fyll ut med Vipps</button>
+              </sc-if>
+            </div>
+          </div>
+
+          <button onClick="{{ confirm }}" disabled="{{ confirmDisabled }}" style="{{ confirmStyle }}">{{ confirmLabel }}</button>
+          <p style="text-align:center; font-size:13px; color:#9AA1AD; margin:12px 0 0;">Gratis avbestilling frem til 24 timer før avtalt tid.</p>
+        </div>
+        </sc-if>
+
+        <!-- STEG 7: BEKREFTELSE -->
+        <sc-if value="{{ isStep7 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:20px 24px 0;">
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; margin-bottom:24px;">
+            <div style="width:72px; height:72px; border-radius:50%; background:rgba(30,58,112,0.1); display:flex; align-items:center; justify-content:center; margin-bottom:18px;">
+              <span style="color:#1e3a70; font-size:34px; line-height:1;">✓</span>
+            </div>
+            <h2 style="font-family:'Barlow'; font-weight:700; font-size:27px; margin:0 0 8px; color:#16223A;">Takk for bestillingen!</h2>
+            <p style="font-size:16px; color:#5A6273; margin:0; max-width:320px;">Referanse <span style="font-family:'Barlow'; font-weight:700; color:#16223A;">{{ orderRef }}</span>. Bekreftelse er sendt på SMS.</p>
+          </div>
+
+          <div style="background:#FFFFFF; border:1px solid rgba(20,32,58,0.14); border-radius:12px; overflow:hidden;">
+            <div style="padding:18px 22px; background:#1e3a70; display:flex; justify-content:space-between; align-items:center;">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:18px; color:#FFFFFF;">Handz On Auto Care</div>
+              <div style="font-size:13px; color:#B7C6E4;">Kvittering</div>
+            </div>
+            <div style="padding:18px 22px;">
+              <div style="display:flex; justify-content:space-between; padding:8px 0; font-size:15px;">
+                <span style="color:#737B8A;">Referanse</span><span style="font-family:'Barlow'; font-weight:600; color:#16223A;">{{ orderRef }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15px;">
+                <span style="color:#737B8A;">Tjeneste</span><span style="font-family:'Barlow'; font-weight:600; text-align:right; color:#16223A;">{{ orderService }}</span>
+              </div>
+              <sc-if value="{{ orderHasAddons }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; justify-content:space-between; gap:16px; padding:4px 0 8px; font-size:13.5px;">
+                  <span style="color:#9AA1AD;">Tillegg</span><span style="color:#737B8A; text-align:right;">{{ orderAddons }}</span>
+                </div>
+              </sc-if>
+              <div style="display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15px;">
+                <span style="color:#737B8A;">Avdeling</span><span style="font-family:'Barlow'; font-weight:600; text-align:right; color:#16223A;">Handz On {{ orderLocation }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; gap:16px; padding:8px 0; font-size:15px;">
+                <span style="color:#737B8A;">Tidspunkt</span><span style="font-family:'Barlow'; font-weight:600; text-align:right; color:#16223A;">{{ orderWhen }}</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; font-size:15px;">
+                <span style="color:#737B8A;">Bil</span><span style="font-family:'Barlow'; font-weight:600; color:#16223A; letter-spacing:0.05em;">{{ orderRegNr }}</span>
+              </div>
+            </div>
+            <div style="padding:14px 22px; border-top:1px dashed rgba(20,32,58,0.22); display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:15px; color:#737B8A;">Å betale ved henting</span>
+              <span style="font-family:'Barlow'; font-weight:700; font-size:24px; color:#16223A;">{{ orderTotal }}</span>
+            </div>
+            <div style="height:52px; margin:0 22px 18px; background-image:repeating-linear-gradient(90deg, #16223A 0 2px, transparent 2px 4px, #16223A 4px 5px, transparent 5px 9px); border-radius:2px; opacity:0.9;"></div>
+            <p style="font-size:12px; color:#9AA1AD; margin:0 22px 18px;">Utstedes av org.nr {{ orderOrgNr }}. Kvitteringen legges på Min side etter utført behandling.</p>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px; margin-top:22px;">
+            <button onClick="{{ noop }}" style="width:100%; background:#FFFFFF; color:#1e3a70; border:1.5px solid rgba(30,58,112,0.35); border-radius:8px; padding:16px; font-family:'Barlow'; font-weight:600; font-size:17px; cursor:pointer;" style-hover="background:#F4F5F7;">Last ned kvittering (PDF)</button>
+            <button onClick="{{ goHome }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:17px; font-family:'Barlow'; font-weight:600; font-size:17px; cursor:pointer;" style-hover="background:#294b8c;">Til forsiden</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- CONTINUE BAR (steg 5) -->
+        <sc-if value="{{ showAddOnBar }}" hint-placeholder-val="{{ false }}">
+        <div style="position:sticky; bottom:0; z-index:30; margin-top:28px; padding:16px 24px 22px; background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 34%);">
+          <button onClick="{{ addOnsContinue }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;" style-hover="background:#294b8c;">{{ addOnsLabel }}</button>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <!-- ============ OM OSS ============ -->
+      <sc-if value="{{ showAbout }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="position:relative; height:240px; background:#EEF0F3;">
+          <image-slot id="hz-about-hero" shape="rect" fit="cover" placeholder="Detaljering i arbeid" style="width:100%; height:100%;"></image-slot>
+        </div>
+        <section style="background:#1e3a70; color:#FFFFFF; padding:30px 24px;">
+          <p style="font-family:'Barlow'; font-size:14px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#9EB6E0; margin:0 0 14px;">Om oss</p>
+          <h1 style="font-family:'Barlow'; font-weight:700; font-size:34px; line-height:1.1; margin:0 0 14px; color:#FFFFFF;">Kvalitet du kan stole på</h1>
+          <p style="font-size:17px; line-height:1.5; color:#D6E0F1; margin:0;">Norges største bilpleiekjede. 15 avdelinger drevet av lokale fagfolk, med godkjente prosesser og folk som bryr seg om detaljene.</p>
+        </section>
+
+        <section data-reveal style="padding:32px 24px 8px;">
+          <div style="display:flex; gap:14px;">
+            <div style="flex:1; padding:22px 18px; background:#F4F5F7; border-radius:11px;">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:34px; color:#1e3a70;">15</div>
+              <div style="font-size:14.5px; color:#5A6273; margin-top:5px;">avdelinger i Norge</div>
+            </div>
+            <div style="flex:1; padding:22px 18px; background:#F4F5F7; border-radius:11px;">
+              <div style="font-family:'Barlow'; font-weight:700; font-size:34px; color:#1e3a70;">120k+</div>
+              <div style="font-size:14.5px; color:#5A6273; margin-top:5px;">biler behandlet</div>
+            </div>
+          </div>
+        </section>
+
+        <section data-reveal style="padding:26px 24px 8px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:0 40px;">
+            <div style="padding:22px 0; border-top:1px solid rgba(20,32,58,0.10);">
+              <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 7px; color:#16223A;">Vasket for hånd</h3>
+              <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Ingen harde børster. Vi skummer, vasker og tørker for hånd — skånsomt mot lakken.</p>
+            </div>
+            <div style="padding:22px 0; border-top:1px solid rgba(20,32,58,0.10);">
+              <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 7px; color:#16223A;">Godkjent og seriøs</h3>
+              <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Alle avdelinger er registrert i Arbeidstilsynets godkjenningsordning for bilpleie. Ryddige forhold, ordnede lønninger.</p>
+            </div>
+            <div style="padding:22px 0; border-top:1px solid rgba(20,32,58,0.10); border-bottom:1px solid rgba(20,32,58,0.10);">
+              <h3 style="font-family:'Barlow'; font-weight:600; font-size:21px; margin:0 0 7px; color:#16223A;">Tid tilbake til deg</h3>
+              <p style="font-size:16.5px; line-height:1.55; color:#5A6273; margin:0;">Du trenger ikke vente. Lever bilen, gjør ærendene dine, og hent den ren.</p>
+            </div>
+          </div>
+        </section>
+
+        <section data-reveal style="padding:32px 24px 12px;">
+          <button onClick="{{ startBooking }}" style="width:100%; background:#1e3a70; color:#FFFFFF; border:none; border-radius:8px; padding:18px; font-family:'Barlow'; font-weight:600; font-size:18px; cursor:pointer;" style-hover="background:#294b8c;">Bestill time</button>
+        </section>
+      </div>
+      </sc-if>
+
+    </main>
+
+    <!-- FOOTER -->
+    <sc-if value="{{ showFooter }}" hint-placeholder-val="{{ true }}">
+    <footer style="padding:36px 24px 40px; border-top:1px solid rgba(20,32,58,0.10); margin-top:24px; background:#F4F5F7;">
+      <img src="assets/logo-original.webp" alt="Handz On" style="height:34px; margin-bottom:20px;" />
+      <div style="display:flex; flex-wrap:wrap; gap:16px 28px; margin-bottom:24px;">
+        <a onClick="{{ goServices }}" style="font-size:16px; color:#444C5C; cursor:pointer;">Tjenester</a>
+        <a onClick="{{ goLocations }}" style="font-size:16px; color:#444C5C; cursor:pointer;">Avdelinger</a>
+        <a onClick="{{ goAbout }}" style="font-size:16px; color:#444C5C; cursor:pointer;">Om oss</a>
+        <a onClick="{{ startBooking }}" style="font-size:16px; color:#444C5C; cursor:pointer;">Bestill time</a>
+      </div>
+      <p style="font-size:13.5px; line-height:1.6; color:#9AA1AD; margin:0;">© 2026 Handz On Auto Care · Franchisekjede med 15 lokale avdelinger. Hver avdeling drives av egen juridisk enhet. Alle avdelinger er registrert i Arbeidstilsynets godkjenningsordning for bilpleie.</p>
+    </footer>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:900},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#1e3a70&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Utseende&quot;},&quot;showKundeklubb&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Innhold&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Bevegelse&quot;}}">
+class Component extends DCLogic {
+  state = {
+    page:'home', nav:false, detailServiceId:'svc-utvendig-vask',
+    step:1, locationId:null, regNr:'', vehicle:null, vehicleStatus:'idle', manualMake:'', manualModel:'',
+    serviceId:null, selectedDay:null, date:null, time:null, addOnIds:[],
+    contactName:'', contactPhone:'', member:false,
+    orderRef:null, orderData:null,
+    locQuery:'', locPosition:null, locating:false,
+    vw: (typeof window!=='undefined'? window.innerWidth : 1200),
+  };
+
+  // ---------- DATA (fra repo lib/mock-data.ts) ----------
+  seeds(){
+    return [
+      { slug:'oslo-alna', name:'Oslo Alna', orgNr:'923456781', address:'Strømsveien 245', postalCode:'0668', city:'Oslo', region:'Østlandet', lat:59.9284, lng:10.8465, cars:4, campaign:'Sommerkampanje: 20 % på keramisk coating ut juli' },
+      { slug:'oslo-skoyen', name:'Oslo Skøyen', orgNr:'923456782', address:'Drammensveien 165', postalCode:'0277', city:'Oslo', region:'Østlandet', lat:59.9195, lng:10.6796, cars:3 },
+      { slug:'sandvika', name:'Sandvika', orgNr:'923456783', address:'Industriveien 33', postalCode:'1337', city:'Sandvika', region:'Østlandet', lat:59.8896, lng:10.5262, cars:3, campaign:'Gratis felgrens ved komplett bilpleie i juli' },
+      { slug:'lillestrom', name:'Lillestrøm', orgNr:'923456784', address:'Depotgata 20', postalCode:'2000', city:'Lillestrøm', region:'Østlandet', lat:59.9566, lng:11.0458, cars:3 },
+      { slug:'ski', name:'Ski', orgNr:'923456785', address:'Kjeppestadveien 42', postalCode:'1400', city:'Ski', region:'Østlandet', lat:59.7195, lng:10.8351, cars:2 },
+      { slug:'drammen', name:'Drammen', orgNr:'923456786', address:'Bjørnstjerne Bjørnsons gate 110', postalCode:'3044', city:'Drammen', region:'Østlandet', lat:59.7378, lng:10.2050, cars:3 },
+      { slug:'fredrikstad', name:'Fredrikstad', orgNr:'923456787', address:'Dikeveien 28', postalCode:'1661', city:'Fredrikstad', region:'Østlandet', lat:59.2431, lng:10.9298, cars:2 },
+      { slug:'tonsberg', name:'Tønsberg', orgNr:'923456788', address:'Kilengaten 15', postalCode:'3117', city:'Tønsberg', region:'Østlandet', lat:59.2707, lng:10.4210, cars:2 },
+      { slug:'kristiansand', name:'Kristiansand', orgNr:'923456789', address:'Barstølveien 54', postalCode:'4636', city:'Kristiansand', region:'Sørlandet', lat:58.1717, lng:8.0763, cars:3 },
+      { slug:'stavanger-forus', name:'Stavanger Forus', orgNr:'923456790', address:'Forusbeen 35', postalCode:'4033', city:'Stavanger', region:'Vestlandet', lat:58.8908, lng:5.7118, cars:4, campaign:'Ny avdeling: 15 % på første bestilling' },
+      { slug:'bergen-asane', name:'Bergen Åsane', orgNr:'923456791', address:'Åsane Senter 40', postalCode:'5116', city:'Bergen', region:'Vestlandet', lat:60.4650, lng:5.3220, cars:3 },
+      { slug:'bergen-kokstad', name:'Bergen Kokstad', orgNr:'923456792', address:'Kokstadflaten 5', postalCode:'5257', city:'Bergen', region:'Vestlandet', lat:60.2917, lng:5.2648, cars:2 },
+      { slug:'alesund', name:'Ålesund', orgNr:'923456793', address:'Langelandsveien 25', postalCode:'6010', city:'Ålesund', region:'Vestlandet', lat:62.4664, lng:6.3462, cars:2 },
+      { slug:'trondheim-lade', name:'Trondheim Lade', orgNr:'923456794', address:'Haakon VIIs gate 14', postalCode:'7041', city:'Trondheim', region:'Midt-Norge', lat:63.4468, lng:10.4568, cars:3 },
+      { slug:'tromso', name:'Tromsø', orgNr:'923456795', address:'Stakkevollvegen 51', postalCode:'9010', city:'Tromsø', region:'Nord-Norge', lat:69.6663, lng:18.9722, cars:2 },
+    ];
+  }
+  hours(){ return [
+    {open:'08:00',close:'17:00'},{open:'08:00',close:'17:00'},{open:'08:00',close:'17:00'},
+    {open:'08:00',close:'18:00'},{open:'08:00',close:'17:00'},{open:'10:00',close:'15:00'},
+    {open:'00:00',close:'00:00',closed:true},
+  ]; }
+  locations(){
+    if(!this._locs) this._locs = this.seeds().map(s=>({ id:'loc-'+s.slug, orgId:'org-'+s.slug, orgNr:s.orgNr, legalName:'Handz On '+s.name+' AS', slug:s.slug, name:s.name, address:s.address, postalCode:s.postalCode, city:s.city, region:s.region, cars:s.cars, campaign:s.campaign, geo:{lat:s.lat,lng:s.lng} }));
+    return this._locs;
+  }
+  services(){ return [
+    { id:'svc-utvendig-vask', slug:'utvendig-handvask', name:'Utvendig håndvask', category:'Utvendig', description:'Skånsom håndvask med to-bøtte-metode, felgvask og tørking med mikrofiber. Bilen skinner uten svirvelmerker.', priceOre:39900, durationMin:45, popular:true },
+    { id:'svc-utvendig-voks', slug:'utvendig-vask-og-voks', name:'Utvendig vask og voks', category:'Utvendig', description:'Komplett håndvask etterfulgt av hardvoks som gir dyp glans og beskyttelse i opptil 3 måneder.', priceOre:89900, durationMin:90, popular:true },
+    { id:'svc-innvendig-rens', slug:'innvendig-rens', name:'Innvendig dyprens', category:'Innvendig', description:'Grundig støvsuging, rens av alle flater, vinduspuss innvendig og tekstil-/skinnrens av seter.', priceOre:149900, durationMin:150, popular:true },
+    { id:'svc-komplett', slug:'komplett-bilpleie', name:'Komplett bilpleie', category:'Komplett', description:'Vår bestselger: utvendig håndvask og voks kombinert med innvendig dyprens. Bilen leveres som ny.', priceOre:219900, durationMin:240, popular:true },
+    { id:'svc-polering', slug:'polering', name:'Maskinpolering', category:'Lakk og beskyttelse', description:'Fjerner riper, svirvelmerker og oksidering i lakken. Inkluderer avfetting, leirbehandling og finish-voks.', priceOre:349900, durationMin:360 },
+    { id:'svc-coating', slug:'keramisk-coating', name:'Keramisk coating', category:'Lakk og beskyttelse', description:'Langtidsbeskyttelse med keramisk belegg som holder i årevis. Inkluderer full polering og forbehandling.', priceOre:799900, durationMin:480 },
+    { id:'svc-motorvask', slug:'motorvask', name:'Motorvask', category:'Utvendig', description:'Skånsom rengjøring av motorrom med avfetting og konservering. Trygt for elektronikk.', priceOre:49900, durationMin:45 },
+    { id:'svc-lyktesliping', slug:'lyktesliping', name:'Lyktesliping', category:'Lakk og beskyttelse', description:'Sliping og polering av matte frontlykter — bedre lys og bestått EU-kontroll.', priceOre:99900, durationMin:60 },
+  ]; }
+  addOns(){ return [
+    { id:'add-felgrens', name:'Felgrens og felgforsegling', description:'Dyprens av felger med syrefri felgrens og beskyttende forsegling.', priceOre:29900, durationMin:20 },
+    { id:'add-ozon', name:'Luktfjerning (ozon)', description:'Ozonbehandling som fjerner røyk-, dyre- og matlukt permanent.', priceOre:59900, durationMin:45 },
+    { id:'add-skinn', name:'Skinnpleie', description:'Rens og impregnering av skinnseter — hindrer sprekker og slitasje.', priceOre:49900, durationMin:30 },
+    { id:'add-vindu', name:'Vindusforsegling', description:'Regnavvisende behandling av frontrute og sideruter.', priceOre:34900, durationMin:20 },
+    { id:'add-dyrehaar', name:'Fjerning av dyrehår', description:'Spesialrens for hundeeiere — fjerner hår fra seter og tepper.', priceOre:39900, durationMin:30 },
+    { id:'add-interior-voks', name:'Interiørbehandling', description:'Pleie og UV-beskyttelse av dashbord og plastdetaljer.', priceOre:29900, durationMin:20 },
+  ]; }
+  affinity(){ return {
+    'svc-utvendig-vask':['add-felgrens','add-vindu','add-interior-voks'],
+    'svc-utvendig-voks':['add-felgrens','add-vindu','add-interior-voks'],
+    'svc-innvendig-rens':['add-ozon','add-skinn','add-dyrehaar'],
+    'svc-komplett':['add-felgrens','add-skinn','add-ozon'],
+    'svc-polering':['add-felgrens','add-vindu'],
+    'svc-coating':['add-vindu','add-felgrens'],
+    'svc-motorvask':['add-felgrens','add-interior-voks'],
+    'svc-lyktesliping':['add-vindu','add-felgrens'],
+  }; }
+  overrides(){ return [
+    { locationId:'loc-oslo-skoyen', serviceId:'svc-komplett', priceOre:239900 },
+    { locationId:'loc-oslo-skoyen', serviceId:'svc-utvendig-vask', priceOre:44900 },
+    { locationId:'loc-tromso', serviceId:'svc-coating', unavailable:true },
+    { locationId:'loc-ski', serviceId:'svc-polering', unavailable:true },
+    { locationId:'loc-stavanger-forus', serviceId:'svc-komplett', priceOre:199900 },
+    { locationId:'loc-sandvika', serviceId:'svc-coating', priceOre:749900 },
+  ]; }
+  MEMBER_RATE(){ return 0.1; }
+
+  // ---------- FORMAT ----------
+  kr(ore){ const v=ore/100; return v.toLocaleString('nb-NO') + ' kr'; }
+  krExact(ore){ const v=ore/100; return v.toLocaleString('nb-NO',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' kr'; }
+  dur(min){ if(min<60) return min+' min'; const h=Math.floor(min/60), r=min%60; return r===0? h+' t' : h+' t '+r+' min'; }
+  orgNr(o){ return o.slice(0,3)+' '+o.slice(3,6)+' '+o.slice(6); }
+  cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+  isoDate(iso){ const d=new Date(iso+'T12:00:00'); return this.cap(new Intl.DateTimeFormat('nb-NO',{weekday:'long',day:'numeric',month:'long'}).format(d)); }
+  dayParts(iso){ const d=new Date(iso+'T12:00:00');
+    return { wd:this.cap(new Intl.DateTimeFormat('nb-NO',{weekday:'short'}).format(d)).replace('.',''), dd:d.getDate(), mon:new Intl.DateTimeFormat('nb-NO',{month:'short'}).format(d).replace('.','') }; }
+
+  // ---------- PRICE LOGIC ----------
+  effectivePrice(serviceId, locationId){ const o=this.overrides().find(x=>x.locationId===locationId&&x.serviceId===serviceId); const s=this.services().find(x=>x.id===serviceId); return (o&&o.priceOre!=null)? o.priceOre : (s?s.priceOre:0); }
+  isAvailable(serviceId, locationId){ const o=this.overrides().find(x=>x.locationId===locationId&&x.serviceId===serviceId); return !(o&&o.unavailable); }
+  calcTotal(locationId, serviceId, addOnIds, member){
+    const sp=this.effectivePrice(serviceId, locationId);
+    const at=this.addOns().filter(a=>addOnIds.includes(a.id)).reduce((s,a)=>s+a.priceOre,0);
+    const disc = member ? Math.round((sp*this.MEMBER_RATE())/100)*100 : 0;
+    const total = sp+at-disc;
+    const vat = Math.round(total/5);
+    return { total, vat, disc, servicePrice:sp, addOnTotal:at };
+  }
+
+  // ---------- SLOTS ----------
+  hashStr(v){ let h=2166136261; for(let i=0;i<v.length;i++){ h^=v.charCodeAt(i); h=Math.imul(h,16777619);} return h>>>0; }
+  mulberry(seed){ let s=seed; return ()=>{ s|=0; s=(s+0x6d2b79f5)|0; let t=Math.imul(s^(s>>>15),1|s); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+  mins(t){ const [h,m]=t.split(':').map(Number); return h*60+m; }
+  toTime(m){ const h=Math.floor(m/60), mm=m%60; return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0'); }
+  weekday(iso){ const j=new Date(iso+'T12:00:00').getDay(); return (j+6)%7; }
+  slots(locationId, serviceId, addOnIds, date){
+    const loc=this.locations().find(l=>l.id===locationId); const svc=this.services().find(s=>s.id===serviceId);
+    if(!loc||!svc||!this.isAvailable(serviceId,locationId)) return [];
+    const h=this.hours()[this.weekday(date)]; if(!h||h.closed) return [];
+    const addMin=this.addOns().filter(a=>addOnIds.includes(a.id)).reduce((s,a)=>s+a.durationMin,0);
+    const total=svc.durationMin+addMin+15;
+    const open=this.mins(h.open), close=this.mins(h.close), lastStart=close-total;
+    const rnd=this.mulberry(this.hashStr(locationId+':'+date));
+    const out=[];
+    for(let start=open; start<=lastStart; start+=30){
+      const demand = start<12*60?0.55:0.35;
+      const taken=Math.floor(rnd()*(loc.cars+1)*demand);
+      const left=Math.max(0, loc.cars-taken);
+      if(left>0) out.push({ date, time:this.toTime(start), capacityLeft:left });
+    }
+    return out;
+  }
+  buildDays(){ const today=new Date(); const out=[]; for(let o=1;o<=14;o++){ const d=new Date(today); d.setDate(today.getDate()+o); out.push(d.toISOString().slice(0,10)); } return out; }
+
+  // ---------- VEHICLE ----------
+  normReg(v){ return (v||'').toUpperCase().replace(/[\s-]/g,'').trim(); }
+  validReg(v){ return /^[A-Z]{2}\d{5}$/.test(this.normReg(v)); }
+  lookup(reg){
+    const r=this.normReg(reg);
+    if(!this.validReg(r)) return null;
+    if(r==='FE11111') return null;
+    const known={ EB12345:{make:'Tesla',model:'Model Y',year:2023,fuel:'Elektrisk',color:'Hvit'}, DR34567:{make:'Volkswagen',model:'Golf',year:2019,fuel:'Bensin',color:'Grå'}, SU98765:{make:'Volvo',model:'XC60',year:2021,fuel:'Diesel',color:'Svart'}, EK55443:{make:'Hyundai',model:'Kona Electric',year:2024,fuel:'Elektrisk',color:'Blå'} };
+    if(known[r]) return { regNr:r, ...known[r] };
+    const mm=[{make:'Toyota',models:['RAV4','Corolla','Yaris']},{make:'Volkswagen',models:['ID.4','Tiguan','Passat']},{make:'Volvo',models:['XC40','V60','XC90']},{make:'Tesla',models:['Model 3','Model Y']},{make:'Skoda',models:['Octavia','Enyaq','Kodiaq']},{make:'BMW',models:['X3','i4','320d']},{make:'Audi',models:['Q4 e-tron','A4','Q5']},{make:'Nissan',models:['Leaf','Qashqai']}];
+    const fuels=['Elektrisk','Bensin','Diesel','Hybrid']; const colors=['Svart','Hvit','Grå','Blå','Rød','Sølv'];
+    const h=this.hashStr(r); const me=mm[h%mm.length];
+    return { regNr:r, make:me.make, model:me.models[(h>>>4)%me.models.length], year:2015+((h>>>8)%11), fuel:fuels[(h>>>12)%fuels.length], color:colors[(h>>>16)%colors.length] };
+  }
+
+  // ---------- GEO ----------
+  distKm(a,b){ const R=6371; const dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180; const h=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h)); }
+  fmtDist(km){ return km<10? km.toFixed(1).replace('.',',')+' km' : Math.round(km)+' km'; }
+  sortByDist(locs, from){ return locs.map(l=>({ ...l, distanceKm:this.distKm(from,l.geo) })).sort((a,b)=>a.distanceKm-b.distanceKm); }
+  matchIds(term){ const t=term; return new Set(this.locations().filter(l=> l.name.toLowerCase().includes(t)||l.city.toLowerCase().includes(t)||l.region.toLowerCase().includes(t)||l.postalCode.startsWith(t)).map(l=>l.id)); }
+  estFromPostal(digits){ if(!digits.length) return null; const target=Number(digits.padEnd(4,'0').slice(0,4)); if(!Number.isFinite(target)) return null; let best=null,bd=Infinity; for(const l of this.locations()){ const d=Math.abs(Number(l.postalCode)-target); if(d<bd){bd=d;best=l;} } return best?best.geo:null; }
+  ranking(){
+    const term=(this.state.locQuery||'').trim().toLowerCase();
+    if(this.state.locPosition){ return { results:this.sortByDist(this.locations(),this.state.locPosition), matched:term?this.matchIds(term):new Set(), showDist:true, note:'Sortert etter avstand fra posisjonen din.' }; }
+    if(!term){ return { results:this.locations(), matched:new Set(), showDist:false, note:null }; }
+    const matched=this.matchIds(term); const digits=term.replace(/\D/g,'');
+    if(digits.length>0){ const p=this.estFromPostal(digits); if(p) return { results:this.sortByDist(this.locations(),p), matched, showDist:false, note:'Nærmeste avdeling til postnummer '+digits+'.' }; }
+    const anchor=this.locations().find(l=>matched.has(l.id));
+    if(anchor) return { results:this.sortByDist(this.locations(),anchor.geo), matched, showDist:false, note:'Nærmeste avdelinger til «'+this.state.locQuery.trim()+'».' };
+    return { results:this.locations(), matched:new Set(), showDist:false, note:'Fant ingen avdeling som matcher «'+this.state.locQuery.trim()+'» – viser alle.' };
+  }
+
+  buildMap(highlighted){
+    const locs=this.locations(); const lats=locs.map(l=>l.geo.lat), lngs=locs.map(l=>l.geo.lng);
+    const minLat=Math.min(...lats),maxLat=Math.max(...lats),minLng=Math.min(...lngs),maxLng=Math.max(...lngs);
+    const h=React.createElement; const kids=[h('rect',{key:'bg',width:100,height:130,rx:8,fill:'#E4E8EE'})];
+    locs.forEach(l=>{ const x=12+((l.geo.lng-minLng)/(maxLng-minLng))*76; const y=118-((l.geo.lat-minLat)/(maxLat-minLat))*106; const active=highlighted&&highlighted.has(l.id);
+      kids.push(h('circle',{key:l.id,cx:x,cy:y,r:active?3:1.9,fill:active?'#1e3a70':'rgba(30,58,112,0.32)'}));
+      if(active) kids.push(h('text',{key:l.id+'t',x,y:y-4.5,textAnchor:'middle',fontSize:4,fontWeight:700,fill:'#16223A'},l.name));
+    });
+    return h('svg',{viewBox:'0 0 100 130',width:'100%',height:'100%',preserveAspectRatio:'xMidYMid meet',role:'img','aria-label':'Kart over avdelinger'},kids);
+  }
+
+  // ---------- NAV / MOTION ----------
+  componentDidMount(){ this.initReveal(); this._onResize=()=>{ if(this._rz) return; this._rz=requestAnimationFrame(()=>{ this._rz=null; if(window.innerWidth!==this.state.vw) this.setState({vw:window.innerWidth}); }); }; window.addEventListener('resize',this._onResize); }
+  componentWillUnmount(){ if(this._onResize) window.removeEventListener('resize',this._onResize); }
+  componentDidUpdate(){ requestAnimationFrame(()=>this.initReveal()); }
+  initReveal(){
+    if(this.props.reduceMotion){ document.querySelectorAll('[data-reveal]').forEach(el=>{el.style.opacity='1';el.style.transform='none';}); return; }
+    if(!this._io){ this._seen=new WeakSet(); this._io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='none';this._io.unobserve(e.target);}});},{threshold:0.1}); }
+    document.querySelectorAll('[data-reveal]').forEach((el,i)=>{ if(this._seen.has(el))return; this._seen.add(el); el.style.opacity='0'; el.style.transform='translateY(14px)'; el.style.transition='opacity .5s ease, transform .5s ease'; el.style.transitionDelay=((i%5)*0.04)+'s'; this._io.observe(el); });
+  }
+  toTop(){ try{ window.scrollTo({top:0,behavior:'instant'}); }catch(e){ window.scrollTo(0,0); } }
+  nav(p){ this.setState({page:p,nav:false}); this.toTop(); }
+  accent(){ return this.props.accent || '#1e3a70'; }
+
+  selCard(sel){ const a=this.accent(); const b='padding:17px 18px; border-radius:10px; cursor:pointer; transition:border-color .2s, background .2s; '; return sel? b+'background:rgba(30,58,112,0.06); border:2px solid '+a+';' : b+'background:#FFFFFF; border:2px solid rgba(20,32,58,0.12);'; }
+  tick(sel){ const a=this.accent(); return sel? 'display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:'+a+';color:#FFFFFF;font-size:14px;flex-shrink:0;' : 'display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;border:2px solid rgba(20,32,58,0.18);color:transparent;font-size:14px;flex-shrink:0;'; }
+  dayCard(sel){ const a=this.accent(); const b='flex-shrink:0;scroll-snap-align:start;width:66px;text-align:center;padding:13px 0;border-radius:10px;cursor:pointer;transition:all .2s;'; return sel? b+'background:'+a+';border:1px solid '+a+';' : b+'background:#FFFFFF;border:1px solid rgba(20,32,58,0.14);'; }
+  slotCard(sel){ const a=this.accent(); const b='text-align:center;padding:12px 0;border-radius:9px;cursor:pointer;transition:all .2s;'; return sel? b+'background:'+a+';border:1px solid '+a+';color:#FFFFFF;' : b+'background:#FFFFFF;border:1px solid rgba(20,32,58,0.14);color:#16223A;'; }
+
+  renderVals(){
+    const s=this.state; const a=this.accent();
+    const isDesktop=(s.vw||1200)>=900;
+    const svcs=this.services(), locs=this.locations();
+    const priceFrom=(x)=>'fra '+this.kr(x.priceOre);
+
+    // service detail
+    const det=svcs.find(x=>x.id===s.detailServiceId)||svcs[0];
+    const detAffIds=this.affinity()[det.id]||[];
+    const detAddons=detAffIds.slice(0,3).map(id=>{ const ad=this.addOns().find(x=>x.id===id); return { name:ad.name, description:ad.description, price:this.kr(ad.priceOre) }; });
+
+    // home services
+    const mkOpen=(id)=>()=>{ this.setState({detailServiceId:id,page:'service',nav:false}); this.toTop(); };
+    const servicesTop = svcs.filter(x=>x.popular).slice(0,4).map(x=>({ name:x.name, category:x.category, dur:this.dur(x.durationMin), priceFrom:priceFrom(x), slotId:'hz-svc-'+x.id, open:mkOpen(x.id) }));
+
+    // services grouped (list page)
+    const cats=[...new Set(svcs.map(x=>x.category))];
+    const servicesGrouped = cats.map(c=>({ category:c, items: svcs.filter(x=>x.category===c).map(x=>({ name:x.name, dur:this.dur(x.durationMin), priceFrom:priceFrom(x), slotId:'hz-svc-'+x.id, open:mkOpen(x.id) })) }));
+
+    // locations
+    const mkBook=(id)=>()=>{ this.setState({locationId:id, page:'booking', step:2, date:null, time:null, selectedDay:null, nav:false}); this.toTop(); };
+    const rank=this.ranking();
+    const locDist=(l)=> (rank.showDist && l.distanceKm!=null) ? this.fmtDist(l.distanceKm) : '';
+    const distStyle=(l)=> (rank.showDist && l.distanceKm!=null) ? 'margin-left:8px;font-size:14px;font-weight:400;color:'+a+';' : 'display:none;';
+    const locationsTop = locs.slice(0,4).map(l=>({ name:l.name, city:l.city, region:l.region, book:mkBook(l.id) }));
+    const locationsAll = rank.results.map(l=>({ name:l.name, address:l.address, postalCode:l.postalCode, city:l.city, region:l.region, campaign:l.campaign||'', hasCampaign:!!l.campaign, openState:'Åpen nå', dist:locDist(l), distStyle:distStyle(l), book:mkBook(l.id) }));
+
+    // booking step 1 options
+    const locOptions = rank.results.map(l=>({ name:l.name, address:l.address, postalCode:l.postalCode, city:l.city, dist:locDist(l), distStyle:distStyle(l), select:()=>{ this.setState({locationId:l.id, step:2, date:null, time:null, selectedDay:null}); this.toTop(); }, cardStyle:this.selCard(s.locationId===l.id), tick:this.tick(s.locationId===l.id) }));
+
+    // vehicle
+    const valid=this.validReg(s.regNr);
+    const lookupDoIt=()=>{ this.setState({vehicleStatus:'loading'}); setTimeout(()=>{ const v=this.lookup(s.regNr); if(v){ this.setState({vehicle:v, vehicleStatus:'found'}); } else { this.setState({vehicleStatus:'error'}); } }, 450); };
+
+    // service step (member pricing + local price/availability)
+    let svcGroups=[];
+    if(s.locationId){
+      svcGroups = cats.map(c=>({ category:c, items: svcs.filter(x=>x.category===c && this.isAvailable(x.id,s.locationId)).map(x=>{
+        const p=this.effectivePrice(x.id,s.locationId);
+        const mp=p-Math.round((p*this.MEMBER_RATE())/100)*100;
+        return { name:x.name, description:x.description, dur:this.dur(x.durationMin), memberOn:s.member, memberOff:!s.member, priceStd:this.kr(p), priceMember:this.kr(mp), select:()=>{ this.setState({serviceId:x.id, step:4, date:null, time:null, selectedDay:null}); this.toTop(); }, cardStyle:this.selCard(s.serviceId===x.id) };
+      }) })).filter(g=>g.items.length>0);
+    }
+
+    // time step
+    const days=this.buildDays();
+    let activeDay=s.selectedDay;
+    if(!activeDay && s.locationId && s.serviceId){ activeDay = days.find(d=>this.slots(s.locationId,s.serviceId,s.addOnIds,d).length>0) || days[0]; }
+    const dayChips = days.map(d=>{ const p=this.dayParts(d); const sel=activeDay===d; return { wd:p.wd, dd:p.dd, mon:p.mon, select:()=>this.setState({selectedDay:d}), cardStyle:this.dayCard(sel), numColor:sel?'#FFFFFF':'#16223A', subColor:sel?'rgba(255,255,255,0.85)':'#737B8A' }; });
+    const curSlots = (activeDay && s.locationId && s.serviceId)? this.slots(s.locationId,s.serviceId,s.addOnIds,activeDay) : [];
+    const slotOptions = curSlots.map(sl=>{ const sel=s.date===sl.date&&s.time===sl.time; return { time:sl.time, cap:sl.capacityLeft===1?'1 plass igjen':sl.capacityLeft+' plasser', capColor:sel?'rgba(255,255,255,0.85)':'#9AA1AD', select:()=>{ this.setState({date:sl.date, time:sl.time, selectedDay:activeDay, step:5}); this.toTop(); }, cardStyle:this.slotCard(sel) }; });
+
+    // add-ons
+    const recIds=s.serviceId?(this.affinity()[s.serviceId]||[]):[];
+    const sortedAdd=[...this.addOns()].sort((x,y)=>{ const xi=recIds.indexOf(x.id), yi=recIds.indexOf(y.id); return (xi===-1?99:xi)-(yi===-1?99:yi); });
+    const addOnOptions = sortedAdd.map(ad=>{ const seld=s.addOnIds.includes(ad.id); return { name:ad.name, description:ad.description, price:this.kr(ad.priceOre), recommended:recIds.includes(ad.id), toggle:()=>this.setState(st=>({addOnIds: st.addOnIds.includes(ad.id)? st.addOnIds.filter(i=>i!==ad.id): [...st.addOnIds,ad.id]})), cardStyle:this.selCard(seld), tick:this.tick(seld) }; });
+
+    // summary
+    const loc=locs.find(l=>l.id===s.locationId); const svc=svcs.find(x=>x.id===s.serviceId);
+    const bd=(loc&&svc)?this.calcTotal(loc.id,svc.id,s.addOnIds,s.member):{total:0,vat:0,disc:0,servicePrice:0};
+    const sumAddOns=this.addOns().filter(x=>s.addOnIds.includes(x.id)).map(x=>({name:x.name, price:this.kr(x.priceOre)}));
+    const contactValid = s.contactName.trim().length>1 && s.contactPhone.trim().length>=8;
+    const whenStr=(s.date&&s.time)? this.isoDate(s.date)+' kl. '+s.time : '';
+
+    // progress
+    const labels=['Avdeling','Bilen din','Tjeneste','Tidspunkt','Tillegg','Oppsummering','Bekreftelse'];
+    const progressSegs=labels.map((lb,i)=>{ const n=i+1; const on=n<=s.step; return { style:'flex:1;height:5px;border-radius:3px;background:'+(on?a:'rgba(20,32,58,0.12)')+';' }; });
+
+    const confirmDo=()=>{ const ref='HOAC-'+((this.hashStr(loc.id+':'+s.regNr+':'+s.date+':'+s.time)%9000)+1000); const total=this.calcTotal(loc.id,svc.id,s.addOnIds,s.member); this.setState({ orderRef:ref, orderData:{ locName:loc.name, orgNr:loc.orgNr, service:svc.name, addOns:sumAddOns.map(x=>x.name), when:whenStr, regNr:s.regNr, total:this.kr(total.total) }, step:7 }); this.toTop(); };
+
+    const od=s.orderData||{};
+
+    return {
+      // nav
+      navOpen:s.nav, navOpenMobile: s.nav && !isDesktop, toggleNav:()=>this.setState(st=>({nav:!st.nav})),
+      goHome:()=>this.nav('home'), goServices:()=>this.nav('services'), goLocations:()=>this.nav('locations'), goAbout:()=>this.nav('about'),
+      startBooking:()=>{ this.setState({page:'booking', step:1, locationId:null, regNr:'', vehicle:null, vehicleStatus:'idle', serviceId:null, date:null, time:null, selectedDay:null, addOnIds:[], contactName:'', contactPhone:'', member:false, nav:false}); this.toTop(); },
+      noop:()=>{},
+
+      // layout
+      isDesktop, isMobileView:!isDesktop,
+
+      // page flags
+      showHome:s.page==='home', showService:s.page==='service', showServices:s.page==='services',
+      showLocations:s.page==='locations', showBooking:s.page==='booking', showAbout:s.page==='about',
+      showFooter: s.page!=='booking',
+      showKundeklubb: this.props.showKundeklubb!==false,
+
+      // home
+      servicesTop, locationsTop, mapHomeEl:this.buildMap(new Set()),
+
+      // service detail
+      detailName:det.name, detailDesc:det.description, detailCategory:det.category, detailPopular:!!det.popular,
+      detailPrice:'fra '+this.kr(det.priceOre), detailDur:this.dur(det.durationMin),
+      detailHasAddons:detAddons.length>0, detailAddons:detAddons,
+      addDetailToBooking:()=>{ this.setState({serviceId:det.id, page:'booking', step:1, locationId:null, date:null, time:null, selectedDay:null, nav:false}); this.toTop(); },
+
+      // services list
+      servicesGrouped,
+
+      // locations
+      locationsAll, mapLocationsEl:this.buildMap(rank.matched.size>0?rank.matched:new Set()),
+      locQuery:s.locQuery, onLocQuery:(e)=>this.setState({locQuery:e.target.value, locPosition:null}),
+      locate:()=>{ if(navigator.geolocation){ navigator.geolocation.getCurrentPosition(p=>this.setState({locPosition:{lat:p.coords.latitude,lng:p.coords.longitude}}), ()=>{}, {timeout:5000,maximumAge:300000}); } },
+      hasLocNote:!!rank.note, locNote:rank.note||'',
+
+      // booking chrome
+      stepNum:s.step, stepLabel:labels[s.step-1], progressSegs,
+      backVis: s.step>1&&s.step<7?'visible':'hidden',
+      back:()=>{ if(s.step>1&&s.step<7){ this.setState(st=>({step:st.step-1})); this.toTop(); } },
+      isStep1:s.step===1, isStep2:s.step===2, isStep3:s.step===3, isStep4:s.step===4, isStep5:s.step===5, isStep6:s.step===6, isStep7:s.step===7,
+      toStep1:()=>{this.setState({step:1});this.toTop();}, toStep2:()=>{this.setState({step:2});this.toTop();}, toStep4:()=>{this.setState({step:4});this.toTop();},
+
+      // step 1
+      locOptions,
+
+      // step 2
+      regNr:s.regNr, onRegNr:(e)=>this.setState({regNr:this.normReg(e.target.value), vehicleStatus:'idle', vehicle:null}),
+      showLookupBtn:s.vehicleStatus!=='found', lookupVehicle:lookupDoIt, lookupDisabled:!valid||s.vehicleStatus==='loading',
+      lookupLabel:s.vehicleStatus==='loading'?'Slår opp…':'Hent bilinfo',
+      lookupStyle:(!valid||s.vehicleStatus==='loading')? 'width:100%;margin-top:16px;background:#E3E5E9;color:#A5AAB4;border:none;border-radius:8px;padding:18px;font-family:\'Barlow\';font-weight:600;font-size:18px;cursor:not-allowed;' : 'width:100%;margin-top:16px;background:'+a+';color:#FFFFFF;border:none;border-radius:8px;padding:18px;font-family:\'Barlow\';font-weight:600;font-size:18px;cursor:pointer;',
+      vehicleFound:s.vehicleStatus==='found'&&!!s.vehicle,
+      vehicleName: s.vehicle? (s.vehicle.make+' '+s.vehicle.model+(s.vehicle.year?' ('+s.vehicle.year+')':'')) : '',
+      vehicleMeta: s.vehicle&&s.vehicle.fuel? (s.vehicle.fuel+' · '+s.vehicle.color) : '',
+      vehicleContinue:()=>{ this.setState({step:3}); this.toTop(); },
+      vehicleError:s.vehicleStatus==='error',
+      manualMake:s.manualMake, onManualMake:(e)=>this.setState({manualMake:e.target.value}),
+      manualModel:s.manualModel, onManualModel:(e)=>this.setState({manualModel:e.target.value}),
+      manualContinue:()=>{ this.setState({vehicle:{regNr:this.normReg(s.regNr), make:s.manualMake||'Ukjent merke', model:s.manualModel||'', year:0, fuel:'', color:''}, step:3}); this.toTop(); },
+
+      // step 3
+      svcGroups, isMember:s.member, notMember:!s.member,
+      vippsLogin:()=>this.setState(st=>({member:true, contactName:st.contactName||'Kari Nordmann', contactPhone:st.contactPhone||'91234567'})),
+
+      // step 4
+      dayChips, activeDayLabel: activeDay?this.isoDate(activeDay):'', slotOptions, hasSlots:slotOptions.length>0, noSlots:slotOptions.length===0,
+
+      // step 5
+      addOnOptions, showAddOnBar:s.step===5,
+      addOnsContinue:()=>{ this.setState({step:6}); this.toTop(); },
+      addOnsLabel: s.addOnIds.length>0? ('Gå videre med '+s.addOnIds.length+' tillegg') : 'Gå videre uten tillegg',
+
+      // step 6
+      sumLocation: loc?loc.name:'', sumLocationAddr: loc?(loc.address+', '+loc.postalCode+' '+loc.city):'',
+      sumVehicle: s.vehicle?((s.vehicle.make+' '+s.vehicle.model).trim()||'—'):'—', sumRegNr:s.regNr,
+      sumWhen: whenStr||'—',
+      sumService: svc?svc.name:'', sumServicePrice:this.kr(bd.servicePrice),
+      sumAddOns, hasDiscount:bd.disc>0, sumDiscount:this.kr(bd.disc),
+      sumVat:this.krExact(bd.vat), sumTotal:this.kr(bd.total),
+      sumOrgName: loc?loc.legalName:'', sumOrgNr: loc?this.orgNr(loc.orgNr):'',
+      contactName:s.contactName, onContactName:(e)=>this.setState({contactName:e.target.value}),
+      contactPhone:s.contactPhone, onContactPhone:(e)=>this.setState({contactPhone:e.target.value}),
+      confirmDisabled:!contactValid, confirm:contactValid?confirmDo:()=>{},
+      confirmLabel: 'Bekreft bestilling – '+this.kr(bd.total),
+      confirmStyle: contactValid? 'width:100%;margin-top:18px;background:'+a+';color:#FFFFFF;border:none;border-radius:8px;padding:18px;font-family:\'Barlow\';font-weight:600;font-size:18px;cursor:pointer;' : 'width:100%;margin-top:18px;background:#E3E5E9;color:#A5AAB4;border:none;border-radius:8px;padding:18px;font-family:\'Barlow\';font-weight:600;font-size:18px;cursor:not-allowed;',
+
+      // step 7
+      orderRef:s.orderRef||'', orderLocation:od.locName||'', orderService:od.service||'',
+      orderHasAddons:(od.addOns&&od.addOns.length>0), orderAddons:(od.addOns||[]).join(', '),
+      orderWhen:od.when||'', orderRegNr:od.regNr||'', orderTotal:od.total||'', orderOrgNr:od.orgNr?this.orgNr(od.orgNr):'',
+    };
+  }
+}
+</script>
+</body>
+</html>

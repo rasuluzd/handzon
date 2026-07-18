@@ -1,47 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #0b0b0e;
-  --surface: #141419;
-  --surface-raised: #1c1c23;
-  --border: #2a2a33;
-  --border-strong: #3a3a45;
-  --foreground: #f5f4f1;
-  --muted: #a6a6b0;
-  --accent: #e3b04b;
-  --accent-strong: #f0c163;
-  --accent-contrast: #1a1405;
-  --success: #4ade80;
-  --danger: #f87171;
-  --vipps: #ff5b24;
+/*
+ * Handz On Auto Care — designsystem (lyst tema, marineblå aksent).
+ * Tokens speiler reference/Handz On Nettside.dc.html og README (Design Tokens).
+ */
+
+@theme {
+  /* Responsiv: ett brytepunkt på 900px (README) */
+  --breakpoint-hz: 900px;
+
+  /* Flater */
+  --color-canvas: #dcdee3;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f4f5f7;
+
+  /* Aksent (marineblå) */
+  --color-navy: #1e3a70;
+  --color-navy-hover: #294b8c;
+
+  /* Tekst */
+  --color-ink: #16223a;
+  --color-body-strong: #333b4a;
+  --color-body: #444c5c;
+  --color-body-soft: #5a6273;
+  --color-muted: #737b8a;
+  --color-muted-light: #9aa1ad;
+
+  /* Tekst på marineblå flater */
+  --color-on-navy: #d6e0f1;
+  --color-on-navy-bright: #eaf0fb;
+  --color-on-navy-eyebrow: #9eb6e0;
+  --color-on-navy-soft: #b7c6e4;
+
+  /* Linjer (hårfine skiller og kantlinjer) */
+  --color-line: rgba(20, 32, 58, 0.1);
+  --color-line-strong: rgba(20, 32, 58, 0.12);
+
+  /* Funksjonelle */
+  --color-vipps: #ff5b24;
+  --color-disabled: #e3e5e9;
+  --color-disabled-text: #a5aab4;
+
+  /* Kart */
+  --color-map-bg: #e4e8ee;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-contrast: var(--accent-contrast);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
-  --color-vipps: var(--vipps);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-source);
+  --font-heading: var(--font-barlow);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-source), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * Lenke-reset i @layer base slik at Tailwind sine text-*-utilities (i
+ * @layer utilities) vinner. Uten laget ville `a { color: inherit }` overstyre
+ * f.eks. `text-navy`/`text-white` på lenkeknapper.
+ */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
 ::selection {
-  background: var(--accent);
-  color: var(--accent-contrast);
+  background: rgba(30, 58, 112, 0.16);
+}
+
+/* Skjult scrollbar for horisontale strimler (dag-chips) */
+.hz-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hz-scroll::-webkit-scrollbar {
+  height: 0;
+  width: 0;
+  display: none;
+}
+
+/*
+ * On-scroll reveal (subtil). Gjelder kun når JS er aktivt (html.js), så innhold
+ * aldri blir liggende skjult uten JavaScript. Respekterer reduced-motion.
+ */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

@@ -48,6 +48,19 @@ export function formatIsoDateShort(isoDate: string): string {
   return capitalizeFirst(shortDateFormatter.format(new Date(`${isoDate}T12:00:00`)));
 }
 
+const weekdayShortFormatter = new Intl.DateTimeFormat("nb-NO", { weekday: "short" });
+const monthShortFormatter = new Intl.DateTimeFormat("nb-NO", { month: "short" });
+
+/** Dag-chip-deler (ukedag / dato / måned) — speiler prototypens dayParts(). */
+export function formatDayParts(isoDate: string): { wd: string; dd: number; mon: string } {
+  const date = new Date(`${isoDate}T12:00:00`);
+  return {
+    wd: capitalizeFirst(weekdayShortFormatter.format(date).replace(".", "")),
+    dd: date.getDate(),
+    mon: monthShortFormatter.format(date).replace(".", ""),
+  };
+}
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);

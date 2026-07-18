@@ -1,19 +1,38 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-type Variant = "primary" | "secondary" | "ghost" | "vipps";
+/**
+ * Knapp i designsystemet (README: Radius/borders — 8px, Barlow 600).
+ * - primary: marineblå fylt (standard CTA)
+ * - secondary: hvit med marineblå kant (sekundær CTA på lys flate)
+ * - ghost: ren tekst (f.eks. «← Tilbake»)
+ * - vipps: Vipps-oransje (kun Vipps-innlogging)
+ * - onNavy: hvit fylt med marineblå tekst (CTA på marineblå panel)
+ * - heroOutline: gjennomsiktig med hvit kant (sekundær CTA på marineblå panel)
+ */
+type Variant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "vipps"
+  | "onNavy"
+  | "heroOutline";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-colors " +
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent " +
-  "disabled:opacity-40 disabled:pointer-events-none min-h-12 px-5 text-base";
+  "inline-flex items-center justify-center gap-2 rounded-[8px] font-heading font-semibold " +
+  "transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy " +
+  "min-h-12 px-6 py-3 text-[16px] cursor-pointer " +
+  "disabled:cursor-not-allowed disabled:bg-disabled disabled:text-disabled-text disabled:border-transparent";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-accent text-accent-contrast hover:bg-accent-strong active:bg-accent-strong",
+  primary: "bg-navy text-white hover:bg-navy-hover",
   secondary:
-    "bg-surface-raised text-foreground border border-border-strong hover:border-accent/60",
-  ghost: "text-foreground hover:bg-surface-raised",
+    "bg-surface text-navy border-[1.5px] border-navy/35 hover:bg-surface-alt",
+  ghost: "text-body-soft hover:text-navy",
   vipps: "bg-vipps text-white hover:brightness-110",
+  onNavy: "bg-white text-navy hover:bg-on-navy-bright",
+  heroOutline:
+    "bg-transparent text-white border-[1.5px] border-white/40 hover:bg-white/10",
 };
 
 interface ButtonOwnProps {
