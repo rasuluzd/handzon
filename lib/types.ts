@@ -25,6 +25,8 @@ export interface Location {
   orgId: string;
   slug: string;
   name: string;
+  /** Senteret avdelingen ligger på, f.eks. «Lambertseter senter». */
+  center: string;
   address: string;
   postalCode: string;
   city: string;
@@ -40,10 +42,14 @@ export interface Location {
 }
 
 export type ServiceCategory =
-  | "Utvendig"
-  | "Innvendig"
-  | "Komplett"
-  | "Lakk og beskyttelse";
+  | "Bilvask"
+  | "Polering"
+  | "Lakkforsegling"
+  | "Full Shine"
+  | "Interiør"
+  | "Dekk & Felg";
+
+export type ServiceLevel = "Basic" | "Premium" | "Pro";
 
 export interface Service {
   id: string;
@@ -55,6 +61,10 @@ export interface Service {
   priceOre: number;
   durationMin: number;
   popular?: boolean;
+  /** Nivå (Basic/Premium/Pro) der tjenesten finnes i flere trinn. */
+  level?: ServiceLevel;
+  /** Garantitekst der relevant (f.eks. keramisk/NANO). */
+  guarantee?: string;
 }
 
 export interface AddOn {
@@ -63,6 +73,18 @@ export interface AddOn {
   description: string;
   priceOre: number;
   durationMin: number;
+}
+
+/** Kundeanmeldelse (sosialt bevis på forside og avdelingsside). */
+export interface Review {
+  initials: string;
+  name: string;
+  where: string;
+  /** Avatarfarge — alle ≥ 4,6:1 mot hvit tekst. */
+  color: string;
+  quote: string;
+  service: string;
+  locationSlug: string;
 }
 
 /** Lokal prisoverstyring per avdeling (FR-5.2). */

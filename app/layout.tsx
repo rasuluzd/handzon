@@ -3,7 +3,7 @@ import { Barlow, Source_Sans_3 } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { RevealProvider } from "@/components/site/RevealProvider";
+import { PageTransition } from "@/components/site/PageTransition";
 
 const barlow = Barlow({
   subsets: ["latin"],
@@ -49,17 +49,11 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${barlow.variable} ${sourceSans.variable} h-full antialiased`}
     >
+      {/* Full bredde: innholdet fyller vinduet, seksjonspaddingen gir luften. */}
       <body className="flex min-h-full flex-col bg-surface">
-        {/* Aktiverer reveal-animasjonen kun når JS er tilgjengelig (unngår skjult innhold). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: "document.documentElement.classList.add('js')",
-          }}
-        />
         <Header />
-        <main className="flex-1">{children}</main>
+        <PageTransition>{children}</PageTransition>
         <Footer />
-        <RevealProvider />
       </body>
     </html>
   );

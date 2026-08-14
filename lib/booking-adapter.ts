@@ -1,4 +1,5 @@
 import type { Booking, BookingRequest, TimeSlot } from "./types";
+import { hashString, mulberry32 } from "./prng";
 import {
   addOns,
   getEffectivePrice,
@@ -51,27 +52,6 @@ export interface BookingAdapter {
  */
 export const MEMBER_DISCOUNT_RATE = 0.1;
 
-/** Deterministisk PRNG (mulberry32) — samme input gir alltid samme tidsluker. */
-function mulberry32(seed: number): () => number {
-  let state = seed;
-  return () => {
-    state |= 0;
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashString(value: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i += 1) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 function minutesFrom(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
@@ -87,6 +67,24 @@ function toTime(totalMinutes: number): string {
 function weekdayIndex(isoDate: string): number {
   const jsDay = new Date(`${isoDate}T12:00:00`).getDay();
   return (jsDay + 6) % 7;
+}
+
+/**
+ * Tidligste starttidspunkt i minutter for en gitt dato. Gjelder bare i dag:
+ * dagsstripa i bookingen starter på dagens dato, og da må klokkeslett som
+ * allerede har passert bort. En time varsel er lagt inn fordi kunden skal
+ * rekke å kjøre til avdelingen — det er samme forutsetning som resten av
+ * kapasitetsmodellen bygger på.
+ */
+const LEAD_TIME_MIN = 60;
+
+function earliestStart(isoDate: string): number {
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
+  ).padStart(2, "0")}`;
+  if (isoDate !== todayIso) return -1;
+  return now.getHours() * 60 + now.getMinutes() + LEAD_TIME_MIN;
 }
 
 export class MockBookingAdapter implements BookingAdapter {
@@ -120,14 +118,17 @@ export class MockBookingAdapter implements BookingAdapter {
     const close = minutesFrom(hours.close);
     const lastStart = close - totalDuration;
 
+    const earliest = earliestStart(date);
     const random = mulberry32(hashString(`${locationId}:${date}`));
     const slots: TimeSlot[] = [];
     for (let start = open; start <= lastStart; start += 30) {
-      // Belegg varierer med tid på dagen — formiddag er mest etterspurt.
+      /* Belegget trekkes uansett, også for tider som filtreres bort — ellers
+         ville dagens ledige tider fått andre kapasitetstall enn i morgendagens
+         visning av samme rute, og tallene sluttet å være deterministiske. */
       const demand = start < 12 * 60 ? 0.55 : 0.35;
       const taken = Math.floor(random() * (location.maxConcurrentCars + 1) * demand);
       const capacityLeft = Math.max(0, location.maxConcurrentCars - taken);
-      if (capacityLeft > 0) {
+      if (capacityLeft > 0 && start >= earliest) {
         slots.push({ date, time: toTime(start), capacityLeft });
       }
     }

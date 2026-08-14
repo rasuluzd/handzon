@@ -1,48 +1,129 @@
 @import "tailwindcss";
 
 /*
- * Handz On Auto Care — designsystem (lyst tema, marineblå aksent).
- * Tokens speiler reference/Handz On Nettside.dc.html og README (Design Tokens).
+ * Handz On Auto Care — designsystem, retning «Dagsverkstedet».
+ * Kilde: design_handoff_dagsverkstedet/code/globals.css + TOKENS.md.
+ *
+ * Navnekonvensjon: --color-<navn> gir deg text-<navn>, bg-<navn>,
+ * border-<navn> automatisk i Tailwind 4.
  */
 
 @theme {
-  /* Responsiv: ett brytepunkt på 900px (README) */
+  /* ---------- Brytepunkt: kundeflaten har bare ett ---------- */
   --breakpoint-hz: 900px;
+  /* Adminpanelet er desktop først og trenger to egne (ADMIN.md § Responsivt):
+     sidestolpen blir ikonrail under 1100px og skuff under 760px. */
+  --breakpoint-admin-sm: 760px;
+  --breakpoint-admin-lg: 1100px;
 
-  /* Flater */
+  /* ---------- Merkevare ---------- */
+  --color-navy: #1e3a70;
+  --color-navy-hover: #294b8c;
+  --color-navy-active: #16294f;
+  --color-navy-deep: #16223a;
+  --color-red: #e41830;
+  --color-red-hover: #c8132a;
+  --color-red-active: #a80f22;
+  --color-cyan: #00a8e4;
+  /* Lysere cyan for tekst/ikon PÅ navy — #00a8e4 gir bare 4,08:1 der */
+  --color-cyan-on-navy: #55c5ef;
+
+  /* ---------- Navy-transparenser: valgt kort, chips, hover-fyll ---------- */
+  --color-navy-06: rgba(30, 58, 112, 0.06);
+  --color-navy-08: rgba(30, 58, 112, 0.08);
+  --color-navy-10: rgba(30, 58, 112, 0.1);
+  --color-navy-14: rgba(30, 58, 112, 0.14);
+  /* Stengte dager i adminpanelets stolpediagram. */
+  --color-navy-24: rgba(30, 58, 112, 0.24);
+  --color-red-08: rgba(228, 24, 48, 0.08);
+
+  /* ---------- Overflatenivåer ---------- */
   --color-canvas: #dcdee3;
   --color-surface: #ffffff;
   --color-surface-alt: #f4f5f7;
+  --color-surface-sunken: #edeff3;
+  /* Mørk verkstedsflate — kun bak fullbleed foto, ikke i Dagsverkstedet-UI */
+  --color-surface-shop: #0e1626;
+  --color-surface-shop-alt: #151f33;
 
-  /* Aksent (marineblå) */
-  --color-navy: #1e3a70;
-  --color-navy-hover: #294b8c;
-
-  /* Tekst */
+  /* ---------- Nøytraler (kalde, navy-tintede) ---------- */
   --color-ink: #16223a;
   --color-body-strong: #333b4a;
   --color-body: #444c5c;
   --color-body-soft: #5a6273;
+  /* ⚠ --color-muted og --color-muted-light er UNDER AA som tekstfarge
+     (4,26:1 og 2,60:1 på hvit). Bruk dem KUN til ikonstrek, hake-ringer og
+     dekorative kanter. All sekundær tekst skal på --color-body-soft (6,12:1). */
   --color-muted: #737b8a;
   --color-muted-light: #9aa1ad;
+  --color-neutral-300: #c7ccd4;
+  --color-neutral-200: #dcdee3;
+  --color-neutral-100: #edeff3;
 
-  /* Tekst på marineblå flater */
+  /* ---------- Tekst på mørke flater ---------- */
   --color-on-navy: #d6e0f1;
   --color-on-navy-bright: #eaf0fb;
   --color-on-navy-eyebrow: #9eb6e0;
   --color-on-navy-soft: #b7c6e4;
 
-  /* Linjer (hårfine skiller og kantlinjer) */
+  /* ---------- Linjer ---------- */
   --color-line: rgba(20, 32, 58, 0.1);
   --color-line-strong: rgba(20, 32, 58, 0.12);
+  --color-line-heavy: rgba(20, 32, 58, 0.18);
+  --color-on-navy-hair: rgba(255, 255, 255, 0.14);
 
-  /* Funksjonelle */
+  /* ---------- Semantiske statuser ---------- */
+  /* Nedjustert fra #2e7d53 / #8a6d1f — de lå på 4,42 og 4,30 mot sin egen
+     bakgrunnstint og strøk AA. Disse passerer. */
+  --color-status-open: #236b45;
+  --color-status-open-bg: rgba(35, 107, 69, 0.1);
+  --color-status-closed: #73591a;
+  --color-status-closed-bg: rgba(115, 89, 26, 0.1);
+  --color-danger: #b4232a;
+  --color-danger-bg: rgba(180, 35, 42, 0.08);
+
+  /* ---------- Funksjonelle / partner ---------- */
   --color-vipps: #ff5b24;
+  --color-vipps-hover: #ff7245;
   --color-disabled: #e3e5e9;
   --color-disabled-text: #a5aab4;
-
-  /* Kart */
   --color-map-bg: #e4e8ee;
+
+  /* ---------- Radius ---------- */
+  --radius-badge: 6px;
+  --radius-control: 8px;
+  --radius-card: 10px;
+  --radius-card-lg: 12px;
+
+  /* ---------- Skygger ---------- */
+  --shadow-xs: 0 1px 2px rgba(20, 32, 58, 0.06);
+  --shadow-card: 0 6px 20px -8px rgba(20, 32, 58, 0.12);
+  --shadow-card-hover: 0 14px 30px -10px rgba(20, 32, 58, 0.18);
+  --shadow-pop: 0 18px 44px -14px rgba(20, 32, 58, 0.24);
+  /* Sticky bunnbar kaster skygge OPPOVER */
+  --shadow-sticky: 0 -10px 28px -16px rgba(20, 32, 58, 0.22);
+  --shadow-hero: 0 24px 60px -28px rgba(20, 32, 58, 0.45);
+  --shadow-app: 0 0 60px rgba(20, 32, 58, 0.14);
+
+  /* ---------- Bevegelse ---------- */
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/*
+ * Bevegelse — varighetene bor her, ikke i komponentene (MOTION.md).
+ * Endres én gang og gjelder overalt.
+ */
+:root {
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 500ms;
+  --dur-hero: 700ms;
+  --dur-page: 420ms;
+  --page-shift: 18px;
+  --dur-fill: 420ms;
+  --dur-xfade: 160ms;
+  --reveal-shift: 14px;
 }
 
 @theme inline {
@@ -51,12 +132,22 @@
 }
 
 body {
-  background: var(--color-canvas);
+  /* Flaten fyller hele vindusbredden — ingen ramme mot canvas. */
+  background: var(--color-surface);
   color: var(--color-ink);
   font-family: var(--font-source), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  /* `text-rendering: optimizeLegibility` er fjernet: den tvinger full shaping
+     av all tekst på nettstedet, med seks lastede fontfiler, for en forskjell
+     man ikke ser i Barlow og Source Sans 3 i UI-størrelser. */
   -webkit-tap-highlight-color: transparent;
+  /* iOS blåser opp brødtekst i landskap uten denne — typografiskalaen skal
+     være den vi har bestemt, ikke den Safari finner på. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* `clip`, ikke `hidden`: hindrer utilsiktet sidelengs rulling på mobil uten
+     å lage en scroll-container (det ville drept alle `position: sticky`). */
+  overflow-x: clip;
 }
 
 /*
@@ -69,13 +160,49 @@ body {
     color: inherit;
     text-decoration: none;
   }
+  /* Fokusring — synlig, konsekvent, aldri fjernet */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-navy);
+    outline-offset: 2px;
+    border-radius: var(--radius-control);
+  }
+  .on-dark :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline-color: #fff;
+  }
 }
 
 ::selection {
   background: rgba(30, 58, 112, 0.16);
 }
 
-/* Skjult scrollbar for horisontale strimler (dag-chips) */
+/* Seksjonspadding — samme rytme på alle sider (SCREENS.md «Fellesnevnere»).
+   Mobilverdiene er strammet inn (40→30, 20→16): tolv seksjoner à 20px spart
+   luft er 240px mindre å rulle, uten at desktop mister pusterommet. */
+.hz-pad {
+  padding-inline: clamp(16px, 4vw, 64px);
+}
+.hz-sec {
+  padding: clamp(30px, 5vw, 76px) clamp(16px, 4vw, 64px);
+}
+.hz-sec-tight {
+  padding: clamp(22px, 3vw, 44px) clamp(16px, 4vw, 64px) clamp(30px, 5vw, 76px);
+}
+
+/* Horisontal strimmel med snap — anmeldelser, dag-chips, relaterte kort.
+   Kombineres med .hz-scroll for skjult scrollbar. */
+.hz-snap {
+  scroll-snap-type: x mandatory;
+}
+.hz-snap > * {
+  scroll-snap-align: start;
+}
+
+/* Tall som flukter i priskolonner og kvitteringer */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skjult scrollbar for horisontale strimler (dag-chips, kategori-chips) */
 .hz-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -86,23 +213,192 @@ body {
   display: none;
 }
 
-/*
- * On-scroll reveal (subtil). Gjelder kun når JS er aktivt (html.js), så innhold
- * aldri blir liggende skjult uten JavaScript. Respekterer reduced-motion.
- */
-.js [data-reveal] {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+/* Kart tones ned så det ikke konkurrerer med navy (README § Kart), og toner
+   over i stedet for å blinke når utsnittet byttes.
+   Filteret er desktop-only: en CSS-filter på et cross-origin iframe tvinger
+   hele Google Maps-rammen inn i sitt eget render surface som må filtreres på
+   nytt ved hver repaint. På mobil koster det mer enn dempingen er verdt. */
+.hz-map iframe {
+  transition: opacity 240ms var(--ease-standard);
 }
-.js [data-reveal].is-visible {
-  opacity: 1;
-  transform: none;
+@media (min-width: 900px) {
+  .hz-map iframe {
+    filter: saturate(0.55) contrast(1.05);
+  }
 }
-@media (prefers-reduced-motion: reduce) {
-  .js [data-reveal] {
+.hz-map.is-loading iframe {
+  opacity: 0.35;
+}
+
+/* ------------------------------------------------------------------
+ * Bevegelse (MOTION.md). Kort, rolig, aldri leken.
+ * Alt slås av av prefers-reduced-motion nederst — ingen unntak per komponent.
+ * ------------------------------------------------------------------ */
+@keyframes hz-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-rise {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes hz-pop {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hz-sheet {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-page {
+  from { opacity: 0; transform: translateY(var(--page-shift)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hz-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes hz-unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+  }
+  to {
     opacity: 1;
     transform: none;
-    transition: none;
+    max-height: 260px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin-top: 20px;
+  }
+}
+@keyframes hz-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Sidebytte: innholdet stiger 18px og toner inn. Nav og footer står stille.
+   På mobil er `<main>` flere tusen piksler høy, og en 420ms transform over
+   hele dokumentet er merkbart tyngre enn den er pen — der toner den bare inn,
+   kortere og uten forskyvning. */
+.hz-page {
+  animation: hz-fade 220ms var(--ease-standard) both;
+}
+@media (min-width: 900px) {
+  .hz-page {
+    animation: hz-page var(--dur-page) var(--ease-out-soft) both;
+  }
+}
+/* Bookingsteg: retningsbevisst — framover fra høyre, tilbake fra venstre. */
+.hz-fwd {
+  animation: hz-in-right 260ms var(--ease-out-soft) both;
+}
+.hz-back {
+  animation: hz-in-left 260ms var(--ease-out-soft) both;
+}
+/* Sticky bunnbar reiser seg når den monteres. */
+.hz-rise {
+  animation: hz-rise 280ms var(--ease-out-soft) both;
+}
+/* Haken spretter inn når et kort velges, og ringen på steg 7. */
+.hz-pop {
+  animation: hz-pop 220ms var(--ease-standard);
+}
+.hz-pop-lg {
+  animation: hz-pop 420ms var(--ease-out-soft) both;
+}
+/* Verdi som endrer seg (medlemspris) toner inn. */
+.hz-fade {
+  animation: hz-fade 240ms var(--ease-standard);
+}
+/* Kryssfade når et filtrert grid byttes ut. Ingen stagger. */
+.hz-xfade {
+  animation: hz-fade var(--dur-xfade) var(--ease-standard) both;
+}
+/* Ledige tider kommer inn etter hverandre når dagen byttes. */
+.hz-slot {
+  animation: hz-in 240ms var(--ease-out-soft) both;
+  animation-delay: var(--d, 0ms);
+}
+/* Mobilmenyen glir inn i stedet for å blinke fram. */
+.hz-sheet {
+  animation: hz-sheet 240ms var(--ease-out-soft) both;
+}
+/* Bilinfo-kortet folder seg ut når oppslaget treffer (booking steg 2). */
+.hz-unfold {
+  animation: hz-unfold 300ms var(--ease-out-soft) both;
+  overflow: hidden;
+}
+/* Fremdriftslinjens fyll vokser inn fra venstre i gjeldende steg. */
+.hz-fill {
+  position: relative;
+  overflow: hidden;
+}
+.hz-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  background: var(--color-navy);
+  transform-origin: left;
+  animation: hz-fill var(--dur-fill) var(--ease-out-soft) both;
+}
+
+/* On-scroll reveal — kun forsidens to hovedblokker, kun én gang.
+   Slått av under 900px: blokkene den pakker inn er flere tusen piksler høye,
+   og en opacity/transform-transisjon over et så stort deltre koster et eget
+   kompositt-lag midt i rullingen. Like viktig: `opacity: 0` står i server-
+   HTML-en, så forsidens viktigste konverteringsblokk lå usynlig til JS var
+   oppe. På mobil skal innholdet bare være der. */
+@media (min-width: 900px) {
+  .hz-reveal {
+    opacity: 0;
+    transform: translateY(var(--reveal-shift));
+    transition:
+      opacity var(--dur-slow) var(--ease-out-soft),
+      transform var(--dur-slow) var(--ease-out-soft);
+    transition-delay: var(--d, 0ms);
+  }
+  .hz-reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * Headeren krympet før ved 40px rulling. Det er fjernet med vilje: effekten
+ * krevde en scroll-lytter som satte React-state midt i rullingen, og gjorde
+ * headeren 48px høy mens sticky filterbarer fortsatt festet seg på 69px.
+ * Fast høyde (61px mobil / 79px desktop) er både roligere og billigere.
+ */
+
+/* Global av-bryter. Ikke skriv egne unntak per komponent. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .hz-reveal {
+    opacity: 1;
+    transform: none;
   }
 }

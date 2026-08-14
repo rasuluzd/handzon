@@ -1,94 +1,166 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
-import { Button, ButtonLink } from "@/components/ui/Button";
-import { Badge, Card } from "@/components/ui/Card";
-import { formatIsoDate, formatOre, formatOrgNr } from "@/lib/format";
-import { getOrganization, locations, services } from "@/lib/mock-data";
+import { useState } from "react";
+import { Calendar, ExternalLink, MapPin, ShieldCheck } from "lucide-react";
+import { Button, ButtonExternal, ButtonLink } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Chip } from "@/components/ui/Chip";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Tag } from "@/components/ui/Tag";
+import { VippsButton } from "@/components/ui/VippsButton";
+import { StampCard } from "@/components/site/StampCard";
+import { bookingAdapter } from "@/lib/booking-adapter";
+import {
+  formatIsoDate,
+  formatIsoDateNumeric,
+  formatKrExact,
+  formatKrPlain,
+  formatOrgNr,
+} from "@/lib/format";
+import { addOns, getOrganization, locations, services } from "@/lib/mock-data";
+import { downloadReceiptPdf } from "@/lib/receipt";
 
 /**
- * Kundeportal (FR-4). Innlogging og data er mocket: i produksjon står
- * Vipps Logg inn (OIDC) / OTP bak Auth.js, og data hentes org-scopet fra API-et.
+ * Kundeportal (FR-4), utformet etter SCREENS.md § Min side.
+ * Innlogging og data er mocket: i produksjon står Vipps Logg inn (OIDC) / OTP
+ * bak Auth.js, og data hentes org-scopet fra API-et.
  */
 
 interface PortalBooking {
   reference: string;
-  locationId: string;
-  serviceId: string;
+  locationSlug: string;
+  serviceSlug: string;
   regNr: string;
-  daysFromNow: number;
+  /** Dager fra i dag — negative er utført. */
+  offset: number;
   time: string;
-  totalOre: number;
-  status: "confirmed" | "completed";
+  addOnIds: string[];
 }
 
 const portalBookings: PortalBooking[] = [
-  { reference: "HOAC-4271", locationId: "loc-lambertseter", serviceId: "svc-komplett", regNr: "EB12345", daysFromNow: 3, time: "10:00", totalOre: 219900, status: "confirmed" },
-  { reference: "HOAC-3966", locationId: "loc-lambertseter", serviceId: "svc-utvendig-voks", regNr: "EB12345", daysFromNow: -32, time: "12:30", totalOre: 89900, status: "completed" },
-  { reference: "HOAC-3712", locationId: "loc-sandvika", serviceId: "svc-innvendig-rens", regNr: "DR34567", daysFromNow: -75, time: "09:00", totalOre: 149900, status: "completed" },
-  { reference: "HOAC-3255", locationId: "loc-lambertseter", serviceId: "svc-utvendig-vask", regNr: "DR34567", daysFromNow: -140, time: "15:30", totalOre: 44900, status: "completed" },
+  {
+    reference: "HOAC-4271",
+    locationSlug: "lambertseter",
+    serviceSlug: "vask-ut-innvendig-premium",
+    regNr: "EB12345",
+    offset: 3,
+    time: "10:00",
+    addOnIds: ["add-dekkrens"],
+  },
+  {
+    reference: "HOAC-3966",
+    locationSlug: "lambertseter",
+    serviceSlug: "polering-basic",
+    regNr: "EB12345",
+    offset: -32,
+    time: "12:30",
+    addOnIds: [],
+  },
+  {
+    reference: "HOAC-3712",
+    locationSlug: "sandvika",
+    serviceSlug: "rens-innvendig",
+    regNr: "DR34567",
+    offset: -75,
+    time: "09:00",
+    addOnIds: ["add-ozon"],
+  },
+  {
+    reference: "HOAC-3255",
+    locationSlug: "lambertseter",
+    serviceSlug: "vask-utvendig-premium",
+    regNr: "DR34567",
+    offset: -140,
+    time: "15:30",
+    addOnIds: [],
+  },
 ];
 
-const dangerButton =
-  "rounded-[8px] px-3 py-2 font-heading text-[14px] font-semibold text-[#b04a4a] hover:bg-[rgba(176,74,74,0.08)]";
-const smallButton =
-  "rounded-[8px] border-[1.5px] border-navy/35 bg-surface px-3 py-2 font-heading text-[14px] font-semibold text-navy hover:bg-surface-alt";
+const cars = [
+  {
+    regNr: "EB12345",
+    make: "Tesla",
+    model: "Model Y",
+    year: 2023,
+    note: "Hvit · Elektrisk",
+    visits: 7,
+    last: "Polering – Basic",
+  },
+  {
+    regNr: "DR34567",
+    make: "Volkswagen",
+    model: "Golf",
+    year: 2019,
+    note: "Grå · Bensin",
+    visits: 4,
+    last: "Rens innvendig",
+  },
+];
 
-function isoDateFromOffset(daysFromNow: number): string {
+type Tab = "avtaler" | "historikk" | "kvitteringer" | "personvern";
+
+/**
+ * Fanene ligger i et 2x2-rutenett under 900px. Som horisontal strimmel målte
+ * raden ~435px mot 358px tilgjengelig, og fordi `.hz-scroll` skjuler
+ * scrollbaren fantes ingen antydning om at «Kvitteringer» og «Personvern» lå
+ * utenfor skjermkanten — de var i praksis usynlige. Den korte etiketten brukes
+ * bare på mobil, der en halv kolonne er ~140px bred.
+ */
+const tabs: Array<{ key: Tab; label: string; short: string }> = [
+  { key: "avtaler", label: "Kommende avtaler", short: "Kommende" },
+  { key: "historikk", label: "Historikk", short: "Historikk" },
+  { key: "kvitteringer", label: "Kvitteringer", short: "Kvitteringer" },
+  { key: "personvern", label: "Personvern", short: "Personvern" },
+];
+
+function isoFromOffset(offset: number): string {
   const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
+  date.setDate(date.getDate() + offset);
   return date.toISOString().slice(0, 10);
 }
 
-type Tab = "avtaler" | "historikk" | "kvitteringer" | "personvern";
+function details(booking: PortalBooking) {
+  const location = locations.find((item) => item.slug === booking.locationSlug)!;
+  const service = services.find((item) => item.slug === booking.serviceSlug)!;
+  const chosenAddOns = addOns.filter((addOn) => booking.addOnIds.includes(addOn.id));
+  const totals = bookingAdapter.calculateTotal(location.id, service.id, booking.addOnIds);
+  return { location, service, chosenAddOns, totals };
+}
+
+/** Forhåndsutfylt booking — samme avdeling, tjeneste og bil som en tidligere ordre. */
+function bookingHref(booking: PortalBooking, step?: "tid") {
+  const { location, service } = details(booking);
+  const base = `/booking?avdeling=${location.slug}&tjeneste=${service.slug}&regnr=${booking.regNr}`;
+  return step ? `${base}&steg=${step}` : base;
+}
 
 export function MinSide() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [tab, setTab] = useState<Tab>("avtaler");
   const [cancelled, setCancelled] = useState<string[]>([]);
-  const [deleteRequested, setDeleteRequested] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleted, setDeleted] = useState(false);
 
-  if (!loggedIn) {
-    return (
-      <div className="mx-auto max-w-md px-6 py-16">
-        <h1 className="font-heading text-[32px] font-bold text-ink">Min side</h1>
-        <p className="mt-2 text-body-soft">
-          Se kommende avtaler, historikk per bil og kvitteringer.
-        </p>
-        <Card className="mt-8 space-y-3">
-          <Button variant="vipps" fullWidth onClick={() => setLoggedIn(true)}>
-            Logg inn med Vipps
-          </Button>
-          <Button variant="secondary" fullWidth onClick={() => setLoggedIn(true)}>
-            Engangskode på SMS eller e-post
-          </Button>
-          <p className="text-center text-[13px] text-muted-light">
-            Passordfritt og trygt. Demo: begge valg logger inn en testbruker.
-          </p>
-        </Card>
-      </div>
-    );
-  }
+  if (!loggedIn) return <Login onLogin={() => setLoggedIn(true)} />;
 
-  if (deleteRequested) {
+  if (deleted) {
     return (
-      <div className="mx-auto max-w-md px-6 py-16">
-        <Card className="text-center">
-          <p className="font-heading text-[18px] font-semibold text-ink">
+      <div className="mx-auto max-w-[480px] px-[clamp(16px,4vw,64px)] py-[clamp(32px,8vw,88px)]">
+        <Card elevated className="text-center">
+          <p className="font-heading text-[18px] font-semibold text-ink hz:text-[19px]">
             Sletteforespørsel mottatt
           </p>
-          <p className="mt-3 text-[15px] leading-relaxed text-body-soft">
-            Profilen og persondataene dine anonymiseres umiddelbart. Kvitteringer
-            og bokføringspliktige bilag må hver avdeling (egen juridisk enhet)
-            oppbevare i 6 år etter bokføringsloven — de kan ikke lenger knyttes
-            til deg som person.
+          <p className="mt-2.5 text-[15px] leading-[1.6] text-body-soft">
+            Profilen og persondataene dine anonymiseres umiddelbart. Kvitteringer og
+            bokføringspliktige bilag må hver avdeling oppbevare i 6 år etter
+            bokføringsloven — de kan ikke lenger knyttes til deg som person.
           </p>
           <Button
             variant="secondary"
-            className="mt-5"
+            className="mt-5 max-hz:w-full"
             onClick={() => {
-              setDeleteRequested(false);
+              setDeleted(false);
+              setConfirmingDelete(false);
               setLoggedIn(false);
             }}
           >
@@ -99,273 +171,394 @@ export function MinSide() {
     );
   }
 
+  const upcoming = portalBookings.filter((booking) => booking.offset > 0);
+  const past = portalBookings.filter((booking) => booking.offset < 0);
+
   return (
-    <div className="mx-auto max-w-[720px] px-6 py-10">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-heading text-[32px] font-bold text-ink">Hei, Kari!</h1>
-          <p className="mt-1 text-[14px] text-muted">
+    <div className="mx-auto max-w-[760px] px-[clamp(16px,4vw,64px)] pb-[clamp(48px,6vw,72px)] pt-[clamp(22px,4vw,48px)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-heading text-[26px] font-bold tracking-[-.02em] text-ink hz:text-[32px]">
+            Hei, Kari
+          </h1>
+          <p className="mt-1 text-[13.5px] text-body-soft hz:text-[14px]">
             Innlogget med Vipps · 912 34 567
           </p>
         </div>
-        <Button variant="ghost" onClick={() => setLoggedIn(false)}>
+        <Button variant="ghost" className="shrink-0" onClick={() => setLoggedIn(false)}>
           Logg ut
         </Button>
       </div>
 
       <nav
-        aria-label="Min side-faner"
-        className="hz-scroll mt-6 flex gap-2 overflow-x-auto pb-1"
+        aria-label="Min side"
+        className="mt-4 grid grid-cols-2 gap-2 hz:mt-[22px] hz:flex hz:flex-wrap"
       >
-        {(
-          [
-            ["avtaler", "Kommende avtaler"],
-            ["historikk", "Historikk"],
-            ["kvitteringer", "Kvitteringer"],
-            ["personvern", "Personvern"],
-          ] as Array<[Tab, string]>
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            aria-current={tab === key ? "page" : undefined}
-            className={`shrink-0 rounded-full border px-4 py-2 font-heading text-[14px] font-semibold transition-colors ${
-              tab === key
-                ? "border-navy bg-navy/8 text-ink"
-                : "border-line-strong text-muted hover:border-navy"
-            }`}
-          >
-            {label}
-          </button>
+        {tabs.map(({ key, label, short }) => (
+          <Chip key={key} active={tab === key} onClick={() => setTab(key)}>
+            <span className="hz:hidden">{short}</span>
+            <span className="max-hz:hidden">{label}</span>
+          </Chip>
         ))}
       </nav>
 
-      <div className="mt-6">
+      <div className="mt-4 flex flex-col gap-3 hz:mt-[22px] hz:gap-3.5">
         {tab === "avtaler" && (
-          <UpcomingBookings
-            cancelled={cancelled}
-            onCancel={(ref) => setCancelled([...cancelled, ref])}
-          />
+          <>
+            {upcoming.length > 0 ? (
+              <>
+                {upcoming.map((booking) => (
+                  <BookingRow
+                    key={booking.reference}
+                    booking={booking}
+                    cancelled={cancelled.includes(booking.reference)}
+                    onCancel={() => setCancelled([...cancelled, booking.reference])}
+                  />
+                ))}
+                {/* En innlogget kunde med avtale er den mest kjøpsklare besøkende
+                    vi har, men hadde ingen vei til booking herfra: CTA-en lå kun
+                    inne i EmptyState, altså bare når det ikke var noe å bestille
+                    fra. Den ligger nå rett under listen, over kundeklubben. */}
+                <ButtonLink href="/booking" size="lg" className="hz:self-start">
+                  Bestill ny time
+                </ButtonLink>
+              </>
+            ) : (
+              <EmptyState
+                icon={<Calendar aria-hidden className="size-10" strokeWidth={1.75} />}
+                title="Ingen kommende avtaler"
+                text="Neste ledige tid hos Handz On Lambertseter er i morgen kl. 08:30."
+                action={<ButtonLink href="/booking">Bestill time</ButtonLink>}
+              />
+            )}
+
+            <div className="on-dark rounded-card-lg bg-navy p-4 hz:p-[26px]">
+              <p className="mb-3 font-heading text-[12px] font-semibold uppercase tracking-[.2em] text-on-navy-eyebrow">
+                Kundeklubb
+              </p>
+              <StampCard filled={4} />
+              <p className="mt-3.5 text-[15px] leading-[1.5] text-on-navy hz:mt-4 hz:text-[15.5px] hz:leading-[1.55]">
+                Du har 4 av 6 stempler. To behandlinger til, så er den utvendige
+                Basic-vasken gratis. Husk at spylervæsken fylles gratis hver gang du er
+                innom.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="mb-2.5 mt-1 font-heading text-[19px] font-semibold text-ink hz:mb-3 hz:mt-3 hz:text-[21px]">
+                Bilene dine
+              </h2>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-2.5 hz:gap-3">
+                {cars.map((car) => (
+                  <Card key={car.regNr}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-heading text-[16.5px] font-semibold text-ink hz:text-[17px]">
+                          {car.make} {car.model}
+                        </p>
+                        <p className="mt-[3px] text-[13.5px] text-body-soft">
+                          {car.year} · {car.note}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded border border-line-strong bg-surface-alt px-2 py-1 font-heading text-[13px] font-bold tracking-[.14em] text-ink">
+                        {car.regNr}
+                      </span>
+                    </div>
+                    <p className="mt-3 border-t border-line pt-2.5 text-[13.5px] text-body-soft">
+                      {car.visits} behandlinger · sist {car.last}
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </>
         )}
-        {tab === "historikk" && <History />}
-        {tab === "kvitteringer" && <Receipts />}
-        {tab === "personvern" && <Privacy onDelete={() => setDeleteRequested(true)} />}
+
+        {tab === "historikk" &&
+          past.map((booking) => <BookingRow key={booking.reference} booking={booking} />)}
+
+        {tab === "kvitteringer" && (
+          <Card elevated flush>
+            {past.map((booking, index) => {
+              const { location, service, totals } = details(booking);
+              const organization = getOrganization(location.orgId);
+              return (
+                /* Pris og PDF-knapp ligger på egen linje under 900px. På én rad
+                   var de to ikke-krympbare, og tekstblokka ble presset til
+                   ~112px — tjenestenavnet brakk til fire-fem linjer. */
+                <div
+                  key={booking.reference}
+                  className={`flex flex-col gap-2.5 px-4 py-3.5 hz:flex-row hz:flex-wrap hz:items-center hz:gap-3.5 hz:px-5 hz:py-4 ${index > 0 ? "border-t border-line" : ""}`}
+                >
+                  <div className="min-w-0 hz:flex-1">
+                    <p className="font-heading text-[15.5px] font-semibold leading-[1.35] text-ink hz:text-[16px]">
+                      {service.name}
+                    </p>
+                    <p className="mt-1 text-[13px] tabular leading-[1.45] text-body-soft hz:text-[13.5px]">
+                      {booking.reference} · {formatIsoDateNumeric(isoFromOffset(booking.offset))}{" "}
+                      · {organization?.legalName}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-heading text-[19px] font-bold tabular text-navy">
+                      {formatKrPlain(totals.totalOre)}
+                    </span>
+                    <Button
+                      variant="secondary"
+                      className="shrink-0"
+                      onClick={() => downloadReceipt(booking)}
+                    >
+                      <ExternalLink aria-hidden className="size-4" strokeWidth={1.75} />
+                      PDF
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </Card>
+        )}
+
+        {tab === "personvern" && (
+          <>
+            <Card elevated>
+              <h2 className="mb-2 font-heading text-[18px] font-semibold text-ink hz:mb-2.5 hz:text-[19px]">
+                Dine data
+              </h2>
+              <p className="text-[15px] leading-[1.6] text-body-soft hz:text-[15.5px]">
+                Vi lagrer navn, mobilnummer, registreringsnummer og behandlingshistorikk.
+                Hver avdeling er en egen juridisk enhet og behandlingsansvarlig for sine
+                egne ordrer.
+              </p>
+              <div className="mt-4 flex flex-col gap-2.5 hz:mt-[18px] hz:flex-row hz:flex-wrap">
+                <Button variant="secondary" onClick={exportData}>
+                  <ExternalLink aria-hidden className="size-4" strokeWidth={1.75} />
+                  Last ned mine data
+                </Button>
+                <ButtonLink href="/kontakt" variant="secondary">
+                  Endre samtykker
+                </ButtonLink>
+              </div>
+            </Card>
+            <Card>
+              <h2 className="mb-2 font-heading text-[18px] font-semibold text-ink hz:mb-2.5 hz:text-[19px]">
+                Slett profilen min
+              </h2>
+              <p className="text-[15px] leading-[1.6] text-body-soft hz:text-[15.5px]">
+                Profilen anonymiseres umiddelbart. Kvitteringer må oppbevares i 6 år etter
+                bokføringsloven, men kobles fra deg som person.
+              </p>
+              {/* Sletting er irreversibel og lå tidligere ett trykk unna, rett
+                  under en identisk formatert seksjon. På touch er bomtrykk
+                  vesentlig mer sannsynlig enn med mus, så handlingen krever nå
+                  en bekreftelse. «Avbryt» ligger nederst der tommelen lander. */}
+              {confirmingDelete ? (
+                <div className="mt-4">
+                  <p role="alert" className="text-[15px] font-semibold leading-[1.5] text-ink">
+                    Er du sikker? Dette kan ikke angres.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2.5 hz:flex-row hz:flex-wrap">
+                    <Button variant="danger" onClick={() => setDeleted(true)}>
+                      Ja, slett profilen
+                    </Button>
+                    <Button variant="secondary" onClick={() => setConfirmingDelete(false)}>
+                      Avbryt
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="danger"
+                  className="mt-4 max-hz:w-full"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Slett profilen min
+                </Button>
+              )}
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function bookingDetails(booking: PortalBooking) {
-  const location = locations.find((item) => item.id === booking.locationId);
-  const service = services.find((item) => item.id === booking.serviceId);
-  return { location, service };
+function Login({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div className="mx-auto max-w-[440px] px-[clamp(16px,4vw,64px)] py-[clamp(32px,8vw,88px)]">
+      <h1 className="font-heading text-[26px] font-bold tracking-[-.02em] text-ink hz:text-[32px]">
+        Min side
+      </h1>
+      <p className="mt-2 text-[16.5px] leading-[1.55] text-body-soft hz:text-[17px]">
+        Se kommende avtaler, historikk per bil, kvitteringer og kundeklubb-status.
+      </p>
+      <Card elevated className="mt-6 grid gap-3 hz:mt-7">
+        <VippsButton block onClick={onLogin} />
+        <Button variant="secondary" size="lg" block onClick={onLogin}>
+          Engangskode på SMS
+        </Button>
+        <p className="text-center text-[13px] leading-[1.5] text-body-soft">
+          Passordfritt og trygt. Vi bruker Vipps til å bekrefte at det er deg.
+        </p>
+      </Card>
+      {/* Booking krever ikke innlogging. En ny kunde som lander her — f.eks. fra
+          kontaktsidens «Til Min side»-kort — møtte tidligere en logg inn-vegg
+          uten vei videre, fordi «bestiller» bare var brødtekst. */}
+      <div className="mt-5 rounded-card border border-line-strong bg-surface-alt p-4">
+        <p className="flex items-start gap-2.5 text-[14.5px] leading-[1.55] text-body-soft">
+          <ShieldCheck
+            aria-hidden
+            className="mt-px size-[18px] shrink-0 text-status-open"
+            strokeWidth={1.75}
+          />
+          Ny kunde? Du får automatisk en profil første gang du bestiller — kvitteringen
+          ligger her etterpå.
+        </p>
+        <ButtonLink href="/booking" variant="secondary" size="lg" block className="mt-3.5">
+          Bestill time
+        </ButtonLink>
+      </div>
+    </div>
+  );
 }
 
-function UpcomingBookings({
+function BookingRow({
+  booking,
   cancelled,
   onCancel,
 }: {
-  cancelled: string[];
-  onCancel: (reference: string) => void;
+  booking: PortalBooking;
+  cancelled?: boolean;
+  onCancel?: () => void;
 }) {
-  const upcoming = portalBookings.filter((booking) => booking.daysFromNow > 0);
+  const { location, service, chosenAddOns, totals } = details(booking);
+  const upcoming = booking.offset > 0;
+  const date = isoFromOffset(booking.offset);
+  const mapQuery = `Handz On ${location.name}, ${location.address}, ${location.postalCode} ${location.city}`;
+
   return (
-    <div className="space-y-3">
-      {upcoming.map((booking) => {
-        const { location, service } = bookingDetails(booking);
-        const isCancelled = cancelled.includes(booking.reference);
-        return (
-          <Card key={booking.reference} className={isCancelled ? "opacity-60" : ""}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-heading text-[17px] font-semibold text-ink">
-                  {service?.name}
-                </p>
-                <p className="mt-0.5 text-[14px] text-muted">
-                  {formatIsoDate(isoDateFromOffset(booking.daysFromNow))} kl.{" "}
-                  {booking.time}
-                </p>
-                <p className="text-[14px] text-muted">
-                  Handz On {location?.name} ·{" "}
-                  <span className="font-heading tracking-[0.05em]">
-                    {booking.regNr}
-                  </span>
-                </p>
-              </div>
-              <Badge>{isCancelled ? "Avbestilt" : "Bekreftet"}</Badge>
-            </div>
-            {!isCancelled ? (
-              <div className="mt-4 flex gap-2">
-                <Link
-                  href={`/booking?avdeling=${location?.slug}&tjeneste=${service?.slug}&regnr=${booking.regNr}&steg=tid`}
-                  className={smallButton}
-                >
-                  Endre tid
-                </Link>
-                <button
-                  type="button"
-                  className={dangerButton}
-                  onClick={() => onCancel(booking.reference)}
-                >
-                  Avbestill
-                </button>
-              </div>
+    <Card elevated={upcoming} className={cancelled ? "opacity-55" : undefined}>
+      {/* Prisen står i egen høyrekolonne fra 900px. På mobil ga det tittelen
+          ~198px, og «Vask ut- og innvendig – Premium» brakk til tre linjer —
+          derfor legger prisen seg som egen linje under teksten. */}
+      <div className="flex flex-col gap-2 hz:flex-row hz:flex-wrap hz:justify-between hz:gap-3.5">
+        <div className="min-w-0">
+          <div className="mb-1.5 flex flex-wrap items-center gap-2">
+            {cancelled ? (
+              <Tag variant="mute">Avbestilt</Tag>
+            ) : upcoming ? (
+              <Tag variant="open">Bekreftet</Tag>
             ) : (
-              <p className="mt-3 text-[14px] text-muted">
-                Avbestilt uten gebyr. Du får bekreftelse på SMS.
-              </p>
+              <Tag variant="mute">Utført</Tag>
             )}
-          </Card>
-        );
-      })}
-      <ButtonLink href="/booking" fullWidth className="mt-2">
-        Bestill ny time
-      </ButtonLink>
-    </div>
-  );
-}
-
-function History() {
-  const completed = portalBookings.filter((booking) => booking.daysFromNow < 0);
-  const byRegNr = useMemo(() => {
-    const groups = new Map<string, PortalBooking[]>();
-    for (const booking of completed) {
-      groups.set(booking.regNr, [...(groups.get(booking.regNr) ?? []), booking]);
-    }
-    return [...groups.entries()];
-  }, [completed]);
-
-  return (
-    <div className="space-y-6">
-      {byRegNr.map(([regNr, bookings]) => (
-        <section key={regNr} aria-label={`Historikk for ${regNr}`}>
-          <h2 className="font-heading text-[14px] font-semibold tracking-[0.05em] text-muted">
-            {regNr}
-          </h2>
-          <div className="mt-2 space-y-2">
-            {bookings.map((booking) => {
-              const { location, service } = bookingDetails(booking);
-              return (
-                <Card
-                  key={booking.reference}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div>
-                    <p className="font-heading text-[17px] font-semibold text-ink">
-                      {service?.name}
-                    </p>
-                    <p className="text-[14px] text-muted">
-                      {formatIsoDate(isoDateFromOffset(booking.daysFromNow))} · Handz
-                      On {location?.name}
-                    </p>
-                  </div>
-                  <p className="font-heading font-bold text-navy">
-                    {formatOre(booking.totalOre)}
-                  </p>
-                </Card>
-              );
-            })}
+            <span className="font-heading text-[13px] font-semibold tabular text-body-soft">
+              {booking.reference}
+            </span>
           </div>
-        </section>
-      ))}
-    </div>
-  );
-}
-
-function Receipts() {
-  const completed = portalBookings.filter((booking) => booking.daysFromNow < 0);
-  return (
-    <div className="space-y-3">
-      <p className="text-[14px] text-muted">
-        Kvitteringer utstedes av avdelingens juridiske enhet og oppbevares i 6 år.
-      </p>
-      {completed.map((booking) => {
-        const { location, service } = bookingDetails(booking);
-        const organization = location ? getOrganization(location.orgId) : undefined;
-        return (
-          <Card
-            key={booking.reference}
-            className="flex items-center justify-between gap-3"
-          >
-            <div>
-              <p className="font-heading text-[17px] font-semibold text-ink">
-                Kvittering {booking.reference}
-              </p>
-              <p className="text-[14px] text-muted">
-                {formatIsoDate(isoDateFromOffset(booking.daysFromNow))} ·{" "}
-                {service?.name}
-              </p>
-              {organization && (
-                <p className="text-[12.5px] text-muted-light">
-                  {organization.legalName} · org.nr{" "}
-                  {formatOrgNr(organization.orgNr)}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              className={smallButton}
-              onClick={() =>
-                window.alert(
-                  "Demo: PDF-kvittering lastes ned fra objektlageret i produksjon.",
-                )
-              }
-            >
-              Last ned PDF
-            </button>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
-
-function Privacy({ onDelete }: { onDelete: () => void }) {
-  return (
-    <div className="space-y-3">
-      <Card>
-        <h2 className="font-heading text-[17px] font-semibold text-ink">
-          Samtykker
-        </h2>
-        <ul className="mt-3 space-y-2 text-[15px] text-body">
-          <li className="flex justify-between gap-3">
-            <span>SMS-påminnelser om avtaler</span>
-            <Badge>Aktivt</Badge>
-          </li>
-          <li className="flex justify-between gap-3">
-            <span>Tilbud og kampanjer på e-post</span>
-            <Badge>Aktivt</Badge>
-          </li>
-        </ul>
-      </Card>
-      <Card>
-        <h2 className="font-heading text-[17px] font-semibold text-ink">
-          Dine data
-        </h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-muted">
-          Du kan når som helst eksportere dataene dine eller be om sletting.
-          Sletting anonymiserer profilen umiddelbart; bokføringspliktige
-          kvitteringer oppbevares i 6 år hos hver enkelt avdeling (egen juridisk
-          enhet) i tråd med bokføringsloven.
-        </p>
-        <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            className={smallButton}
-            onClick={() =>
-              window.alert(
-                "Demo: dataeksport (JSON) genereres og sendes på e-post i produksjon.",
-              )
-            }
-          >
-            Eksporter data
-          </button>
-          <button type="button" className={dangerButton} onClick={onDelete}>
-            Slett meg
-          </button>
+          <p className="font-heading text-[17px] font-semibold leading-[1.3] text-ink hz:text-[18px]">
+            {service.name}
+          </p>
+          <p className="mt-1 text-[14.5px] leading-[1.45] text-body-soft">
+            {formatIsoDate(date)} kl. {booking.time} · Handz On {location.name}
+          </p>
+          <p className="mt-[3px] text-[13.5px] leading-[1.45] text-body-soft">
+            {booking.regNr}
+            {chosenAddOns.length > 0
+              ? ` · ${chosenAddOns.map((addOn) => addOn.name).join(", ")}`
+              : ""}
+          </p>
         </div>
-      </Card>
-    </div>
+        <div className="flex items-baseline gap-2 hz:block hz:shrink-0 hz:text-right">
+          <p className="font-heading text-[20px] font-bold tabular text-navy hz:text-[22px]">
+            {formatKrPlain(totals.totalOre)}
+          </p>
+          <p className="text-[12.5px] text-body-soft hz:mt-0.5">inkl. mva</p>
+        </div>
+      </div>
+
+      {upcoming && !cancelled && (
+        /* Tre 38px-kontroller på én linje målte ~365px mot 302px tilgjengelig og
+           brakk, og «Avbestill» hadde `ml-auto` — den destruktive handlingen
+           havnet nederst til høyre, der tommelen lander. Nå tar «Endre tid»
+           full bredde på mobil, og ml-auto gjelder først fra 900px. */
+        <div className="mt-3.5 flex flex-wrap items-center gap-2 border-t border-line pt-3.5 hz:mt-4 hz:gap-2.5">
+          <ButtonLink
+            href={bookingHref(booking, "tid")}
+            variant="secondary"
+            className="max-hz:w-full"
+          >
+            Endre tid
+          </ButtonLink>
+          <ButtonExternal
+            variant="ghost"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+            aria-label="Veibeskrivelse (åpnes i ny fane)"
+          >
+            <MapPin aria-hidden className="size-4" strokeWidth={1.75} />
+            Veibeskrivelse
+          </ButtonExternal>
+          <Button variant="danger" className="hz:ml-auto" onClick={onCancel}>
+            Avbestill
+          </Button>
+        </div>
+      )}
+
+      {!upcoming && (
+        /* Historikken er sidens sterkeste kjøpssignal: kunden har allerede
+           kjøpt akkurat denne tjenesten. Lenken forhåndsutfyller avdeling,
+           tjeneste og bil, så gjenkjøp er ett trykk unna. */
+        <div className="mt-3.5 border-t border-line pt-3.5">
+          <ButtonLink
+            href={bookingHref(booking)}
+            variant="secondary"
+            className="max-hz:w-full"
+          >
+            Bestill på nytt
+          </ButtonLink>
+        </div>
+      )}
+
+      {cancelled && (
+        <p className="mt-3 text-[14px] leading-[1.5] text-body-soft">
+          Avbestilt uten gebyr. Du får bekreftelse på SMS.
+        </p>
+      )}
+    </Card>
   );
+}
+
+function downloadReceipt(booking: PortalBooking) {
+  const { location, service, chosenAddOns, totals } = details(booking);
+  const organization = getOrganization(location.orgId);
+  void downloadReceiptPdf({
+    reference: booking.reference,
+    sellerName: organization?.legalName ?? "Handz On Auto Care",
+    orgNr: formatOrgNr(organization?.orgNr ?? ""),
+    address: `${location.address}, ${location.postalCode} ${location.city}`,
+    branchName: `Handz On ${location.name}`,
+    when: `${formatIsoDate(isoFromOffset(booking.offset))} kl. ${booking.time}`,
+    regNr: booking.regNr,
+    vehicle: "",
+    lines: [
+      { label: service.name, amount: formatKrPlain(service.priceOre) },
+      ...chosenAddOns.map((addOn) => ({
+        label: addOn.name,
+        amount: formatKrPlain(addOn.priceOre),
+      })),
+    ],
+    vat: formatKrExact(totals.vatOre),
+    total: formatKrPlain(totals.totalOre),
+    issuedAt: formatIsoDateNumeric(isoFromOffset(booking.offset)),
+  });
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify({ kunde: "Kari Nordmann", bookinger: portalBookings }, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "handzon-mine-data.json";
+  anchor.click();
+  URL.revokeObjectURL(url);
 }

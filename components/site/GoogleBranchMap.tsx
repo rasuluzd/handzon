@@ -9,15 +9,30 @@
  * brukes et nøkkelfritt Google-innbygg som alltid rendrer: avdelingssiden viser
  * adressen (place), oversikten viser kart over Norge (et bredt firmasøk uten
  * nøkkel rendrer ikke pins). Sett nøkkelen på Vercel for pins i oversikten.
+ *
+ * MOBIL: kartet er en dyr passasjer — et eget dokument med egen JS, fliser og
+ * 15–40 MB minne i en egen renderer-prosess. `loading="lazy"` hjelper ikke når
+ * iframen står i første viewport, slik den gjorde på /avdelinger. Derfor er
+ * kartkolonnene nå `hidden hz:block` hos kallerne: en lazy iframe inne i et
+ * `display:none`-subtre kommer aldri inn i viewporten og lastes dermed aldri
+ * under 900px. Det er grunnen til at komponenten ikke selv har en mobilgren —
+ * den koster ingenting så lenge kalleren skjuler den.
  */
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export function GoogleBranchMap({
   query = "Handz On",
   mode = "search",
+  title = "Google Maps – Handz On-avdelinger",
+  className,
+  onLoad,
 }: {
   query?: string;
   mode?: "search" | "place";
+  /** Egen tittel per kart — en side kan ha flere, og de trenger hvert sitt navn. */
+  title?: string;
+  className?: string;
+  onLoad?: () => void;
 }) {
   // Nøkkelfritt innbygg rendrer ikke et bredt firmasøk — bruk adressen (place)
   // eller et geografisk søk (oversikt) som fallback.
@@ -28,12 +43,17 @@ export function GoogleBranchMap({
 
   return (
     <iframe
-      title="Google Maps – Handz On-avdelinger"
+      title={title}
       src={src}
       loading="lazy"
+      /* width/height gjør at nettleseren kan legge ut rammen før CSS-en
+         treffer, i stedet for å reflowe når iframen får sin faktiske boks. */
+      width={640}
+      height={480}
       allowFullScreen
       referrerPolicy="strict-origin-when-cross-origin"
-      className="h-full w-full border-0"
+      onLoad={onLoad}
+      className={["h-full w-full border-0", className].filter(Boolean).join(" ")}
     />
   );
 }

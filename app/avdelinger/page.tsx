@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHead, Section } from "@/components/site/Section";
 import { LocationList } from "./location-list";
 
 export const metadata: Metadata = {
@@ -9,14 +10,18 @@ export const metadata: Metadata = {
 
 export default function LocationsPage() {
   return (
-    <div className="mx-auto max-w-[1160px] px-[clamp(24px,4vw,48px)] pb-10 pt-7">
-      <p className="mb-2.5 font-heading text-[14px] font-semibold uppercase tracking-[0.1em] text-navy">
-        Avdelinger
-      </p>
-      <h1 className="mb-5 font-heading text-[32px] font-bold leading-[1.1] text-ink">
-        14 avdelinger i Norge
-      </h1>
-      <LocationList />
-    </div>
+    <>
+      {/* Ingressen var fire linjer på 390px og dyttet søkefeltet ned. Geografien
+          («fra Sørlandssenteret til Moa») står allerede i H1-ens «14 avdelinger»
+          — det som selger er at du slipper å vente. */}
+      <PageHead
+        eyebrow="Avdelinger"
+        title="14 avdelinger i Norge"
+        lead="De fleste ligger på et kjøpesenter, så du gjør ærendene mens vi vasker bilen."
+      />
+      <Section className="!pt-5 hz:!pt-7">
+        <LocationList />
+      </Section>
+    </>
   );
 }

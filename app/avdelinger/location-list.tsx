@@ -1,133 +1,188 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { MapPin, Search } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { BranchCard } from "@/components/site/BranchCard";
 import { GoogleBranchMap } from "@/components/site/GoogleBranchMap";
-import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
+import { rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import { locations } from "@/lib/mock-data";
 
 /**
- * Avdelingsoversikt (FR-1.2): kart + søk + «Nær meg». Et søk sorterer etter
- * nærhet i stedet for å tømme listen (rankLocations i lib/geo).
+ * Avdelingsoversikt (SCREENS.md § Avdelinger).
+ *
+ * DESKTOP: sticky kart til venstre, søk og liste til høyre. Hover eller
+ * tastaturfokus på et kort flytter kartet.
+ *
+ * MOBIL: ingen kart. Hover finnes ikke på touch, så kartet var låst til den
+ * første avdelingen for alltid — en bruker som søkte «Bergen» fikk fem
+ * Bergens-kort over et kart som viste Lambertseter. Samtidig lå iframen øverst
+ * i viewporten og gjorde `loading="lazy"` til en no-op, midt i kritisk vei.
+ * Mobilopplevelsen er derfor søk + «Nær meg» + rangert liste, og hvert kort
+ * lenker uansett videre til avdelingssiden sin, som har både kart og
+ * «Veibeskrivelse ↗». Et søk uten treff viser alle avdelinger med forklarende
+ * linje — aldri en tom liste.
  */
+
+/** Antall kort før «Vis alle avdelinger» på mobil. Fjorten kort på rad er ~3 700px. */
+const MOBILE_PREVIEW = 6;
+
 export function LocationList() {
   const [query, setQuery] = useState("");
   const [position, setPosition] = useState<GeoPoint | null>(null);
   const [locating, setLocating] = useState(false);
+  const [geoFailed, setGeoFailed] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  /** null = kartet følger toppen av trefflista. Settes kun av hover/fokus (desktop). */
+  const [pinnedSlug, setPinnedSlug] = useState<string | null>(null);
 
   const ranking = useMemo(
     () => rankLocations(locations, query, position),
     [query, position],
   );
 
+  /* Kartutsnittet UTLEDES i stedet for å lagres: uten pin følger det første
+     treff i lista, slik at et søk på «Bergen» faktisk flytter kartet til
+     Bergen. Tidligere kunne bare hover endre det, og søket lot kartet stå
+     igjen på feil by. */
+  const focus =
+    (pinnedSlug ? locations.find((item) => item.slug === pinnedSlug) : undefined) ??
+    ranking.results[0] ??
+    locations[0];
+
+  /* Kartet dempes mens nytt utsnitt lastes, i stedet for å blinke
+     (MOTION.md § Kartet). Signalet er iframens egen load-hendelse, ikke en
+     timer i en effekt — react-hooks/set-state-in-effect er på, og en fast
+     240ms gjettet uansett feil. Byttes mot panTo() når Maps JS API-nøkkelen
+     er inne. */
+  const [mapLoading, setMapLoading] = useState(false);
+
+  function focusBranch(slug: string) {
+    if (slug === focus.slug) return;
+    setPinnedSlug(slug);
+    setMapLoading(true);
+  }
+
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    setPosition(null);
+    setPinnedSlug(null);
+    setGeoFailed(false);
+  }
+
   async function handleLocate() {
     setLocating(true);
-    setPosition(await getBrowserPosition());
+    setGeoFailed(false);
+    const { getBrowserPosition } = await import("@/lib/geo");
+    const point = await getBrowserPosition();
     setLocating(false);
+    /* Avslag, timeout og usikker kontekst resolver alle null. Før nullstilte vi
+       søket uansett, uten feilmelding — knappen så rett og slett ødelagt ut, og
+       det brukeren hadde skrevet forsvant. Nå røres verken søk eller liste. */
+    if (!point) {
+      setGeoFailed(true);
+      return;
+    }
+    setPosition(point);
+    setQuery("");
+    setPinnedSlug(null);
+    setShowAll(false);
   }
 
   return (
-    <div>
-      <div className="mb-[18px] h-[clamp(260px,30vw,440px)] overflow-hidden rounded-[12px] border border-line-strong bg-[#eef1f5]">
-        <GoogleBranchMap />
-      </div>
-
-      <div className="mb-2 flex gap-2.5">
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setPosition(null);
-          }}
-          placeholder="By eller postnummer, f.eks. Bergen"
-          className="min-w-0 flex-1 rounded-[8px] border border-[rgba(20,32,58,0.16)] bg-surface px-4 py-3.5 text-[16px] text-ink outline-none placeholder:text-muted-light focus:border-navy"
-        />
-        <button
-          type="button"
-          onClick={handleLocate}
-          disabled={locating}
-          className="shrink-0 rounded-[8px] border border-navy/30 bg-surface px-4 font-heading text-[15px] font-semibold text-navy hover:bg-surface-alt disabled:opacity-60"
+    <div className="grid items-start gap-6 hz:grid-cols-2">
+      {/* display:none under 900px — ikke `visibility`. Det er det som gjør at
+          den lazy-lastede iframen aldri lastes på mobil. */}
+      <div className="hidden hz:sticky hz:top-[95px] hz:block">
+        <div
+          className={`hz-map h-[clamp(280px,40vw,500px)] overflow-hidden rounded-card-lg border border-line-strong bg-map-bg${mapLoading ? " is-loading" : ""}`}
         >
-          {locating ? "Finner…" : "📍 Nær meg"}
-        </button>
+          <GoogleBranchMap
+            mode="place"
+            query={`Handz On ${focus.name}, ${focus.address}, ${focus.postalCode} ${focus.city}`}
+            title={`Kart – Handz On ${focus.name}`}
+            onLoad={() => setMapLoading(false)}
+          />
+        </div>
+        <p className="mt-3 flex items-center gap-2.5 text-[13.5px] text-body-soft">
+          <MapPin aria-hidden className="size-4 shrink-0" strokeWidth={1.75} />
+          <span>
+            Viser <strong className="font-semibold text-ink">Handz On {focus.name}</strong> ·{" "}
+            {focus.center}
+          </span>
+        </p>
       </div>
-      {ranking.note && (
-        <p className="mx-0.5 mt-1.5 text-[14px] text-muted">{ranking.note}</p>
-      )}
 
-      <div className="mt-[18px] grid grid-cols-[repeat(auto-fit,minmax(330px,1fr))] gap-3.5">
-        {ranking.results.map((location) => (
-          <div
-            key={location.id}
-            className="rounded-[11px] border border-line-strong bg-surface p-5"
+      <div>
+        {/* Én rad på 390px ga søkefeltet ca. 150px synlig tekst — placeholderen
+            ble kuttet midt i ordet. Under 900px stables de i stedet, og begge
+            får full bredde som trykkflate. */}
+        <div className="mb-3 flex flex-col gap-2.5 hz:flex-row">
+          <label className="relative block hz:flex-1">
+            <span className="sr-only">Søk etter avdeling</span>
+            <Search
+              aria-hidden
+              className="pointer-events-none absolute left-[14px] top-1/2 size-[18px] -translate-y-1/2 text-muted"
+              strokeWidth={1.75}
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => handleQueryChange(event.target.value)}
+              placeholder="By eller postnummer"
+              className="min-h-[46px] w-full rounded-control border border-line-heavy bg-surface py-[11px] pl-11 pr-3.5 text-[16px] text-ink outline-none transition-[border-color,box-shadow] hover:border-body-soft focus:border-navy focus:shadow-[0_0_0_3px_var(--color-navy-14)]"
+            />
+          </label>
+          <Button
+            variant="secondary"
+            onClick={handleLocate}
+            loading={locating}
+            className="max-hz:w-full"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <Link
-                  href={`/avdelinger/${location.slug}`}
-                  className="font-heading text-[20px] font-semibold text-ink hover:text-navy"
-                >
-                  Handz On {location.name}
-                  {ranking.showDistance && "distanceKm" in location && (
-                    <span className="ml-2 text-[14px] font-normal text-navy">
-                      {formatDistance(location.distanceKm as number)}
-                    </span>
-                  )}
-                </Link>
-                <div className="mt-1 text-[14.5px] text-muted">
-                  {location.address}, {location.postalCode} {location.city}
-                </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    `Handz On ${location.name}`,
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-1 inline-block text-[13px] font-semibold text-navy hover:text-navy-hover"
-                >
-                  Åpne i Google Maps →
-                </a>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5 rounded-[6px] bg-navy/8 px-[11px] py-1.5">
-                <span className="h-[7px] w-[7px] rounded-full bg-navy" />
-                <span className="whitespace-nowrap text-[13px] font-semibold text-navy">
-                  Åpen nå
-                </span>
-              </div>
-            </div>
+            <MapPin aria-hidden className="size-4" strokeWidth={1.75} />
+            Nær meg
+          </Button>
+        </div>
 
-            {location.campaign && (
-              <div className="mt-3 rounded-[8px] bg-navy/6 px-3 py-2.5 text-[13.5px] font-semibold text-navy">
-                {location.campaign}
-              </div>
-            )}
+        <p aria-live="polite" className="mb-3 text-[13.5px] leading-[1.5] text-body-soft">
+          {geoFailed
+            ? "Fant ikke posisjonen din. Søk på by eller postnummer i stedet."
+            : ranking.note}
+        </p>
 
-            <div className="my-4 flex gap-7 border-y border-line py-4">
-              <div>
-                <div className="mb-1 text-[13px] text-muted-light">Man–fre</div>
-                <div className="font-heading text-[16px] font-medium text-body-strong">
-                  08–17{" "}
-                  <span className="font-normal text-muted-light">(tors. 18)</span>
-                </div>
-              </div>
-              <div>
-                <div className="mb-1 text-[13px] text-muted-light">Lør / søn</div>
-                <div className="font-heading text-[16px] font-medium text-body-strong">
-                  10–15 / stengt
-                </div>
-              </div>
-            </div>
-
-            <Link
-              href={`/booking?avdeling=${location.slug}`}
-              className="block w-full rounded-[8px] bg-navy py-[15px] text-center font-heading text-[16px] font-semibold text-white transition-colors hover:bg-navy-hover"
+        <div className="flex flex-col gap-2.5">
+          {ranking.results.map((location, index) => (
+            /* Wrapperen bærer to ting kortet ikke kan bære selv: den klipper
+               visningen på mobil (alle kortene blir i DOM, så søket treffer
+               fortsatt alle fjorten), og den gir kartet et tastaturspor —
+               onFocus bobler opp fra lenkene inne i kortet. */
+            <div
+              key={location.id}
+              onMouseEnter={() => focusBranch(location.slug)}
+              onFocus={() => focusBranch(location.slug)}
+              className={!showAll && index >= MOBILE_PREVIEW ? "max-hz:hidden" : undefined}
             >
-              Book her
-            </Link>
-          </div>
-        ))}
+              <BranchCard
+                location={location}
+                elevated
+                active={focus.slug === location.slug}
+                distanceKm={ranking.showDistance ? location.distanceKm : undefined}
+              />
+            </div>
+          ))}
+        </div>
+
+        {!showAll && ranking.results.length > MOBILE_PREVIEW && (
+          <Button
+            variant="secondary"
+            block
+            onClick={() => setShowAll(true)}
+            className="mt-2.5 hz:hidden"
+          >
+            Vis alle {ranking.results.length} avdelinger
+          </Button>
+        )}
       </div>
     </div>
   );

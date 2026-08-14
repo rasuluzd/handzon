@@ -9,8 +9,12 @@ import type { Vehicle } from "./types";
 /** Norske kjennemerker: to bokstaver (ikke I, M, O, Q, Æ, Ø, Å) + fem sifre. */
 const REG_NR_PATTERN = /^[A-Z]{2}\d{5}$/;
 
+/**
+ * Normaliserer mens brukeren skriver: versaler uten shift, ingen skilletegn,
+ * maks sju tegn (COMPONENTS.md § RegNr-felt).
+ */
 export function normalizeRegNr(input: string): string {
-  return input.toUpperCase().replace(/[\s-]/g, "").trim();
+  return input.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7);
 }
 
 export function isValidRegNr(input: string): boolean {
