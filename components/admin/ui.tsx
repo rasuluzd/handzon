@@ -11,7 +11,9 @@ import type { ComponentProps, ReactNode } from "react";
 
 /* ---------- Knapp ---------- */
 const btnBase =
-  "inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control border-[1.5px] " +
+  // `shrink-0`: knappene deler flex-rad med avdelingsvelgeren i toppbaren, og
+  // det er velgeren som skal gi fra seg plass — ikke etiketten på handlingen.
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control border-[1.5px] " +
   "border-transparent font-heading font-semibold transition-[background-color,border-color,color] duration-[120ms] " +
   "ease-standard active:translate-y-px disabled:cursor-not-allowed disabled:border-transparent " +
   "disabled:bg-disabled disabled:text-disabled-text disabled:translate-y-0";
@@ -304,16 +306,25 @@ export function AdSectionTitle({ children, className }: { children: ReactNode; c
 }
 
 export const adTh =
-  "whitespace-nowrap border-b border-line-strong bg-surface-alt px-3.5 py-[11px] text-left font-heading text-[10.5px] font-semibold uppercase tracking-[.16em] text-body-soft";
-export const adTd = "border-b border-line px-3.5 py-[13px] align-middle text-[14.5px] text-body";
+  "whitespace-nowrap border-b border-line-strong bg-surface-alt px-2.5 py-2.5 text-left font-heading text-[10.5px] font-semibold uppercase tracking-[.16em] text-body-soft " +
+  "admin-sm:px-3.5 admin-sm:py-[11px]";
+export const adTd =
+  "border-b border-line px-2.5 py-2.5 align-middle text-[14px] text-body " +
+  "admin-sm:px-3.5 admin-sm:py-[13px] admin-sm:text-[14.5px]";
 export const adNum = "whitespace-nowrap text-right font-heading font-semibold tabular text-ink";
 export const adName = "font-heading text-[15px] font-semibold text-ink";
 export const adMeta = "mt-0.5 text-[12.5px] text-body-soft";
 
+/**
+ * Datatabell. `min-w-[640px]` gjelder FRA 760px — under det skal tabellen få
+ * plass i skjermen, ikke tvinge fram sidelengs draing. Skjermene som bruker
+ * den skjuler sine sekundære kolonner med `max-admin-sm:hidden` og flytter
+ * innholdet inn i navnekolonnen i stedet.
+ */
 export function AdTable({ children }: { children: ReactNode }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse">{children}</table>
+      <table className="w-full border-collapse admin-sm:min-w-[640px]">{children}</table>
     </div>
   );
 }

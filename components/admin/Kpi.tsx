@@ -32,21 +32,24 @@ export function Kpi({
         : "text-body-soft";
 
   return (
+    /* Kompakt på telefon: kortene ligger to og to, og et 30px tall med 20px
+       sidepadding sprengte en 170px kolonne. Med 22px og 14px padding får alle
+       fire nøkkeltallene plass på én skjerm i stedet for fire. */
     <div
-      className={`rounded-card-lg border px-5 py-[18px] ${navy ? "on-dark border-navy bg-navy" : "border-line-strong bg-surface"}`}
+      className={`rounded-card-lg border px-3.5 py-3.5 admin-sm:px-5 admin-sm:py-[18px] ${navy ? "on-dark border-navy bg-navy" : "border-line-strong bg-surface"}`}
     >
       <p
-        className={`font-heading text-[11px] font-semibold uppercase tracking-[.16em] ${navy ? "text-on-navy-eyebrow" : "text-body-soft"}`}
+        className={`font-heading text-[10.5px] font-semibold uppercase tracking-[.14em] admin-sm:text-[11px] admin-sm:tracking-[.16em] ${navy ? "text-on-navy-eyebrow" : "text-body-soft"}`}
       >
         {label}
       </p>
       <p
-        className={`mt-2.5 font-heading text-[30px] font-bold leading-none tabular ${navy ? "text-white" : "text-ink"}`}
+        className={`mt-2 font-heading text-[22px] font-bold leading-none tabular admin-sm:mt-2.5 admin-sm:text-[30px] ${navy ? "text-white" : "text-ink"}`}
       >
         {value}
       </p>
       <p
-        className={`mt-2 flex items-center gap-[7px] text-[13px] ${navy ? "text-on-navy" : "text-body-soft"}`}
+        className={`mt-1.5 flex flex-wrap items-center gap-x-[7px] text-[12px] leading-[1.35] admin-sm:mt-2 admin-sm:text-[13px] ${navy ? "text-on-navy" : "text-body-soft"}`}
       >
         {delta != null && (
           <span className={`font-heading font-bold tabular ${navy ? "" : tone}`}>

@@ -103,6 +103,10 @@
   /* Sticky bunnbar kaster skygge OPPOVER */
   --shadow-sticky: 0 -10px 28px -16px rgba(20, 32, 58, 0.22);
   --shadow-hero: 0 24px 60px -28px rgba(20, 32, 58, 0.45);
+  /* Mobilvarianten. Hero-kortet ligger 40px oppå fotoet der, og den store
+     skyggen la en tydelig mørk stripe over bildekanten i stedet for å løfte
+     kortet. Kortere kast, halv styrke. */
+  --shadow-hero-soft: 0 8px 24px -16px rgba(20, 32, 58, 0.22);
   --shadow-app: 0 0 60px rgba(20, 32, 58, 0.14);
 
   /* ---------- Bevegelse ---------- */

@@ -32,7 +32,7 @@ export function Hero() {
       </div>
 
       <div
-        className="relative -mt-10 mx-4 mb-2 rounded-card-lg bg-surface p-5 pb-6 shadow-hero
+        className="relative -mt-10 mx-4 mb-2 rounded-card-lg bg-surface p-5 pb-6 shadow-hero-soft hz:shadow-hero
                    hz:mx-0 hz:mb-0 hz:mt-0 hz:my-[clamp(28px,4vw,56px)] hz:ml-[clamp(16px,4vw,64px)]
                    hz:max-w-[600px] hz:p-[clamp(30px,3.4vw,50px)]"
       >
@@ -69,7 +69,14 @@ export function Hero() {
           </ButtonLink>
         </div>
 
-        <p className="mt-4 flex items-center gap-2 border-t border-line pt-3.5 text-[13px] leading-[1.4] text-body-soft hz:mt-[26px] hz:gap-2.5 hz:pt-[18px] hz:text-[14px]">
+        {/* Innvendingene folk har i det de vurderer å trykke: hva koster det,
+            og hva om jeg ikke kan komme. Svaret står rett under knappen, ikke
+            tre skjermer ned. */}
+        <p className="mt-2.5 text-center text-[13px] leading-[1.4] text-body-soft hz:text-left">
+          Faste priser · gratis avbestilling til 24 timer før
+        </p>
+
+        <p className="mt-4 flex items-center gap-2 border-t border-line pt-3.5 text-[13px] leading-[1.4] text-body-soft hz:mt-[22px] hz:gap-2.5 hz:pt-[18px] hz:text-[14px]">
           <ShieldCheck
             aria-hidden
             className="size-[18px] shrink-0 text-status-open"

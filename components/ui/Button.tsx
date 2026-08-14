@@ -22,8 +22,14 @@ const variants = {
     "bg-navy text-white hover:bg-navy-hover active:bg-navy-active uppercase tracking-[.1em]",
   accent:
     "bg-red text-white hover:bg-red-hover active:bg-red-active uppercase tracking-[.1em]",
+  /* Hover-tinten legges som et BILDE-lag, ikke som background-color. `hover:bg-navy-06`
+     erstattet den ugjennomsiktige hvite flaten med en 6 % gjennomsiktig navy — på en
+     hvit side var det en svak tint, men på et navy-panel forsvant knappen helt:
+     navy tekst på navy. Et gradient-lag oppå `bg-surface` gir samme tint uten å
+     røre den hvite bunnen, uansett hva knappen ligger på. */
   secondary:
-    "bg-surface text-navy border-line-heavy hover:border-navy hover:bg-navy-06 uppercase tracking-[.1em]",
+    "bg-surface text-navy border-line-heavy hover:border-navy uppercase tracking-[.1em] " +
+    "hover:bg-[image:linear-gradient(var(--color-navy-06),var(--color-navy-06))]",
   ghost: "bg-transparent text-navy hover:bg-navy-06 px-3 normal-case tracking-normal",
   danger: "bg-transparent text-danger hover:bg-danger-bg px-3 normal-case tracking-normal",
   onNavy: "bg-white text-navy hover:bg-on-navy-bright uppercase tracking-[.1em]",

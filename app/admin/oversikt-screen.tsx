@@ -90,7 +90,7 @@ export function OversiktScreen() {
       />
 
       <AdminBody>
-        <div className="grid gap-3.5 admin-lg:grid-cols-4 admin-sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2.5 admin-sm:gap-3.5 admin-lg:grid-cols-4">
           <Kpi
             navy
             label="Omsetning i dag"

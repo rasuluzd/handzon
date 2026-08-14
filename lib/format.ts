@@ -82,24 +82,41 @@ const monthShortFormatter = new Intl.DateTimeFormat("nb-NO", { month: "short" })
  * Kalles kun fra klientkode (dagsstripa bygges i en effekt), så et oppslag på
  * dagens dato gir ingen forskjell mellom server og hydrering.
  */
-export function formatDayParts(isoDate: string): { wd: string; dd: number; mon: string } {
-  const date = new Date(`${isoDate}T12:00:00`);
+export function formatDayParts(isoDate: string): {
+  wd: string;
+  dd: number;
+  mon: string;
+  /** «I dag» / «I morgen» når det gjelder, ellers null. */
+  rel: string | null;
+} {
+  const probe = new Date(`${isoDate}T12:00:00`);
   const now = new Date();
   const dayDiff = Math.round(
-    (date.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0)) / 86_400_000,
+    (probe.setHours(0, 0, 0, 0) - now.setHours(0, 0, 0, 0)) / 86_400_000,
   );
   const day = new Date(`${isoDate}T12:00:00`);
-  const weekday =
-    dayDiff === 0
-      ? "I dag"
-      : dayDiff === 1
-        ? "I morgen"
-        : capitalizeFirst(weekdayShortFormatter.format(day).replace(".", ""));
   return {
-    wd: weekday,
+    wd: capitalizeFirst(weekdayShortFormatter.format(day).replace(".", "")),
     dd: day.getDate(),
     mon: monthShortFormatter.format(day).replace(".", ""),
+    rel: dayDiff === 0 ? "I dag" : dayDiff === 1 ? "I morgen" : null,
   };
+}
+
+const monthLongFormatter = new Intl.DateTimeFormat("nb-NO", { month: "long" });
+
+/**
+ * «15.–21. august» — overskriften over en uke i dagvelgeren. Krysser perioden
+ * et månedsskifte, navngis begge: «29. juli – 4. august».
+ */
+export function formatDayRange(fromIso: string, toIso: string): string {
+  const from = new Date(`${fromIso}T12:00:00`);
+  const to = new Date(`${toIso}T12:00:00`);
+  const toMonth = monthLongFormatter.format(to);
+  if (from.getMonth() === to.getMonth()) {
+    return `${from.getDate()}.–${to.getDate()}. ${toMonth}`;
+  }
+  return `${from.getDate()}. ${monthLongFormatter.format(from)} – ${to.getDate()}. ${toMonth}`;
 }
 
 export function formatDuration(minutes: number): string {

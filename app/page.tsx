@@ -229,7 +229,9 @@ export default function HomePage() {
                 </li>
               ))}
             </ul>
-            <ButtonLink href="/kundeklubb" variant="secondary" block className="hz:w-auto">
+            {/* `onNavy`, ikke `secondary`: dette er varianten som er laget for
+                navy flater (hvit knapp, navy tekst, hover mot on-navy-bright). */}
+            <ButtonLink href="/kundeklubb" variant="onNavy" block className="hz:w-auto">
               Bli medlem — gratis
             </ButtonLink>
           </div>

@@ -35,7 +35,14 @@ export function Top({
         <h1 className="font-heading text-[19px] font-semibold leading-[1.2] text-ink">{title}</h1>
         {sub && <p className="mt-0.5 text-[13px] text-body-soft">{sub}</p>}
       </div>
-      {right && <div className="ml-auto flex flex-wrap items-center gap-2.5">{right}</div>}
+      {/* På telefon legger kontrollene seg på ÉN rad under tittelen i stedet
+          for én rad hver. Avdelingsvelgeren og «Full rapport» tok 116px av
+          toppen alene — chrome før man så et eneste tall. */}
+      {right && (
+        <div className="ml-auto flex flex-wrap items-center gap-2 max-admin-sm:w-full admin-sm:gap-2.5">
+          {right}
+        </div>
+      )}
     </header>
   );
 }
@@ -55,7 +62,10 @@ export function BranchPicker({
       aria-label="Velg avdeling"
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      className={adSelect}
+      /* `min-w-0` er nødvendig: en <select> er ellers like bred som sin
+         lengste option («Hele kjeden (14 avdelinger)») og nekter å krympe i
+         en flex-rad. */
+      className={`${adSelect} min-w-0 flex-1 admin-sm:flex-none`}
     >
       <option value="alle">{allLabel}</option>
       {locations.map((location) => (

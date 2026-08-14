@@ -4,7 +4,14 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, Check, MapPin, Search } from "lucide-react";
+import {
+  Calendar,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Search,
+} from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card, Tick } from "@/components/ui/Card";
 import { Chip } from "@/components/ui/Chip";
@@ -20,6 +27,7 @@ import { formatDistance, getBrowserPosition, rankLocations } from "@/lib/geo";
 import type { GeoPoint } from "@/lib/geo";
 import {
   formatDayParts,
+  formatDayRange,
   formatDuration,
   formatIsoDate,
   formatIsoDateLower,
@@ -303,7 +311,8 @@ export function BookingWizard({
               amount: formatKr(stepPrice),
             }
           : null;
-  const sticky = state.step === 5 || state.step === 6 || confirm !== null;
+  const sticky =
+    state.step === 5 || state.step === 6 || state.step === 7 || confirm !== null;
 
   return (
     /* `flex flex-col` + `flex-1` på innholdet presser bunnbaren ned til
@@ -422,6 +431,31 @@ export function BookingWizard({
 
       {state.step === 5 && service && state.locationId && (
         <AddOnBar state={state} dispatch={dispatch} serviceName={service.name} />
+      )}
+
+      {/* Bekreftelsessiden får samme bunnbar som resten av trakten. De to
+          tingene folk faktisk vil gjøre etterpå — hente kvitteringen og se
+          bestillingen — lå nederst under et helt kvitteringskort. */}
+      {state.step === 7 && state.booking && (
+        <BottomBar
+          compact
+          label="Referanse"
+          value={state.booking.reference}
+          action={
+            <div className="flex flex-1 gap-2 hz:flex-none">
+              <Button
+                variant="secondary"
+                className="flex-1 hz:flex-none"
+                onClick={() => state.booking && downloadReceipt(state.booking)}
+              >
+                Last ned PDF
+              </Button>
+              <ButtonLink href="/min-side" className="flex-1 hz:flex-none">
+                Se på Min side
+              </ButtonLink>
+            </div>
+          }
+        />
       )}
 
       {state.step === 6 && location && service && (
@@ -919,8 +953,12 @@ function StepService({ state, dispatch, headingRef, direction }: StepProps) {
         </div>
       )}
 
+      {/* Chipene BREKKER linje, de ruller ikke. Sju kategorier måler ~680px i
+          et 358px vindu: som strimmel lå to av dem permanent utenfor kanten og
+          ble aldri oppdaget. To rader koster 52px én gang; skjulte kategorier
+          koster salg hver gang. */}
       <div
-        className="hz-scroll hz-snap -mx-[clamp(16px,4vw,40px)] mb-3.5 flex gap-2 overflow-x-auto scroll-pl-[clamp(16px,4vw,40px)] px-[clamp(16px,4vw,40px)] py-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)] hz:mb-[18px] hz:[mask-image:none]"
+        className="mb-3.5 flex flex-wrap gap-2 hz:mb-[18px]"
         role="group"
         aria-label="Filtrer på kategori"
       >
@@ -938,11 +976,16 @@ function StepService({ state, dispatch, headingRef, direction }: StepProps) {
         ))}
       </div>
 
-      {shown.map((item) => {
+      {shown.map((item, index) => {
         const items = services.filter((service) => service.category === item.label);
         return (
-          <div key={item.label}>
-            <p className="mb-2.5 mt-[26px] border-b border-line pb-2.5 font-heading text-[12px] font-semibold uppercase tracking-[.16em] text-body-soft first:mt-0">
+          /* Luften ligger på KATEGORI-diven, ikke på overskriften. `first:mt-0`
+             sto på <p>-en, som alltid er første barn i sin egen div — regelen
+             traff derfor hver eneste overskrift, og `mt-[26px]` slo aldri inn.
+             Resultatet var null avstand mellom forrige kategoris siste kort og
+             neste overskrift. */
+          <div key={item.label} className={index === 0 ? "" : "mt-7 hz:mt-8"}>
+            <p className="mb-2.5 border-b border-line pb-2.5 font-heading text-[12px] font-semibold uppercase tracking-[.16em] text-body-soft">
               {item.label}
             </p>
             <div className="flex flex-col gap-2.5">
@@ -958,6 +1001,11 @@ function StepService({ state, dispatch, headingRef, direction }: StepProps) {
                     title={service.name}
                     tags={
                       <>
+                        {/* Bevisst INGEN «Mest booket» her: sju av atten
+                            tjenester har `popular`, så merkelappen ville stått
+                            på sju rader samtidig. Et signal som gjelder 40 % av
+                            utvalget er ikke et signal — og rødt er reservert ett
+                            konverteringspunkt per skjerm. */}
                         {service.guarantee && <Tag>{service.guarantee}</Tag>}
                         {!available && <Tag variant="mute">Ikke tilgjengelig her</Tag>}
                       </>
@@ -1062,6 +1110,19 @@ function StepTime({ state, dispatch, headingRef, direction }: StepProps) {
   }, [state.locationId, state.serviceId, addOnKey]);
 
   const activeDay = selectedDay ?? days[0] ?? null;
+
+  /* Kalendersiden er UTLEDET av valgt dag, ikke lagret — da følger den med av
+     seg selv når «første ledige dag» lander i uke to, uten en effekt som
+     setter state (react-hooks/set-state-in-effect). Overstyringen settes bare
+     når brukeren selv bytter uke, og nullstilles så snart en dag velges. */
+  const [pageOverride, setPageOverride] = useState<number | null>(null);
+  const PAGE_SIZE = 7;
+  const pageCount = Math.max(1, Math.ceil(days.length / PAGE_SIZE));
+  const activeIndex = activeDay ? days.indexOf(activeDay) : -1;
+  const derivedPage = activeIndex >= 0 ? Math.floor(activeIndex / PAGE_SIZE) : 0;
+  const page = Math.min(pageCount - 1, Math.max(0, pageOverride ?? derivedPage));
+  const pageDays = days.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
   const slots = activeDay ? (slotsByDay[activeDay] ?? []) : [];
   const closed = activeDay
     ? Boolean(hoursForDay(location.openingHours, weekdayIndex(new Date(`${activeDay}T12:00:00`)))?.closed)
@@ -1077,41 +1138,75 @@ function StepTime({ state, dispatch, headingRef, direction }: StepProps) {
         direction={direction}
       />
 
-      <div className="hz-scroll -mx-[clamp(16px,4vw,40px)] flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-pl-[clamp(16px,4vw,40px)] px-[clamp(16px,4vw,40px)] pb-3.5 pt-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%-24px),transparent)] hz:gap-2.5 hz:pb-[18px] hz:[mask-image:none]">
-        {days.map((day) => {
-          const parts = formatDayParts(day);
-          const selected = activeDay === day;
-          const empty = !loading && (slotsByDay[day] ?? []).length === 0;
-          return (
-            <button
-              key={day}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => setSelectedDay(day)}
-              className={`w-[62px] shrink-0 snap-start cursor-pointer rounded-card border py-2.5 text-center transition-colors duration-[120ms] hz:w-[66px] hz:py-3 ${
-                selected
-                  ? "border-navy bg-navy"
-                  : "border-line-heavy bg-surface hover:border-navy"
-              } ${empty && !selected ? "opacity-45" : ""}`}
-            >
-              <span
-                className={`block whitespace-nowrap text-[11.5px] ${selected ? "text-on-navy" : "text-body-soft"} hz:text-[12.5px]`}
+      {/* Uke-kalender, ikke rullestrimmel. Fjorten dag-chips på rad måler
+          1052px i et 390px vindu: man så fem dager og måtte dra sidelengs 2,7
+          skjermbredder for resten — uten at noe fortalte at de fantes. Sju
+          kolonner får plass i bredden på enhver telefon, og ‹ › bytter uke.
+          Ingen horisontal rulling igjen i steget. */}
+      <div className="mb-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <button
+            type="button"
+            aria-label="Forrige uke"
+            disabled={page === 0}
+            onClick={() => setPageOverride(page - 1)}
+            className="-ml-2 grid size-11 shrink-0 place-items-center rounded-control text-navy transition-colors duration-[120ms] hover:bg-navy-06 disabled:text-neutral-300 disabled:hover:bg-transparent"
+          >
+            <ChevronLeft aria-hidden className="size-5" strokeWidth={2} />
+          </button>
+          <span
+            aria-live="polite"
+            className="min-w-0 truncate text-center font-heading text-[14.5px] font-semibold text-ink hz:text-[15.5px]"
+          >
+            {pageDays.length > 0 &&
+              formatDayRange(pageDays[0], pageDays[pageDays.length - 1])}
+          </span>
+          <button
+            type="button"
+            aria-label="Neste uke"
+            disabled={page >= pageCount - 1}
+            onClick={() => setPageOverride(page + 1)}
+            className="-mr-2 grid size-11 shrink-0 place-items-center rounded-control text-navy transition-colors duration-[120ms] hover:bg-navy-06 disabled:text-neutral-300 disabled:hover:bg-transparent"
+          >
+            <ChevronRight aria-hidden className="size-5" strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1.5 hz:gap-2">
+          {pageDays.map((day) => {
+            const parts = formatDayParts(day);
+            const selected = activeDay === day;
+            const empty = !loading && (slotsByDay[day] ?? []).length === 0;
+            return (
+              <button
+                key={day}
+                type="button"
+                aria-pressed={selected}
+                aria-label={`${formatIsoDate(day)}${empty ? " — ingen ledige tider" : ""}`}
+                onClick={() => {
+                  setSelectedDay(day);
+                  setPageOverride(null);
+                }}
+                className={`cursor-pointer rounded-card border px-0.5 py-2 text-center transition-colors duration-[120ms] hz:py-2.5 ${
+                  selected
+                    ? "border-navy bg-navy"
+                    : "border-line-heavy bg-surface hover:border-navy"
+                } ${empty && !selected ? "opacity-45" : ""}`}
               >
-                {parts.wd}
-              </span>
-              <span
-                className={`my-[3px] block font-heading text-[20px] font-bold leading-none tabular hz:text-[22px] ${selected ? "text-white" : "text-ink"}`}
-              >
-                {parts.dd}
-              </span>
-              <span
-                className={`block text-[11px] ${selected ? "text-on-navy" : "text-body-soft"} hz:text-[11.5px]`}
-              >
-                {parts.mon}
-              </span>
-            </button>
-          );
-        })}
+                <span
+                  className={`block truncate text-[10.5px] leading-none ${selected ? "text-on-navy" : "text-body-soft"} hz:text-[11.5px]`}
+                >
+                  {parts.rel === "I dag" ? "I dag" : parts.wd}
+                </span>
+                <span
+                  className={`mt-1.5 block font-heading text-[17px] font-bold leading-none tabular hz:text-[19px] ${selected ? "text-white" : "text-ink"}`}
+                >
+                  {parts.dd}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <p aria-live="polite" className="mb-3 text-[14.5px] text-body-soft hz:text-[15px]">
@@ -1468,6 +1563,51 @@ function PriceLine({
   );
 }
 
+/**
+ * Kvitterings-PDF-en. Ligger på modulnivå og ikke inne i steget, fordi både
+ * bekreftelsessiden og den sticky bunnbaren skal kunne utløse den — baren
+ * rendres av `BookingWizard`, ikke av `StepConfirmation`.
+ */
+function downloadReceipt(booking: Booking) {
+  const location = locations.find((item) => item.id === booking.locationId)!;
+  const service = services.find((item) => item.id === booking.serviceId)!;
+  const organization = getOrganization(location.orgId);
+  const chosenAddOns = addOns.filter((addOn) => booking.addOnIds.includes(addOn.id));
+  const servicePrice = getEffectivePrice(service.id, booking.locationId);
+  const addOnTotal = chosenAddOns.reduce((sum, addOn) => sum + addOn.priceOre, 0);
+  const discountOre = servicePrice + addOnTotal - booking.totalOre;
+  const lines: ReceiptLine[] = [
+    { label: service.name, amount: formatKrPlain(servicePrice) },
+    ...chosenAddOns.map((addOn) => ({
+      label: addOn.name,
+      amount: formatKrPlain(addOn.priceOre),
+    })),
+  ];
+  if (discountOre > 0) {
+    lines.push({
+      label: "Kundeklubb-rabatt (10 %)",
+      amount: `−${formatKrPlain(discountOre)}`,
+      accent: true,
+    });
+  }
+  void downloadReceiptPdf({
+    reference: booking.reference,
+    sellerName: organization?.legalName ?? "Handz On Auto Care",
+    orgNr: formatOrgNr(booking.orgNr),
+    address: `${location.address}, ${location.postalCode} ${location.city}`,
+    branchName: `Handz On ${location.name}`,
+    when: `${formatIsoDate(booking.date)} kl. ${booking.time}`,
+    regNr: booking.regNr,
+    vehicle: booking.vehicle
+      ? `${booking.vehicle.make} ${booking.vehicle.model}`.trim()
+      : "",
+    lines,
+    vat: formatKrExact(booking.vatOre),
+    total: formatKrPlain(booking.totalOre),
+    issuedAt: formatIsoDate(new Date().toISOString().slice(0, 10)),
+  });
+}
+
 /* ---------- Steg 7: bekreftelse ---------- */
 function StepConfirmation({
   booking,
@@ -1482,42 +1622,6 @@ function StepConfirmation({
   const service = services.find((item) => item.id === booking.serviceId)!;
   const organization = getOrganization(location.orgId);
   const chosenAddOns = addOns.filter((addOn) => booking.addOnIds.includes(addOn.id));
-
-  function handleDownload() {
-    const servicePrice = getEffectivePrice(service.id, booking.locationId);
-    const addOnTotal = chosenAddOns.reduce((sum, addOn) => sum + addOn.priceOre, 0);
-    const discountOre = servicePrice + addOnTotal - booking.totalOre;
-    const lines: ReceiptLine[] = [
-      { label: service.name, amount: formatKrPlain(servicePrice) },
-      ...chosenAddOns.map((addOn) => ({
-        label: addOn.name,
-        amount: formatKrPlain(addOn.priceOre),
-      })),
-    ];
-    if (discountOre > 0) {
-      lines.push({
-        label: "Kundeklubb-rabatt (10 %)",
-        amount: `−${formatKrPlain(discountOre)}`,
-        accent: true,
-      });
-    }
-    void downloadReceiptPdf({
-      reference: booking.reference,
-      sellerName: organization?.legalName ?? "Handz On Auto Care",
-      orgNr: formatOrgNr(booking.orgNr),
-      address: `${location.address}, ${location.postalCode} ${location.city}`,
-      branchName: `Handz On ${location.name}`,
-      when: `${formatIsoDate(booking.date)} kl. ${booking.time}`,
-      regNr: booking.regNr,
-      vehicle: booking.vehicle
-        ? `${booking.vehicle.make} ${booking.vehicle.model}`.trim()
-        : "",
-      lines,
-      vat: formatKrExact(booking.vatOre),
-      total: formatKrPlain(booking.totalOre),
-      issuedAt: formatIsoDate(new Date().toISOString().slice(0, 10)),
-    });
-  }
 
   return (
     <div>
@@ -1626,15 +1730,11 @@ function StepConfirmation({
         </ul>
       </Card>
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <Button variant="secondary" className="flex-1" onClick={handleDownload}>
-          Last ned kvittering
-        </Button>
-        <ButtonLink href="/min-side" className="flex-1">
-          Se på Min side
-        </ButtonLink>
-      </div>
-      <ButtonLink href="/" variant="ghost" block className="mt-3">
+      {/* «Last ned kvittering» og «Se på Min side» ligger i den sticky
+          bunnbaren, som i alle de andre stegene — de sto før nederst på en
+          side full av kvitteringsdetaljer, så man måtte rulle helt ned for å
+          finne dem. Her står bare den rolige veien ut. */}
+      <ButtonLink href="/" variant="ghost" block className="mt-5">
         Til forsiden
       </ButtonLink>
     </div>

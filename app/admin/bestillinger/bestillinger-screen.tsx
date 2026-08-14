@@ -133,7 +133,7 @@ export function BestillingerScreen() {
       />
 
       <AdminBody>
-        <div className="grid gap-3.5 admin-lg:grid-cols-4 admin-sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-2.5 admin-sm:gap-3.5 admin-lg:grid-cols-4">
           {[
             ["Ordrer", String(orders.length), "booket denne dagen"],
             ["Forventet omsetning", formatKr(sumOre), "inkl. mva"],
@@ -199,12 +199,16 @@ export function BestillingerScreen() {
             <AdTable>
               <thead>
                 <tr>
+                  {/* Under 760px vises bare tid, tjeneste og handlingen.
+                      Avdeling, kanal, sum og status flyttes ned i
+                      tjenestecellen — sju kolonner tvang tabellen 640px bred
+                      og gjorde dagens bestillinger til en sidelengs draing. */}
                   <th className={adTh}>Tid</th>
                   <th className={adTh}>Tjeneste og tillegg</th>
-                  {loc === "alle" && <th className={adTh}>Avdeling</th>}
-                  <th className={adTh}>Kanal</th>
-                  <th className={`${adTh} text-right`}>Sum</th>
-                  <th className={adTh}>Status</th>
+                  {loc === "alle" && <th className={`${adTh} max-admin-sm:hidden`}>Avdeling</th>}
+                  <th className={`${adTh} max-admin-sm:hidden`}>Kanal</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Sum</th>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Status</th>
                   <th className={`${adTh} text-right`} />
                 </tr>
               </thead>
@@ -214,7 +218,11 @@ export function BestillingerScreen() {
                   const status = statusFor(order);
                   return (
                     <tr key={order.id}>
-                      <td className={`${adTd} font-heading font-semibold tabular text-ink`}>
+                      {/* `whitespace-nowrap`: uten minstebredde på tabellen kan
+                          nettleseren klemme tidskolonnen og brekke «10:00». */}
+                      <td
+                        className={`${adTd} whitespace-nowrap align-top font-heading font-semibold tabular text-ink admin-sm:align-middle`}
+                      >
                         {String(order.hour).padStart(2, "0")}:00
                       </td>
                       <td className={adTd}>
@@ -225,13 +233,27 @@ export function BestillingerScreen() {
                             ? ` · ${order.addOnIds.map((id) => addOns.find((a) => a.id === id)?.name).join(", ")}`
                             : ""}
                         </p>
+                        {/* Det de skjulte kolonnene bar, samlet på én linje. */}
+                        <span className="mt-1.5 flex flex-wrap items-center gap-1.5 admin-sm:hidden">
+                          <AdTag variant={STATUS[status].variant} dot={status === "klar"}>
+                            {STATUS[status].label}
+                          </AdTag>
+                          <span className="font-heading text-[13px] font-semibold tabular text-ink">
+                            {formatKr(order.totalOre)}
+                          </span>
+                          {loc === "alle" && (
+                            <span className="text-[12.5px] text-body-soft">
+                              {locations.find((item) => item.slug === order.locationSlug)?.name}
+                            </span>
+                          )}
+                        </span>
                       </td>
                       {loc === "alle" && (
-                        <td className={adTd}>
+                        <td className={`${adTd} max-admin-sm:hidden`}>
                           {locations.find((item) => item.slug === order.locationSlug)?.name}
                         </td>
                       )}
-                      <td className={adTd}>
+                      <td className={`${adTd} max-admin-sm:hidden`}>
                         <div className="flex flex-wrap gap-1.5">
                           <AdTag variant="off">
                             {order.channel === "nett"
@@ -243,8 +265,10 @@ export function BestillingerScreen() {
                           {order.member && <AdTag>Medlem</AdTag>}
                         </div>
                       </td>
-                      <td className={`${adTd} ${adNum}`}>{formatKr(order.totalOre)}</td>
-                      <td className={adTd}>
+                      <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
+                        {formatKr(order.totalOre)}
+                      </td>
+                      <td className={`${adTd} max-admin-sm:hidden`}>
                         <AdTag variant={STATUS[status].variant} dot={status === "klar"}>
                           {STATUS[status].label}
                         </AdTag>
@@ -267,7 +291,23 @@ export function BestillingerScreen() {
                 })}
               </tbody>
               <tfoot>
-                <tr>
+                {/* Egen mobilrad: sumcellen er skjult under 760px, så uten
+                    denne forsvant dagens total helt. */}
+                <tr className="admin-sm:hidden">
+                  <td
+                    className={`${adTd} border-t border-line-strong bg-surface-alt`}
+                    colSpan={loc === "alle" ? 7 : 6}
+                  >
+                    <span className="flex items-center justify-between gap-3 font-heading font-bold text-ink">
+                      <span>
+                        Sum{" "}
+                        {day.toLocaleDateString("nb-NO", { day: "numeric", month: "long" })}
+                      </span>
+                      <span className="tabular">{formatKr(sumOre)}</span>
+                    </span>
+                  </td>
+                </tr>
+                <tr className="max-admin-sm:hidden">
                   <td
                     className={`${adTd} border-t border-line-strong bg-surface-alt font-heading font-bold text-ink`}
                     colSpan={loc === "alle" ? 4 : 3}
