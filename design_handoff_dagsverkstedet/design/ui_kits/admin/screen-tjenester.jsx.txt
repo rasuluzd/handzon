@@ -1,0 +1,289 @@
+/* Tjenester og priser — rediger navn, beskrivelse, pris, varighet, nivå og
+   tilgjengelighet. Kjedepris + lokalpris per avdeling. */
+(function () {
+const D = window.HZ_DATA;
+const S = window.HZ_SALES;
+const { ADIcon: I, ADBtn: Btn, ADTag: Tag, ADSwitch: Switch, ADField: Field, ADLupe: Lupe, ADBranch: Branch, ADTop: Top, ADPanel: Panel, ADEmpty: Empty } = window;
+
+const PHOTOS = ["utvendig-handvask-thumb.webp", "utvendig-vask-og-voks-thumb.webp", "innvendig-rens-thumb.webp", "polering-thumb.webp", "keramisk-coating-thumb.webp", "komplett-bilpleie-thumb.webp", "lyktesliping-thumb.webp", "motorvask-thumb.webp", "hero-hjulskift.webp"];
+
+function Tjenester({ loc, setLoc, onBurger, services, setServices, toast }) {
+  const [q, setQ] = React.useState("");
+  const [cat, setCat] = React.useState("alle");
+  const [editId, setEditId] = React.useState(null);
+  const [draft, setDraft] = React.useState(null);
+
+  const locName = loc === "alle" ? "Kjedepris (standard)" : "Handz On " + D.locations.find((l) => l.slug === loc).name;
+  const dirty = services.filter((s) => s.dirty).length;
+
+  let list = services.filter((s) => (cat === "alle" || s.cat === cat));
+  if (q) {
+    const t = q.toLowerCase();
+    list = list.filter((s) => (s.name + " " + s.catLabel + " " + s.desc).toLowerCase().includes(t));
+  }
+
+  const open = (s) => { setEditId(s.id); setDraft({ ...s, localPrices: { ...(s.localPrices || {}) } }); };
+  const close = () => { setEditId(null); setDraft(null); };
+
+  function save() {
+    setServices((prev) => prev.map((s) => (s.id === draft.id ? { ...draft, dirty: true } : s)));
+    toast({ title: "Tjenesten er lagret", text: `${draft.name} — endringene er synlige på nettsiden og i bookingen.` });
+    close();
+  }
+
+  function toggleActive(id, on) {
+    setServices((prev) => prev.map((s) => (s.id === id ? { ...s, active: on, dirty: true } : s)));
+    const svc = services.find((s) => s.id === id);
+    toast({ variant: "info", title: on ? "Tjenesten er aktivert" : "Tjenesten er skjult", text: on ? `${svc.name} kan bookes igjen.` : `${svc.name} vises ikke i bookingen før den aktiveres.` });
+  }
+
+  function addNew() {
+    const id = "ny-tjeneste-" + (services.length + 1);
+    const fresh = {
+      id, name: "", cat: "bilvask", catLabel: "Bilvask", price: 0, min: 30, level: "", guarantee: "",
+      desc: "", img: D.PHOTOS + PHOTOS[0], hero: D.PHOTOS + "utvendig-handvask.webp",
+      active: false, popular: false, localPrices: {}, isNew: true,
+    };
+    setServices((prev) => [...prev, fresh]);
+    setEditId(id);
+    setDraft(fresh);
+  }
+
+  function remove() {
+    setServices((prev) => prev.filter((s) => s.id !== draft.id));
+    toast({ variant: "info", title: "Tjenesten er fjernet", text: `${draft.name || "Ny tjeneste"} er tatt ut av katalogen.` });
+    close();
+  }
+
+  function publishAll() {
+    setServices((prev) => prev.map((s) => ({ ...s, dirty: false })));
+    toast({ title: `${dirty} ${dirty === 1 ? "endring" : "endringer"} publisert`, text: "Prisene er nå live på handzon.no og i bookingflyten." });
+  }
+
+  const localPrice = (s) => (loc !== "alle" && s.localPrices && s.localPrices[loc] != null ? s.localPrices[loc] : null);
+
+  return (
+    <React.Fragment>
+      <Top title="Tjenester og priser" sub={`${services.length} tjenester i katalogen · ${locName}`} onBurger={onBurger}
+           right={<React.Fragment>
+             <Branch value={loc} onChange={setLoc} allLabel="Kjedepris (standard)" />
+             {dirty > 0 && <Btn variant="s" onClick={publishAll}>Publiser {dirty} {dirty === 1 ? "endring" : "endringer"}</Btn>}
+             <Btn onClick={addNew}><I n="sparkles" s={16} />Ny tjeneste</Btn>
+           </React.Fragment>} />
+
+      <div className="ad-body">
+        {dirty > 0 && (
+          <div className="ad-card" style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderColor: "var(--status-closed)", background: "var(--status-closed-bg)", flexWrap: "wrap" }}>
+            <span style={{ color: "var(--status-closed)" }}><I n="info" s={20} /></span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontSize: 15, fontWeight: 600, color: "var(--ink)" }}>
+                {dirty} {dirty === 1 ? "endring" : "endringer"} er ikke publisert
+              </div>
+              <p className="ad-note" style={{ marginTop: 2 }}>Endringene er lagret som utkast. De vises ikke for kunden før du publiserer.</p>
+            </div>
+            <Btn style={{ marginLeft: "auto" }} onClick={publishAll}>Publiser nå</Btn>
+          </div>
+        )}
+
+        <div className="ad-card" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", padding: 14 }}>
+          <label className="ad-search" style={{ flex: 1, minWidth: 220 }}>
+            <Lupe />
+            <input className="ad-input" type="search" value={q} placeholder="Søk i tjenestenavn eller beskrivelse"
+                   aria-label="Søk i tjenester" onChange={(e) => setQ(e.target.value)} />
+          </label>
+          <select className="ad-select" aria-label="Kategori" value={cat} onChange={(e) => setCat(e.target.value)}>
+            <option value="alle">Alle kategorier</option>
+            {D.categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+
+        {list.length === 0 ? (
+          <Empty title="Ingen tjenester traff søket" text="Prøv et annet ord, eller nullstill kategorifilteret."
+                 action={<Btn variant="s" onClick={() => { setQ(""); setCat("alle"); }}>Vis alle tjenester</Btn>} />
+        ) : (
+          <div className="ad-card ad-card--flush">
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    <th>Tjeneste</th><th>Kategori</th><th className="num">Varighet</th>
+                    <th className="num">{loc === "alle" ? "Kjedepris" : "Pris her"}</th>
+                    <th className="num">Solgt 30 d.</th><th>Status</th><th className="act" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((s) => {
+                    const lp = localPrice(s);
+                    return (
+                      <tr key={s.id}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <img className="ad-thumb" src={s.img} alt="" />
+                            <div style={{ minWidth: 0 }}>
+                              <div className="nm">{s.name || "Uten navn"}</div>
+                              <div className="meta" style={{ maxWidth: "42ch", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.desc || "Ingen beskrivelse"}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{s.catLabel}</td>
+                        <td className="num">{D.dur(s.min)}</td>
+                        <td className="num">
+                          {lp != null ? (
+                            <React.Fragment>
+                              <div>{D.kr(lp)}</div>
+                              <div className="meta" style={{ textDecoration: "line-through" }}>{D.kr(s.price)}</div>
+                            </React.Fragment>
+                          ) : D.kr(s.price)}
+                        </td>
+                        <td className="num">{s.sold30}</td>
+                        <td>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {s.active ? <Tag variant="ok" dot>Aktiv</Tag> : <Tag variant="off">Skjult</Tag>}
+                            {s.dirty && <Tag variant="warn">Utkast</Tag>}
+                            {lp != null && <Tag>Lokalpris</Tag>}
+                            {s.guarantee && <Tag>{s.guarantee}</Tag>}
+                          </div>
+                        </td>
+                        <td className="act">
+                          <div style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+                            <Switch id={`akt-${s.id}`} checked={s.active} onChange={(on) => toggleActive(s.id, on)} />
+                            <Btn variant="s" size="sm" onClick={() => open(s)}>Rediger</Btn>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <p className="ad-note">
+          Kjedeprisen er standard for alle 14 avdelinger. Velg en avdeling øverst for å sette lokalpris — den overstyrer kjedeprisen bare der. Tjenester uten lokalpris følger kjedeprisen automatisk.
+        </p>
+      </div>
+
+      {draft && (
+        <Panel
+          title={draft.isNew ? "Ny tjeneste" : draft.name}
+          sub={draft.isNew ? "Fyll ut, aktiver, og publiser når du er klar." : `${draft.catLabel} · ${D.dur(draft.min)} · ${D.kr(draft.price)}`}
+          onClose={close}
+          foot={<React.Fragment>
+            <Btn variant="d" size="sm" onClick={remove}>Slett tjenesten</Btn>
+            <Btn variant="s" onClick={close}>Avbryt</Btn>
+            <Btn onClick={save} disabled={!draft.name.trim() || !draft.price}>Lagre</Btn>
+          </React.Fragment>}
+        >
+          <Field label="Navn" id="t-navn" help="Skriv som i katalogen: «Vask ut-/innvendig – Premium».">
+            <input id="t-navn" className="ad-input" value={draft.name} placeholder="Vask utvendig – Premium"
+                   onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
+          </Field>
+
+          <Field label="Kategori" id="t-kat">
+            <select id="t-kat" className="ad-select" style={{ width: "100%" }} value={draft.cat}
+                    onChange={(e) => setDraft({ ...draft, cat: e.target.value, catLabel: D.categories.find((c) => c.value === e.target.value).label })}>
+              {D.categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </Field>
+
+          <Field label="Beskrivelse" id="t-desc" help="To linjer maks. Konkret om hva som gjøres — ikke salgsspråk.">
+            <textarea id="t-desc" className="ad-textarea" style={{ minHeight: 90 }} value={draft.desc}
+                      placeholder="Grundig håndvask med to-bøtte-metode, felgvask og skånsom tørk – uten svirvelmerker."
+                      onChange={(e) => setDraft({ ...draft, desc: e.target.value })} />
+          </Field>
+
+          <div className="ad-row2" style={{ marginTop: 16 }}>
+            <Field label="Kjedepris (kr inkl. mva)" id="t-pris">
+              <input id="t-pris" className="ad-input ad-input--num" type="number" min="0" step="10" value={draft.price || ""}
+                     onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} />
+            </Field>
+            <Field label="Varighet (minutter)" id="t-min" help={D.dur(draft.min)}>
+              <input id="t-min" className="ad-input ad-input--num" type="number" min="10" step="5" value={draft.min}
+                     onChange={(e) => setDraft({ ...draft, min: Number(e.target.value) })} />
+            </Field>
+          </div>
+
+          <div className="ad-row2">
+            <Field label="Nivå" id="t-niv" help="Basic, Premium eller Pro. Kan stå tomt.">
+              <input id="t-niv" className="ad-input" value={draft.level || ""} placeholder="Premium"
+                     onChange={(e) => setDraft({ ...draft, level: e.target.value })} />
+            </Field>
+            <Field label="Garanti" id="t-gar" help="Vises som merkelapp. F.eks. «6 års garanti».">
+              <input id="t-gar" className="ad-input" value={draft.guarantee || ""} placeholder="6 års garanti"
+                     onChange={(e) => setDraft({ ...draft, guarantee: e.target.value })} />
+            </Field>
+          </div>
+
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+            <div className="ad-secttl">Bilde</div>
+            <div className="ad-pickers">
+              {PHOTOS.map((p) => {
+                const src = D.PHOTOS + p;
+                return (
+                  <button type="button" key={p} className={`ad-picker${draft.img === src ? " on" : ""}`}
+                          onClick={() => setDraft({ ...draft, img: src })} aria-label={p}>
+                    <img src={src} alt="" />
+                  </button>
+                );
+              })}
+            </div>
+            <p className="ad-help">Bildene ligger i mediebiblioteket. Nye bilder lastes opp under Innhold.</p>
+          </div>
+
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+            <div className="ad-secttl">Synlighet</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Switch id="t-akt" checked={draft.active} onChange={(v) => setDraft({ ...draft, active: v })} label="Kan bookes på nett" />
+              <Switch id="t-pop" checked={!!draft.popular} onChange={(v) => setDraft({ ...draft, popular: v })} label="Vis under «Populære tjenester» på forsiden" />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+            <div className="ad-secttl">Lokalpriser</div>
+            <p className="ad-help" style={{ marginBottom: 12 }}>
+              Tomt felt betyr at avdelingen følger kjedeprisen {D.kr(draft.price || 0)}. Sett 0 for å skjule tjenesten i den avdelingen.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {D.locations.map((l) => (
+                <div key={l.slug} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ flex: 1, fontSize: 14.5, color: "var(--body)" }}>Handz On {l.name}</span>
+                  <input className="ad-input ad-input--num" type="number" min="0" step="10" style={{ width: 120 }}
+                         placeholder={String(draft.price || 0)}
+                         value={draft.localPrices[l.slug] != null ? draft.localPrices[l.slug] : ""}
+                         onChange={(e) => {
+                           const next = { ...draft.localPrices };
+                           if (e.target.value === "") delete next[l.slug]; else next[l.slug] = Number(e.target.value);
+                           setDraft({ ...draft, localPrices: next });
+                         }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </Panel>
+      )}
+    </React.Fragment>
+  );
+}
+
+/* Startkatalogen bygges fra designsystemets data + salgstall siste 30 dager. */
+function initialServices() {
+  const to = new Date(); to.setHours(12, 0, 0, 0);
+  const from = S.addDays(to, -30);
+  const orders = S.ordersInRange("alle", from, to);
+  return D.services.map((s) => {
+    const localPrices = {};
+    for (const l of D.locations) {
+      const p = D.priceAt(l.slug, s.id);
+      if (p === null) localPrices[l.slug] = 0;
+      else if (p !== s.price) localPrices[l.slug] = p;
+    }
+    return {
+      ...s, active: true, dirty: false, localPrices,
+      sold30: orders.filter((o) => o.serviceId === s.id).length,
+    };
+  });
+}
+
+Object.assign(window, { ADTjenester: Tjenester, adInitialServices: initialServices });
+})();

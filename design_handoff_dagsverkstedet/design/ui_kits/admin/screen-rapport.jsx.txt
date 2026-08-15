@@ -1,0 +1,264 @@
+/* Salgsrapport — dag, uke, måned og år, per avdeling eller hele kjeden.
+   Sammenligning mot forrige tilsvarende periode. CSV-eksport. */
+(function () {
+const D = window.HZ_DATA;
+const S = window.HZ_SALES;
+const { ADIcon: I, ADBtn: Btn, ADSeg: Seg, ADTag: Tag, ADKpi: Kpi, ADChart: Chart, ADBranch: Branch, ADTop: Top } = window;
+
+const PERIODS = [["dag", "Dag"], ["uke", "Uke"], ["maaned", "Måned"], ["aar", "År"]];
+const PREV_LABEL = { dag: "mot dagen før", uke: "mot forrige uke", maaned: "mot forrige måned", aar: "mot i fjor" };
+
+function Rapport({ loc, setLoc, onBurger, toast }) {
+  const [period, setPeriod] = React.useState("maaned");
+  const [anchor, setAnchor] = React.useState(() => { const d = new Date(); d.setHours(12, 0, 0, 0); return d; });
+
+  const rep = React.useMemo(() => S.report(loc, period, anchor), [loc, period, anchor]);
+  const locName = loc === "alle" ? "Hele kjeden" : "Handz On " + D.locations.find((l) => l.slug === loc).name;
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const atEnd = rep.range.to >= today;
+
+  const chartTitle = { dag: "Omsetning per time", uke: "Omsetning per dag", maaned: "Omsetning per dag", aar: "Omsetning per måned" }[period];
+
+  function exportCsv() {
+    const text = S.csv(rep, locName, rep.range.label);
+    const blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `handzon-salg-${loc}-${period}-${S.iso(rep.range.from)}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast({ title: "Rapport lastet ned", text: `${rep.orders.length} ordrelinjer som CSV, klar for regnskap.` });
+  }
+
+  const maxCat = Math.max(...rep.categories.map((c) => c.sum), 1);
+
+  return (
+    <React.Fragment>
+      <Top title="Salgsrapport" sub={`${locName} · ${rep.range.label}`} onBurger={onBurger}
+           right={<React.Fragment>
+             <Branch value={loc} onChange={setLoc} />
+             <Btn variant="s" onClick={exportCsv}><I n="external-link" s={16} />Eksporter CSV</Btn>
+           </React.Fragment>} />
+
+      <div className="ad-body">
+        <div className="ad-card" style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: 14 }}>
+          <Seg label="Periode" options={PERIODS} value={period} onChange={setPeriod} />
+          <div className="ad-period">
+            <button type="button" className="ad-nav-arrow" aria-label="Forrige periode" onClick={() => setAnchor(S.shift(period, anchor, -1))}>←</button>
+            <span className="ad-period__lbl">{rep.range.label}</span>
+            <button type="button" className="ad-nav-arrow" aria-label="Neste periode" disabled={atEnd} onClick={() => setAnchor(S.shift(period, anchor, 1))}>→</button>
+          </div>
+          <Btn variant="g" size="sm" style={{ marginLeft: "auto" }} onClick={() => { const d = new Date(); d.setHours(12, 0, 0, 0); setAnchor(d); }}>
+            Hopp til i dag
+          </Btn>
+        </div>
+
+        <div className="ad-kpis">
+          <Kpi navy label="Omsetning inkl. mva" value={D.kr(rep.now.sum)} delta={S.pct(rep.now.sum, rep.before.sum)} hint={PREV_LABEL[period]} />
+          <Kpi label="Antall ordrer" value={rep.now.count} delta={S.pct(rep.now.count, rep.before.count)} hint={PREV_LABEL[period]} />
+          <Kpi label="Snittordre" value={D.kr(rep.now.avg)} delta={S.pct(rep.now.avg, rep.before.avg)} hint={PREV_LABEL[period]} />
+          <Kpi label="Medlemsandel" value={`${Math.round(rep.now.memberShare * 100)} %`} delta={S.pct(rep.now.memberShare, rep.before.memberShare)} hint={PREV_LABEL[period]} />
+        </div>
+
+        <div className="ad-card">
+          <div className="ad-card__head">
+            <div>
+              <div className="ad-card__title">{chartTitle}</div>
+              <p className="ad-card__sub">{locName} · {rep.range.label} · sammenlignet med {rep.prevRange.label}</p>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "var(--font-heading)", fontSize: 22, fontWeight: 700, color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{D.kr(rep.now.sum)}</div>
+              <div style={{ fontSize: 12.5, color: "var(--body-soft)" }}>herav mva. {rep.now.vat.toFixed(2).replace(".", ",")} kr</div>
+            </div>
+          </div>
+          <Chart data={rep.buckets} />
+        </div>
+
+        <div className="ad-grid2">
+          <div className="ad-card ad-card--flush">
+            <div className="ad-card__head" style={{ padding: "20px 20px 0", marginBottom: 14 }}>
+              <div>
+                <div className="ad-card__title">Tjenester i perioden</div>
+                <p className="ad-card__sub">Rangert etter omsetning. Tilleggssalg vises for seg.</p>
+              </div>
+            </div>
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr><th>Tjeneste</th><th className="num">Antall</th><th className="num">Omsetning</th><th style={{ width: 110 }}>Andel</th></tr>
+                </thead>
+                <tbody>
+                  {rep.services.map((r) => (
+                    <tr key={r.service.id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <img className="ad-thumb" src={r.service.img} alt="" />
+                          <div>
+                            <div className="nm">{r.service.name}</div>
+                            <div className="meta">{r.service.catLabel} · ca. {D.dur(r.service.min)}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="num">{r.count}</td>
+                      <td className="num">{D.kr(r.sum)}</td>
+                      <td>
+                        <div className="ad-share"><i style={{ width: `${(r.sum / (rep.services[0] ? rep.services[0].sum : 1)) * 100}%` }} /></div>
+                        <div className="meta" style={{ marginTop: 4 }}>{Math.round((r.sum / (rep.now.sum || 1)) * 100)} %</div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!rep.services.length && <tr><td colSpan="4"><p className="ad-note">Ingen salg i denne perioden.</p></td></tr>}
+                </tbody>
+                {rep.services.length > 0 && (
+                  <tfoot className="ad-table__foot">
+                    <tr>
+                      <td>Sum tjenester</td>
+                      <td className="num">{rep.now.count}</td>
+                      <td className="num">{D.kr(rep.services.reduce((n, r) => n + r.sum, 0))}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div className="ad-card">
+              <div className="ad-card__head"><div className="ad-card__title">Kategorier</div></div>
+              <div className="ad-list">
+                {rep.categories.map((r) => (
+                  <div className="ad-li" key={r.cat.value} style={{ alignItems: "flex-start" }}>
+                    <div className="ad-li__bd">
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                        <span className="ad-li__t">{r.cat.label}</span>
+                        <span className="ad-li__n">{D.kr(r.sum)}</span>
+                      </div>
+                      <div className="ad-share" style={{ marginTop: 8 }}><i style={{ width: `${(r.sum / maxCat) * 100}%` }} /></div>
+                      <div className="ad-li__m" style={{ marginTop: 5 }}>{r.count} ordrer · {Math.round((r.sum / (rep.now.sum || 1)) * 100)} % av omsetningen</div>
+                    </div>
+                  </div>
+                ))}
+                {!rep.categories.length && <p className="ad-note">Ingen data.</p>}
+              </div>
+            </div>
+
+            <div className="ad-card">
+              <div className="ad-card__head">
+                <div>
+                  <div className="ad-card__title">Tilleggssalg</div>
+                  <p className="ad-card__sub">Festerate {Math.round(rep.now.attachRate * 100)} % · {D.kr(rep.now.addRevenue)} i perioden</p>
+                </div>
+              </div>
+              <div className="ad-list">
+                {rep.addOns.map((r) => (
+                  <div className="ad-li" key={r.addOn.id}>
+                    <div className="ad-li__bd">
+                      <div className="ad-li__t">{r.addOn.name}</div>
+                      <div className="ad-li__m">{r.count} solgt · {D.kr(r.addOn.price)} per stk.</div>
+                    </div>
+                    <span className="ad-li__n">{D.kr(r.sum)}</span>
+                  </div>
+                ))}
+                {!rep.addOns.length && <p className="ad-note">Ingen tillegg solgt i perioden.</p>}
+              </div>
+            </div>
+
+            <div className="ad-card">
+              <div className="ad-card__head"><div className="ad-card__title">Bestillingskanal</div></div>
+              <div className="ad-list">
+                {rep.channels.map((r) => (
+                  <div className="ad-li" key={r.id}>
+                    <div className="ad-li__bd">
+                      <div className="ad-li__t">{r.label}</div>
+                      <div className="ad-li__m">{Math.round((r.count / (rep.now.count || 1)) * 100)} % av ordrene</div>
+                    </div>
+                    <span className="ad-li__n">{D.kr(r.sum)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {loc === "alle" && rep.locations.length > 1 && (
+          <div className="ad-card ad-card--flush">
+            <div className="ad-card__head" style={{ padding: "20px 20px 0", marginBottom: 14 }}>
+              <div>
+                <div className="ad-card__title">Avdelinger i perioden</div>
+                <p className="ad-card__sub">Klikk en avdeling for å filtrere hele rapporten.</p>
+              </div>
+            </div>
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr><th>Avdeling</th><th>Region</th><th className="num">Ordrer</th><th className="num">Snittordre</th><th className="num">Omsetning</th><th className="act" /></tr>
+                </thead>
+                <tbody>
+                  {rep.locations.map((r) => (
+                    <tr key={r.loc.slug}>
+                      <td>
+                        <div className="nm">Handz On {r.loc.name}</div>
+                        <div className="meta">{r.loc.center}</div>
+                      </td>
+                      <td>{r.loc.region}</td>
+                      <td className="num">{r.count}</td>
+                      <td className="num">{D.kr(Math.round(r.sum / r.count))}</td>
+                      <td className="num">{D.kr(r.sum)}</td>
+                      <td className="act"><Btn variant="g" size="sm" onClick={() => setLoc(r.loc.slug)}>Vis →</Btn></td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="ad-table__foot">
+                  <tr>
+                    <td colSpan="2">Sum hele kjeden</td>
+                    <td className="num">{rep.now.count}</td>
+                    <td className="num">{D.kr(rep.now.avg)}</td>
+                    <td className="num">{D.kr(rep.now.sum)}</td>
+                    <td />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <div className="ad-card">
+          <div className="ad-card__head"><div className="ad-card__title">Regnskapslinjer</div></div>
+          <div className="ad-grid3">
+            <div>
+              <div className="ad-secttl">Omsetning</div>
+              <div className="ad-list">
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Tjenester</div></div><span className="ad-li__n">{D.kr(rep.services.reduce((n, r) => n + r.sum, 0))}</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Tillegg</div></div><span className="ad-li__n">{D.kr(rep.now.addRevenue)}</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t" style={{ color: "var(--brand-navy)" }}>Kundeklubb-rabatt</div></div><span className="ad-li__n" style={{ color: "var(--brand-navy)" }}>−{D.kr(rep.now.discount)}</span></div>
+              </div>
+            </div>
+            <div>
+              <div className="ad-secttl">Merverdiavgift</div>
+              <div className="ad-list">
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Sum inkl. mva</div></div><span className="ad-li__n">{D.kr(rep.now.sum)}</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Herav mva. (25 %)</div></div><span className="ad-li__n">{rep.now.vat.toFixed(2).replace(".", ",")} kr</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Grunnlag eks. mva</div></div><span className="ad-li__n">{D.kr(Math.round(rep.now.sum - rep.now.vat))}</span></div>
+              </div>
+            </div>
+            <div>
+              <div className="ad-secttl">Nøkkeltall</div>
+              <div className="ad-list">
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Snittordre</div></div><span className="ad-li__n">{D.kr(rep.now.avg)}</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Medlemsandel</div></div><span className="ad-li__n">{Math.round(rep.now.memberShare * 100)} %</span></div>
+                <div className="ad-li"><div className="ad-li__bd"><div className="ad-li__t">Festerate tillegg</div></div><span className="ad-li__n">{Math.round(rep.now.attachRate * 100)} %</span></div>
+              </div>
+            </div>
+          </div>
+          <p className="ad-note" style={{ marginTop: 16 }}>
+            Alle beløp er inkl. mva. hvis ikke annet er oppgitt. Hver avdeling er en egen juridisk enhet med eget regnskap — eksporten inneholder én linje per ordre og kan leses rett inn i regnskapssystemet.
+          </p>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+window.ADRapport = Rapport;
+})();

@@ -1,0 +1,221 @@
+/* Min side — kundeportalen, uendret fra den godkjente versjonen
+   (ui_kits/min-side/app.jsx). Kun ytterste chrome er fjernet, siden ruteren
+   i dette kittet leverer nav og footer. Ikke endre innholdet her. */
+(function () {
+const { Button, Badge, Card, PriceTag, Icon, VippsButton, Chip, EmptyState, StampCard } = window.HZ_COMPONENTS;
+const D = window.HZ_DATA;
+
+const WDL = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
+const MOL = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+const dateFrom = (offset) => { const d = new Date(); d.setDate(d.getDate() + offset); return d; };
+const long = (d) => `${WDL[d.getDay()]} ${d.getDate()}. ${MOL[d.getMonth()]}`;
+const short = (d) => `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+
+const BOOKINGS = [
+  { ref: "HOAC-4271", loc: "lambertseter", svc: "vask-ut-innvendig-premium", reg: "EB12345", offset: 3, time: "10:00", total: 1789, status: "confirmed", addOns: ["dekkrens"] },
+  { ref: "HOAC-3966", loc: "lambertseter", svc: "polering-basic", reg: "EB12345", offset: -32, time: "12:30", total: 1990, status: "completed", addOns: [] },
+  { ref: "HOAC-3712", loc: "sandvika", svc: "rens-innvendig", reg: "DR34567", offset: -75, time: "09:00", total: 4490, status: "completed", addOns: ["ozon"] },
+  { ref: "HOAC-3255", loc: "lambertseter", svc: "vask-utvendig-premium", reg: "DR34567", offset: -140, time: "15:30", total: 849, status: "completed", addOns: [] },
+];
+
+const CARS = [
+  { reg: "EB12345", make: "Tesla", model: "Model Y", year: 2023, note: "Hvit · Elektrisk", visits: 7, last: "Polering – Basic" },
+  { reg: "DR34567", make: "Volkswagen", model: "Golf", year: 2019, note: "Grå · Bensin", visits: 4, last: "Rens innvendig" },
+];
+
+function Login({ onLogin }) {
+  return (
+    <div style={{ maxWidth: 440, margin: "0 auto", padding: "clamp(48px,8vw,88px) var(--pad-section-x)" }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700 }}>Min side</h1>
+      <p style={{ marginTop: 8, fontSize: 17, color: "var(--body-soft)", lineHeight: 1.55 }}>
+        Se kommende avtaler, historikk per bil, kvitteringer og kundeklubb-status.
+      </p>
+      <Card elevated style={{ marginTop: 28, display: "grid", gap: 12 }}>
+        <VippsButton block onClick={onLogin} />
+        <Button variant="secondary" size="lg" block onClick={onLogin}>Engangskode på SMS</Button>
+        <p style={{ textAlign: "center", fontSize: 13, color: "var(--body-soft)", lineHeight: 1.5 }}>
+          Passordfritt og trygt. Vi bruker Vipps til å bekrefte at det er deg.
+        </p>
+      </Card>
+      <div style={{ marginTop: 24, display: "flex", gap: 10, alignItems: "flex-start", fontSize: 14, color: "var(--body-soft)", lineHeight: 1.55 }}>
+        <span style={{ color: "var(--status-open)", flex: "none", marginTop: 1 }}><Icon name="shield-check" size={18} /></span>
+        Ny kunde? Du får automatisk en profil første gang du bestiller — kvitteringen ligger her etterpå.
+      </div>
+    </div>
+  );
+}
+
+function BookingRow({ b, onCancel, cancelled }) {
+  const loc = D.locations.find((l) => l.slug === b.loc);
+  const svc = D.services.find((s) => s.id === b.svc);
+  const d = dateFrom(b.offset);
+  const upcoming = b.offset > 0;
+  return (
+    <Card elevated={upcoming} style={cancelled ? { opacity: 0.55 } : undefined}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
+            {cancelled ? <Badge variant="muted">Avbestilt</Badge>
+              : upcoming ? <Badge variant="open" dot>Bekreftet</Badge>
+              : <Badge variant="muted">Utført</Badge>}
+            <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 600, color: "var(--body-soft)", fontVariantNumeric: "tabular-nums" }}>{b.ref}</span>
+          </div>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 600 }}>{svc.name}</div>
+          <div style={{ marginTop: 4, fontSize: 14.5, color: "var(--body-soft)" }}>
+            {long(d)} kl. {b.time} · Handz On {loc.name}
+          </div>
+          <div style={{ marginTop: 3, fontSize: 13.5, color: "var(--body-soft)" }}>
+            {b.reg}{b.addOns.length ? " · " + b.addOns.map((a) => D.addOns.find((x) => x.id === a).name).join(", ") : ""}
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <PriceTag amount={b.total} suffix=" kr" />
+          <div style={{ fontSize: 12.5, color: "var(--body-soft)", marginTop: 2 }}>inkl. mva</div>
+        </div>
+      </div>
+      {upcoming && !cancelled && (
+        <div style={{ display: "flex", gap: 10, marginTop: 16, paddingTop: 14, borderTop: "1px solid var(--line)", flexWrap: "wrap" }}>
+          <Button size="sm" variant="secondary">Endre tid</Button>
+          <Button size="sm" variant="ghost" leadingIcon={<Icon name="map-pin" size={16} />}>Veibeskrivelse</Button>
+          <Button size="sm" variant="dangerGhost" style={{ marginLeft: "auto" }} onClick={onCancel}>Avbestill</Button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function Portal({ onLogout, go }) {
+  const [tab, setTab] = React.useState("avtaler");
+  const [cancelled, setCancelled] = React.useState([]);
+  const [deleted, setDeleted] = React.useState(false);
+  const upcoming = BOOKINGS.filter((b) => b.offset > 0);
+  const past = BOOKINGS.filter((b) => b.offset < 0);
+
+  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+
+  if (deleted) {
+    return (
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "clamp(48px,8vw,88px) var(--pad-section-x)" }}>
+        <Card elevated style={{ textAlign: "center" }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 19, fontWeight: 600 }}>Sletteforespørsel mottatt</div>
+          <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.6, color: "var(--body-soft)" }}>
+            Profilen og persondataene dine anonymiseres umiddelbart. Kvitteringer og bokføringspliktige bilag må hver avdeling oppbevare i 6 år etter bokføringsloven — de kan ikke lenger knyttes til deg som person.
+          </p>
+          <Button variant="secondary" style={{ marginTop: 20 }} onClick={() => { setDeleted(false); onLogout(); }}>Til forsiden</Button>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 760, margin: "0 auto", padding: "clamp(32px,4vw,48px) var(--pad-section-x) 72px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: 32, fontWeight: 700 }}>Hei, Kari!</h1>
+          <p style={{ marginTop: 4, fontSize: 14, color: "var(--body-soft)" }}>Innlogget med Vipps · 912 34 567</p>
+        </div>
+        <Button variant="ghost" onClick={onLogout}>Logg ut</Button>
+      </div>
+
+      <nav aria-label="Min side" className="hz-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 22, paddingBottom: 4 }}>
+        {[["avtaler", "Kommende avtaler"], ["historikk", "Historikk"], ["kvitteringer", "Kvitteringer"], ["personvern", "Personvern"]].map(([k, l]) => (
+          <Chip key={k} active={tab === k} onClick={() => setTab(k)}>{l}</Chip>
+        ))}
+      </nav>
+
+      <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 14 }}>
+        {tab === "avtaler" && (
+          <React.Fragment>
+            {upcoming.length ? upcoming.map((b) => (
+              <BookingRow key={b.ref} b={b} cancelled={cancelled.includes(b.ref)} onCancel={() => setCancelled([...cancelled, b.ref])} />
+            )) : (
+              <EmptyState icon={<Icon name="calendar" size={40} />} title="Ingen kommende avtaler" text="Neste ledige tid hos Handz On Lambertseter er i morgen kl. 08:30." action={<Button onClick={() => go("/booking")}>Bestill time</Button>} />
+            )}
+
+            <div className="on-dark" style={{ background: "var(--brand-navy)", borderRadius: "var(--r-card-lg)", padding: 26 }}>
+              <div className="hz-sh__eyebrow" style={{ color: "var(--on-navy-eyebrow)", marginBottom: 14 }}>Kundeklubb</div>
+              <StampCard filled={4} />
+              <p style={{ marginTop: 16, fontSize: 15.5, lineHeight: 1.55, color: "var(--on-navy)" }}>
+                Du har 4 av 6 stempler. To behandlinger til, så er den utvendige Basic-vasken gratis. Husk at spylervæsken fylles gratis hver gang du er innom.
+              </p>
+            </div>
+
+            <div>
+              <h2 style={{ fontSize: 21, fontWeight: 600, margin: "12px 0 12px" }}>Bilene dine</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 12 }}>
+                {CARS.map((c) => (
+                  <Card key={c.reg}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+                      <div>
+                        <div style={{ fontFamily: "var(--font-heading)", fontSize: 17, fontWeight: 600 }}>{c.make} {c.model}</div>
+                        <div style={{ marginTop: 3, fontSize: 13.5, color: "var(--body-soft)" }}>{c.year} · {c.note}</div>
+                      </div>
+                      <span style={{ fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, letterSpacing: "0.14em", background: "var(--surface-alt)", border: "1px solid var(--line-strong)", borderRadius: 4, padding: "4px 8px" }}>{c.reg}</span>
+                    </div>
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line)", fontSize: 13.5, color: "var(--body-soft)" }}>
+                      {c.visits} behandlinger · sist {c.last}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </React.Fragment>
+        )}
+
+        {tab === "historikk" && past.map((b) => <BookingRow key={b.ref} b={b} />)}
+
+        {tab === "kvitteringer" && (
+          <Card elevated flush>
+            {past.map((b, i) => {
+              const loc = D.locations.find((l) => l.slug === b.loc);
+              const svc = D.services.find((s) => s.id === b.svc);
+              return (
+                <div key={b.ref} style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 20px", borderTop: i ? "1px solid var(--line)" : undefined, flexWrap: "wrap" }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600 }}>{svc.name}</div>
+                    <div style={{ marginTop: 2, fontSize: 13.5, color: "var(--body-soft)", fontVariantNumeric: "tabular-nums" }}>
+                      {b.ref} · {short(dateFrom(b.offset))} · Handz On {loc.name} AS
+                    </div>
+                  </div>
+                  <PriceTag amount={b.total} suffix=" kr" />
+                  <Button size="sm" variant="secondary" leadingIcon={<Icon name="external-link" size={16} />}>PDF</Button>
+                </div>
+              );
+            })}
+          </Card>
+        )}
+
+        {tab === "personvern" && (
+          <React.Fragment>
+            <Card elevated>
+              <h2 style={{ fontSize: 19, fontWeight: 600, marginBottom: 10 }}>Dine data</h2>
+              <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--body-soft)" }}>
+                Vi lagrer navn, mobilnummer, registreringsnummer og behandlingshistorikk. Hver avdeling er en egen juridisk enhet og behandlingsansvarlig for sine egne ordrer.
+              </p>
+              <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+                <Button variant="secondary" leadingIcon={<Icon name="external-link" size={16} />}>Last ned mine data</Button>
+                <Button variant="secondary">Endre samtykker</Button>
+              </div>
+            </Card>
+            <Card>
+              <h2 style={{ fontSize: 19, fontWeight: 600, marginBottom: 10 }}>Slett profilen min</h2>
+              <p style={{ fontSize: 15.5, lineHeight: 1.6, color: "var(--body-soft)" }}>
+                Profilen anonymiseres umiddelbart. Kvitteringer må oppbevares i 6 år etter bokføringsloven, men kobles fra deg som person.
+              </p>
+              <Button variant="dangerGhost" style={{ marginTop: 16 }} onClick={() => setDeleted(true)}>Slett profilen min</Button>
+            </Card>
+          </React.Fragment>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MinSide({ go }) {
+  const [inn, setInn] = React.useState(false);
+  React.useEffect(() => { if (window.lucide) window.lucide.createIcons(); });
+  return inn ? <Portal onLogout={() => setInn(false)} go={go} /> : <Login onLogin={() => setInn(true)} />;
+}
+
+window.DGMinSide = MinSide;
+})();

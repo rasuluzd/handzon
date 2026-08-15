@@ -1,0 +1,42 @@
+/* Grunnlag: reset-nivå som gjelder overalt der styles.css lastes. */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--canvas);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:var(--fs-body);
+  line-height:var(--lh-body);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  -webkit-tap-highlight-color:transparent;
+}
+h1,h2,h3,h4,h5,h6{font-family:var(--font-heading);color:var(--ink);margin:0;text-wrap:balance}
+p{margin:0;text-wrap:pretty}
+a{color:var(--text-link);text-decoration:none}
+a:hover{color:var(--text-link-hover)}
+button{font:inherit;color:inherit}
+img{display:block;max-width:100%}
+::selection{background:var(--navy-14)}
+
+/* Fokusring — synlig, konsekvent, aldri fjernet. */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:2px solid var(--brand-navy);
+  outline-offset:2px;
+  border-radius:var(--r-control);
+}
+.on-dark :where(a,button,input,select,textarea,[tabindex]):focus-visible{outline-color:#fff}
+
+/* Tall som flukter i priskolonner og kvitteringer. */
+.tabular{font-variant-numeric:tabular-nums}
+
+/* Skjult scrollbar for horisontale strimler (dag-chips, kategori-chips). */
+.hz-scroll{scrollbar-width:none;-ms-overflow-style:none}
+.hz-scroll::-webkit-scrollbar{height:0;width:0;display:none}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+@media (prefers-reduced-motion:reduce){
+  *,::before,::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}
+}

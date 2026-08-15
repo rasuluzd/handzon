@@ -1,0 +1,51 @@
+/* Router + delt tilstand for adminpanelet. Tjenestekatalog, blogginnlegg,
+   valgt avdeling og toaster lever her, så endringer består når du bytter skjerm. */
+(function () {
+const { ADRail: Rail, ADToasts: Toasts } = window;
+
+function Admin() {
+  const [route, setRoute] = React.useState("/");
+  const [loc, setLoc] = React.useState("lambertseter");
+  const [menu, setMenu] = React.useState(false);
+  const [services, setServices] = React.useState(() => window.adInitialServices());
+  const [posts, setPosts] = React.useState(window.AD_POSTS);
+  const [toasts, setToasts] = React.useState([]);
+
+  const toast = React.useCallback((t) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { id, ...t }]);
+    setTimeout(() => setToasts((prev) => prev.filter((x) => x.id !== id)), 5000);
+  }, []);
+  const dismiss = (id) => setToasts((prev) => prev.filter((x) => x.id !== id));
+
+  const go = (href) => { setRoute(href); window.scrollTo({ top: 0 }); };
+
+  React.useEffect(() => {
+    if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
+  });
+
+  const counts = {
+    "/blogg": posts.filter((p) => !p.published).length || null,
+    "/tjenester": services.filter((s) => s.dirty).length || null,
+  };
+
+  const shared = { loc, setLoc, go, onBurger: () => setMenu(true), toast };
+  let screen;
+  if (route === "/rapport") screen = <window.ADRapport {...shared} />;
+  else if (route === "/tjenester") screen = <window.ADTjenester {...shared} services={services} setServices={setServices} />;
+  else if (route === "/blogg") screen = <window.ADBlogg {...shared} posts={posts} setPosts={setPosts} />;
+  else if (route === "/bestillinger") screen = <window.ADBestillinger {...shared} />;
+  else screen = <window.ADOversikt {...shared} services={services} />;
+
+  return (
+    <div className="ad">
+      {menu && <div className="ad-scrim" onClick={() => setMenu(false)} style={{ zIndex: 70 }} />}
+      <Rail route={route} go={go} open={menu} close={() => setMenu(false)} counts={counts} />
+      <div className="ad-main">{screen}</div>
+      <Toasts items={toasts} dismiss={dismiss} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<Admin />);
+})();

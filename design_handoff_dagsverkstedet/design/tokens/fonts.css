@@ -1,0 +1,11 @@
+/* Skrifter — Barlow (overskrifter/tall/knapper) + Source Sans 3 (brødtekst).
+   Kilden (handzon-1) laster begge via next/font/google, så det finnes ingen
+   lokale fontbinærfiler å kopiere. Vi henter de samme familiene og vektene
+   fra Google Fonts. Ingen substitusjon — dette ER merkevarens skrifter. */
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&display=swap");
+
+:root{
+  --font-heading:"Barlow",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-body:"Source Sans 3",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --font-numeric:"Barlow",system-ui,sans-serif;
+}

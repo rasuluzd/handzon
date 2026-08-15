@@ -1,0 +1,19 @@
+/* Bevegelse. Rolig, kort, aldri leken. Ingen bounce. */
+:root{
+  --dur-fast:120ms; /* @kind other */
+  --dur:200ms; /* @kind other */
+  --dur-slow:500ms; /* @kind other */
+  --dur-hero:700ms; /* @kind other */
+  --ease-standard:cubic-bezier(0.2,0.6,0.2,1); /* @kind other */
+  --ease-out:cubic-bezier(0.16,1,0.3,1); /* @kind other */
+  --reveal-shift:14px;
+  --hover-lift:-2px;
+
+  /* Sidebytte (Dagsverkstedet, variant B). Endres her, gjelder overalt. */
+  --dur-page:420ms; /* @kind other */
+  --page-shift:18px;
+  /* Fremdriftslinjens fyll i bookingen. */
+  --dur-fill:420ms; /* @kind other */
+  /* Kryssfade når et filtrert grid byttes ut. */
+  --dur-xfade:160ms; /* @kind other */
+}

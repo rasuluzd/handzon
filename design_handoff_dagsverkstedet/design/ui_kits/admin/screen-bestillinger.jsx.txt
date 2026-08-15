@@ -1,0 +1,151 @@
+/* Bestillinger — dagens og kommende ordrer per avdeling, med statusflyt. */
+(function () {
+const D = window.HZ_DATA;
+const S = window.HZ_SALES;
+const { ADIcon: I, ADBtn: Btn, ADTag: Tag, ADLupe: Lupe, ADBranch: Branch, ADTop: Top, ADEmpty: Empty } = window;
+
+const STATUS = {
+  ny: ["Ny", "navy"], inne: ["Inne til behandling", "warn"], klar: ["Klar til henting", "ok"], levert: ["Levert", "off"],
+};
+
+function Bestillinger({ loc, setLoc, onBurger, toast }) {
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const [dayOffset, setDayOffset] = React.useState(0);
+  const [q, setQ] = React.useState("");
+  const [overrides, setOverrides] = React.useState({});
+
+  const day = S.addDays(today, dayOffset);
+  const orders = React.useMemo(() => S.ordersInRange(loc, day, day), [loc, dayOffset]);
+
+  /* Deterministisk startstatus ut fra klokketid. */
+  const statusFor = (o) => {
+    if (overrides[o.id]) return overrides[o.id];
+    if (dayOffset > 0) return "ny";
+    const h = new Date().getHours();
+    if (o.hour + 2 <= h) return "levert";
+    if (o.hour <= h) return "inne";
+    return "ny";
+  };
+
+  let list = orders;
+  if (q) {
+    const t = q.toLowerCase();
+    list = list.filter((o) => {
+      const svc = D.services.find((s) => s.id === o.serviceId);
+      return (svc.name + " " + o.id + " " + D.locations.find((l) => l.slug === o.loc).name).toLowerCase().includes(t);
+    });
+  }
+
+  const sum = orders.reduce((n, o) => n + o.total, 0);
+  const locName = loc === "alle" ? "Hele kjeden" : "Handz On " + D.locations.find((l) => l.slug === loc).name;
+
+  function advance(o) {
+    const order = ["ny", "inne", "klar", "levert"];
+    const cur = statusFor(o);
+    const next = order[Math.min(order.length - 1, order.indexOf(cur) + 1)];
+    setOverrides((p) => ({ ...p, [o.id]: next }));
+    if (next === "klar") toast({ title: "SMS sendt til kunden", text: "«Bilen din er klar til henting hos Handz On.»" });
+    else if (next === "levert") toast({ variant: "info", title: "Ordren er avsluttet", text: `${D.kr(o.total)} registrert som betalt ved henting.` });
+  }
+
+  return (
+    <React.Fragment>
+      <Top title="Bestillinger" sub={`${locName} · ${day.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "long" })}`} onBurger={onBurger}
+           right={<React.Fragment>
+             <Branch value={loc} onChange={setLoc} />
+             <div className="ad-period">
+               <button type="button" className="ad-nav-arrow" aria-label="Forrige dag" onClick={() => setDayOffset(dayOffset - 1)}>←</button>
+               <span className="ad-period__lbl" style={{ minWidth: 120 }}>
+                 {dayOffset === 0 ? "I dag" : dayOffset === 1 ? "I morgen" : dayOffset === -1 ? "I går" : day.toLocaleDateString("nb-NO", { day: "numeric", month: "short" })}
+               </span>
+               <button type="button" className="ad-nav-arrow" aria-label="Neste dag" onClick={() => setDayOffset(dayOffset + 1)}>→</button>
+             </div>
+           </React.Fragment>} />
+
+      <div className="ad-body">
+        <div className="ad-kpis">
+          <div className="ad-kpi"><div className="ad-kpi__l">Ordrer</div><div className="ad-kpi__v">{orders.length}</div><div className="ad-kpi__d"><span>booket denne dagen</span></div></div>
+          <div className="ad-kpi"><div className="ad-kpi__l">Forventet omsetning</div><div className="ad-kpi__v">{D.kr(sum)}</div><div className="ad-kpi__d"><span>inkl. mva</span></div></div>
+          <div className="ad-kpi"><div className="ad-kpi__l">Inne nå</div><div className="ad-kpi__v">{orders.filter((o) => statusFor(o) === "inne").length}</div><div className="ad-kpi__d"><span>biler under behandling</span></div></div>
+          <div className="ad-kpi"><div className="ad-kpi__l">Klar til henting</div><div className="ad-kpi__v">{orders.filter((o) => statusFor(o) === "klar").length}</div><div className="ad-kpi__d"><span>kunden er varslet</span></div></div>
+        </div>
+
+        <div className="ad-card" style={{ padding: 14 }}>
+          <label className="ad-search">
+            <Lupe />
+            <input className="ad-input" type="search" value={q} placeholder="Søk på tjeneste, referanse eller avdeling"
+                   aria-label="Søk i bestillinger" onChange={(e) => setQ(e.target.value)} />
+          </label>
+        </div>
+
+        {list.length === 0 ? (
+          <Empty icon="calendar" title={day.getDay() === 0 ? "Stengt på søndager" : "Ingen bestillinger denne dagen"}
+                 text="Velg en annen dag, eller sjekk om avdelingen har stengt."
+                 action={<Btn variant="s" onClick={() => setDayOffset(0)}>Tilbake til i dag</Btn>} />
+        ) : (
+          <div className="ad-card ad-card--flush">
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr>
+                    <th>Tid</th><th>Tjeneste og tillegg</th>{loc === "alle" && <th>Avdeling</th>}
+                    <th>Kanal</th><th className="num">Sum</th><th>Status</th><th className="act" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((o) => {
+                    const svc = D.services.find((s) => s.id === o.serviceId);
+                    const st = statusFor(o);
+                    const [label, variant] = STATUS[st];
+                    return (
+                      <tr key={o.id}>
+                        <td className="num" style={{ textAlign: "left" }}>{String(o.hour).padStart(2, "0")}:00</td>
+                        <td>
+                          <div className="nm">{svc.name}</div>
+                          <div className="meta">
+                            ca. {D.dur(svc.min)}
+                            {o.addOns.length ? " · " + o.addOns.map((id) => D.addOns.find((a) => a.id === id).name).join(", ") : ""}
+                          </div>
+                        </td>
+                        {loc === "alle" && <td>{D.locations.find((l) => l.slug === o.loc).name}</td>}
+                        <td>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <Tag variant="off">{o.channel === "nett" ? "Nett" : o.channel === "skranke" ? "Skranke" : "Telefon"}</Tag>
+                            {o.member && <Tag>Medlem</Tag>}
+                          </div>
+                        </td>
+                        <td className="num">{D.kr(o.total)}</td>
+                        <td><Tag variant={variant} dot={st === "klar"}>{label}</Tag></td>
+                        <td className="act">
+                          {st !== "levert"
+                            ? <Btn variant="s" size="sm" onClick={() => advance(o)}>
+                                {st === "ny" ? "Ta inn" : st === "inne" ? "Meld klar" : "Registrer levert"}
+                              </Btn>
+                            : <span className="meta">Fullført</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot className="ad-table__foot">
+                  <tr>
+                    <td colSpan={loc === "alle" ? 4 : 3}>Sum {day.toLocaleDateString("nb-NO", { day: "numeric", month: "long" })}</td>
+                    <td className="num">{D.kr(sum)}</td>
+                    <td colSpan="2" />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <p className="ad-note">
+          «Meld klar» sender SMS til kunden. Betaling registreres ved henting i avdelingen — bookingen tar ikke betalt på nett.
+        </p>
+      </div>
+    </React.Fragment>
+  );
+}
+
+window.ADBestillinger = Bestillinger;
+})();

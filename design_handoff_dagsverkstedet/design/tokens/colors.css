@@ -1,0 +1,103 @@
+/* Farge.
+   Kjernen er hentet direkte fra logo og kode i handzon-1:
+   navy #1E3A70 (logoens bilstrek og ordmerke), rød #E41830 (logoens «z» og
+   de ansattes arbeidstøy), cyan #00A8E4 («Auto Care»-linjen i logoen).
+   Alt annet er utvidelser: nøytraler, overflatenivåer og semantikk. */
+:root{
+  /* ---- Merkevare ---- */
+  --brand-navy:#1e3a70;
+  --brand-navy-hover:#294b8c;
+  --brand-navy-active:#16294f;
+  --brand-navy-deep:#16223a;
+  --brand-red:#e41830;
+  --brand-red-hover:#c8132a;
+  --brand-red-active:#a80f22;
+  --brand-cyan:#00a8e4;
+
+  /* Navy-transparenser — valgte kort, chips, hover-fyll */
+  --navy-06:rgba(30,58,112,0.06);
+  --navy-08:rgba(30,58,112,0.08);
+  --navy-10:rgba(30,58,112,0.10);
+  --navy-14:rgba(30,58,112,0.14);
+  --navy-24:rgba(30,58,112,0.24);
+  --red-08:rgba(228,24,48,0.08);
+  --red-14:rgba(228,24,48,0.14);
+
+  /* ---- Nøytraler (kalde, navy-tintede) ---- */
+  --ink:#16223a;
+  --ink-strong:#0d1526;
+  --body-strong:#333b4a;
+  --body:#444c5c;
+  --body-soft:#5a6273;
+  --muted:#737b8a;
+  --muted-light:#9aa1ad;
+  --neutral-300:#c7ccd4;
+  --neutral-200:#dcdee3;
+  --neutral-100:#edeff3;
+  --neutral-050:#f4f5f7;
+  --white:#ffffff;
+
+  /* ---- Overflatenivåer ---- */
+  --canvas:#dcdee3;
+  --surface:#ffffff;
+  --surface-alt:#f4f5f7;
+  --surface-sunken:#edeff3;
+  --surface-inverse:#16223a;
+  --surface-brand:#1e3a70;
+  /* Mørk verkstedsflate — bak fullbleed foto og «premium verksted»-paneler */
+  --surface-shop:#0e1626;
+  --surface-shop-alt:#151f33;
+
+  /* ---- Tekst (semantisk) ---- */
+  --text-heading:var(--ink);
+  --text-body:var(--body);
+  --text-lead:var(--body-soft);
+  --text-meta:var(--muted);
+  --text-caption:var(--muted-light);
+  --text-price:var(--brand-navy);
+  --text-link:var(--brand-navy);
+  --text-link-hover:var(--brand-navy-hover);
+
+  /* ---- Tekst på mørke flater ---- */
+  --on-navy:#d6e0f1;
+  --on-navy-strong:#eaf0fb;
+  --on-navy-eyebrow:#9eb6e0;
+  --on-navy-soft:#b7c6e4;
+  --on-navy-hair:rgba(255,255,255,0.14);
+  --on-shop:#c3cbd9;
+  --on-shop-strong:#f2f5fa;
+  --on-shop-hair:rgba(255,255,255,0.10);
+
+  /* ---- Linjer ---- */
+  --line:rgba(20,32,58,0.10);
+  --line-strong:rgba(20,32,58,0.12);
+  --line-heavy:rgba(20,32,58,0.18);
+  --line-focus:var(--brand-navy);
+
+  /* ---- Semantiske tilstander ---- */
+  --status-open:#236b45;
+  --status-open-bg:rgba(46,125,83,0.10);
+  --status-closed:#73591a;
+  --status-closed-bg:rgba(138,109,31,0.10);
+  --danger:#b4232a;
+  --danger-bg:rgba(180,35,42,0.08);
+  --info:var(--brand-navy);
+  --info-bg:var(--navy-08);
+  --disabled-bg:#e3e5e9;
+  --disabled-text:#a5aab4;
+
+  /* ---- Funksjonelle / partner ---- */
+  --vipps:#ff5b24;
+  --vipps-hover:#ff7245;
+  --map-bg:#e4e8ee;
+  --map-dot:rgba(30,58,112,0.32);
+  --map-dot-active:var(--brand-navy);
+
+  /* ---- Aliaser for handling ---- */
+  --action-primary:var(--brand-navy);
+  --action-primary-hover:var(--brand-navy-hover);
+  --action-primary-active:var(--brand-navy-active);
+  --action-accent:var(--brand-red);
+  --action-accent-hover:var(--brand-red-hover);
+  --action-accent-active:var(--brand-red-active);
+}

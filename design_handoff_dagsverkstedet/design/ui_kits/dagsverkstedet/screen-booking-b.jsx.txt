@@ -1,0 +1,260 @@
+/* Booking steg 5–7: tillegg, oppsummering, bekreftelse. */
+(function () {
+const D = window.HZ_DATA;
+const { DGBtn: Btn, DGTag: Tag, DGIcon: I, DGStepHead: Head, DGVipps: Vipps } = window;
+
+const WDL = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"];
+const MOL = ["januar", "februar", "mars", "april", "mai", "juni", "juli", "august", "september", "oktober", "november", "desember"];
+const longDate = (iso) => { const d = new Date(iso + "T12:00:00"); return `${WDL[d.getDay()]} ${d.getDate()}. ${MOL[d.getMonth()]}`; };
+
+function totals(state) {
+  const base = D.priceAt(state.location, state.service) || 0;
+  const addons = state.addOns.map((id) => D.addOns.find((a) => a.id === id));
+  const addSum = addons.reduce((n, a) => n + a.price, 0);
+  const discount = state.member ? Math.round(base * 0.1) : 0;
+  const total = base + addSum - discount;
+  const vat = Math.round((total / 5) * 100) / 100;
+  return { base, addons, addSum, discount, total, vat };
+}
+
+/* ---------- Steg 5: tillegg ---------- */
+function S5({ state, set }) {
+  const rec = D.affinity[state.service] || [];
+  const sorted = [...D.addOns].sort((a, b) => (rec.indexOf(b.id) > -1 ? 1 : 0) - (rec.indexOf(a.id) > -1 ? 1 : 0));
+  const toggle = (id) => set({ addOns: state.addOns.includes(id) ? state.addOns.filter((x) => x !== id) : [...state.addOns, id] });
+  return (
+    <div>
+      <Head title="Vil du legge til noe?" help="Vi gjør det mens bilen først står inne — du sparer en ekstra tur." />
+      <div className="dg-rows">
+        {sorted.map((a) => {
+          const sel = state.addOns.includes(a.id);
+          return (
+            <button type="button" key={a.id} className={`dg-opt${sel ? " sel" : ""}`} onClick={() => toggle(a.id)}>
+              <div className="dg-opt__bd">
+                <div className="dg-opt__nm">
+                  {a.name}
+                  {rec.includes(a.id) && <Tag variant="red">Ofte valgt sammen</Tag>}
+                </div>
+                <p className="dg-opt__ds">{a.desc}</p>
+                <div className="dg-opt__mt">+ ca. {D.dur(a.min)}</div>
+              </div>
+              <div className="dg-opt__pr"><b>+ {D.kr(a.price)}</b></div>
+              <span className={`dg-tick${sel ? " on" : ""}`}>✓</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Steg 6: oppsummering ---------- */
+function Row({ label, value, onEdit }) {
+  return (
+    <div className="dg-srow">
+      <div><div className="l">{label}</div><div className="v">{value}</div></div>
+      {onEdit && <button type="button" onClick={onEdit}>Endre</button>}
+    </div>
+  );
+}
+
+function S6({ state, set, confirm }) {
+  const t = totals(state);
+  const loc = D.locations.find((l) => l.slug === state.location);
+  const svc = D.services.find((s) => s.id === state.service);
+  const ok = state.contact.name.trim().length > 1 && state.contact.phone.replace(/\s/g, "").length >= 8;
+  return (
+    <div>
+      <Head title="Oppsummering" help="Sjekk at alt stemmer før du bekrefter." />
+
+      <div className="dg-card dg-card--key">
+        <Row label="Avdeling" value={"Handz On " + loc.name} onEdit={() => set({ step: 1 })} />
+        <Row label="Bil" value={state.vehicle ? `${state.vehicle.make} ${state.vehicle.model} · ${state.regNr}` : state.regNr} onEdit={() => set({ step: 2 })} />
+        <Row label="Tjeneste" value={svc.name} onEdit={() => set({ step: 3 })} />
+        <Row label="Tidspunkt" value={`${longDate(state.date)} kl. ${state.time}`} onEdit={() => set({ step: 4 })} />
+        {t.addons.length > 0 && <Row label="Tillegg" value={t.addons.map((a) => a.name).join(", ")} onEdit={() => set({ step: 5 })} />}
+      </div>
+
+      <div className="dg-card dg-card--key" style={{ marginTop: 14 }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, marginBottom: 12, color: "var(--ink)" }}>Prisspesifikasjon</div>
+        <div className="dg-line"><span>{svc.name}</span><span>{D.kr(t.base)}</span></div>
+        {t.addons.map((a) => <div className="dg-line" key={a.id}><span>{a.name}</span><span>{D.kr(a.price)}</span></div>)}
+        {t.discount > 0 && <div className="dg-line dg-line--accent"><span>Kundeklubb-rabatt (10 %)</span><span>−{D.kr(t.discount)}</span></div>}
+        <div className="dg-line dg-line--mute"><span>Herav mva. (25 %)</span><span>{t.vat.toFixed(2).replace(".", ",")} kr</span></div>
+        <div className="dg-line dg-line--total"><span>Å betale ved henting</span><span>{D.kr(t.total)}</span></div>
+        <p className="dg-note" style={{ marginTop: 10 }}>Alle priser er inkl. mva. Selger: Handz On {loc.name} AS, org. 923 456 787.</p>
+      </div>
+
+      <div className="dg-card dg-card--key" style={{ marginTop: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>Kontaktinfo</div>
+          {!state.member && <Vipps label="Fyll ut med" onClick={() => set({ member: true, contact: { name: "Kari Nordmann", phone: "912 34 567" } })} />}
+        </div>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label className="dg-label" htmlFor="navn">Navn</label>
+            <input id="navn" className="dg-input" placeholder="Kari Nordmann" value={state.contact.name}
+                   onChange={(e) => set({ contact: { ...state.contact, name: e.target.value } })} />
+          </div>
+          <div>
+            <label className="dg-label" htmlFor="tlf">Mobilnummer</label>
+            <input id="tlf" className="dg-input" type="tel" placeholder="912 34 567" value={state.contact.phone}
+                   onChange={(e) => set({ contact: { ...state.contact, phone: e.target.value } })} />
+            <p className="dg-help">Vi sender bekreftelse og melding når bilen er klar.</p>
+          </div>
+        </div>
+      </div>
+
+      <p className="dg-note" style={{ marginTop: 18 }}>
+        Gratis avbestilling frem til 24 timer før avtalt tid. Du betaler i avdelingen når du henter bilen.
+      </p>
+      <Btn size="lg" block style={{ marginTop: 16 }} disabled={!ok} onClick={confirm}>Bekreft bestilling – {D.kr(t.total)}</Btn>
+      {!ok && <p className="dg-note" style={{ marginTop: 8, textAlign: "center" }}>Fyll inn navn og mobilnummer for å bekrefte.</p>}
+    </div>
+  );
+}
+
+/* ---------- Steg 7: bekreftelse ---------- */
+function S7({ state, go, reset }) {
+  const t = totals(state);
+  const loc = D.locations.find((l) => l.slug === state.location);
+  const svc = D.services.find((s) => s.id === state.service);
+  return (
+    <div>
+      <div className="dg-done">
+        <span className="dg-done__ring"><I n="check" s={32} /></span>
+        <h1>Takk for bestillingen!</h1>
+        <p>Referanse <strong style={{ fontFamily: "var(--font-heading)", color: "var(--ink)" }}>{state.reference}</strong>. Bekreftelse er sendt på SMS til {state.contact.phone}.</p>
+      </div>
+
+      <div className="dg-card dg-card--key dg-card--flush">
+        <div className="dg-receipt__top">
+          <img src="../../assets/logo-white.png" alt="Handz On Auto Care" />
+          <span>Kvittering</span>
+        </div>
+        <div className="dg-receipt__bd">
+          <Row label="Referanse" value={state.reference} />
+          <Row label="Tjeneste" value={svc.name} />
+          {t.addons.length > 0 && <Row label="Tillegg" value={t.addons.map((a) => a.name).join(", ")} />}
+          <Row label="Avdeling" value={`Handz On ${loc.name} · ${loc.address}`} />
+          <Row label="Tidspunkt" value={`${longDate(state.date)} kl. ${state.time}`} />
+          <Row label="Bil" value={state.vehicle ? `${state.vehicle.make} ${state.vehicle.model} · ${state.regNr}` : state.regNr} />
+          <div style={{ borderTop: "1px dashed var(--line-heavy)", margin: "16px 0 14px" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+            <span style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>Å betale ved henting</span>
+            <span className="dg-price" style={{ fontSize: 28 }}>{D.kr(t.total)}</span>
+          </div>
+          <p className="dg-note" style={{ textAlign: "right", marginTop: 4 }}>inkl. mva. {t.vat.toFixed(2).replace(".", ",")} kr</p>
+          <div className="dg-receipt__code" aria-hidden="true" />
+          <p className="dg-note" style={{ marginTop: 14 }}>
+            Utstedes av Handz On {loc.name} AS, org. 923 456 787. Kvitteringen legges på Min side etter utført behandling.
+          </p>
+        </div>
+      </div>
+
+      <div className="dg-card" style={{ marginTop: 14, background: "var(--surface-alt)" }}>
+        <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, marginBottom: 8, color: "var(--ink)" }}>Slik blir det</div>
+        <ul className="dg-checks" style={{ gridTemplateColumns: "1fr" }}>
+          <li><I n="check" />Møt opp i skranken hos Handz On {loc.name} og lever nøkkelen.</li>
+          <li><I n="check" />Gjør ærendene dine på senteret — vi sender SMS når bilen er klar.</li>
+          <li><I n="check" />Du betaler ved henting. Gratis avbestilling til 24 timer før.</li>
+        </ul>
+      </div>
+
+      <div className="dg-acts" style={{ marginTop: 20 }}>
+        <Btn variant="s" style={{ flex: 1 }}><I n="external-link" s={16} />Last ned kvittering</Btn>
+        <Btn style={{ flex: 1 }} onClick={() => { reset(); go("/min-side"); }}>Se på Min side</Btn>
+      </div>
+      <Btn variant="g" block style={{ marginTop: 12 }} onClick={() => { reset(); go("/"); }}>Til forsiden</Btn>
+    </div>
+  );
+}
+
+/* ---------- Skall ---------- */
+const STEPS = ["Avdeling", "Bilen din", "Tjeneste", "Tidspunkt", "Tillegg", "Oppsummering", "Bekreftelse"];
+
+function Booking({ go, preset }) {
+  const [state, setState] = React.useState(() => ({
+    step: preset && preset.loc ? (preset.service ? 2 : 2) : 1,
+    location: (preset && preset.loc) || null,
+    regNr: "", vehicle: null,
+    service: (preset && preset.service) || null,
+    date: null, time: null, addOns: [], member: false,
+    contact: { name: "", phone: "" }, reference: null,
+  }));
+  const set = (patch) => setState((s) => ({ ...s, ...patch }));
+
+  React.useEffect(() => {
+    window.scrollTo({ top: 0 });
+    if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
+  }, [state.step]);
+
+  const confirm = () => {
+    let h = 2166136261;
+    for (const ch of state.location + state.regNr + state.date + state.time) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+    set({ reference: "HOAC-" + ((Math.abs(h) % 9000) + 1000), step: 7 });
+  };
+  const reset = () => setState({ step: 1, location: null, regNr: "", vehicle: null, service: null, date: null, time: null, addOns: [], member: false, contact: { name: "", phone: "" }, reference: null });
+
+  const back = state.step > 1 && state.step < 7;
+  const sticky = state.step === 5;
+  const svc = state.service && D.services.find((s) => s.id === state.service);
+
+  /* Retningsbevisst stegovergang: framover fra høyre, tilbake fra venstre. */
+  const prev = React.useRef(state.step);
+  const dir = state.step >= prev.current ? "fwd" : "back";
+  React.useEffect(() => { prev.current = state.step; }, [state.step]);
+
+  const stickyTotal = window.dgUseCountUp(sticky ? totals(state).total : 0);
+
+  return (
+    <div className="dg-book">
+      <div className="dg-bookhead">
+        <div className="dg-bookhead__row">
+          <button type="button" className="dg-bookhead__back" style={{ visibility: back ? "visible" : "hidden" }}
+                  onClick={() => back && set({ step: state.step - 1 })}>← Tilbake</button>
+          <img src="../../assets/logo-original.webp" alt="Handz On Auto Care" />
+          <button type="button" className="dg-bookhead__back" onClick={() => go("/")}>Avbryt</button>
+        </div>
+        <div className="dg-bar" role="progressbar" aria-valuenow={state.step} aria-valuemin={1} aria-valuemax={7}
+             aria-label={`Steg ${state.step} av 7 — ${STEPS[state.step - 1]}`}>
+          {STEPS.map((s, i) => <i key={s} className={i + 1 < state.step ? "on" : i + 1 === state.step ? "now" : ""} />)}
+        </div>
+        <div className="dg-bookmeta">
+          <span className="l">{STEPS[state.step - 1]}</span>
+          <span className="c">Steg {state.step} av 7</span>
+        </div>
+      </div>
+
+      <div className={`dg-bookbody${sticky ? " dg-bookbody--sticky" : ""}`} aria-live="polite">
+        <div key={state.step} className={`dg-${dir}`}>
+          {state.step === 1 && <window.DGS1 state={state} set={set} />}
+          {state.step === 2 && <window.DGS2 state={state} set={set} />}
+          {state.step === 3 && <window.DGS3 state={state} set={set} />}
+          {state.step === 4 && <window.DGS4 state={state} set={set} />}
+          {state.step === 5 && <S5 state={state} set={set} />}
+          {state.step === 6 && <S6 state={state} set={set} confirm={confirm} />}
+          {state.step === 7 && <S7 state={state} go={go} reset={reset} />}
+        </div>
+      </div>
+
+      {sticky && (
+        <div className="dg-sticky">
+          <div className="dg-sticky__in">
+            <div style={{ minWidth: 0 }}>
+              <div className="l">{svc.name}</div>
+              <div className="v">{state.addOns.length ? `${state.addOns.length} tillegg valgt` : "Ingen tillegg"}</div>
+            </div>
+            <span className="dg-sticky__tot">{D.kr(stickyTotal)}</span>
+            <Btn size="lg" onClick={() => set({ step: 6 })}>
+              {state.addOns.length ? "Gå videre" : "Gå videre uten tillegg"}
+            </Btn>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+window.DGBooking = Booking;
+})();

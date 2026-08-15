@@ -1,0 +1,277 @@
+/* Admin-panelets skall: sidestolpe, toppbar, og de små byggeklossene
+   skjermene deler (knapp, tag, bryter, KPI, stolpediagram, panel, toast). */
+(function () {
+const D = window.HZ_DATA;
+
+const I = ({ n, s = 18, style }) => (
+  <i data-lucide={n} aria-hidden="true" style={{ display: "inline-flex", width: s, height: s, flex: "none", ...style }} />
+);
+
+function Btn({ variant = "p", size, children, ...rest }) {
+  return (
+    <button type="button" className={["ad-btn", `ad-btn--${variant}`, size ? `ad-btn--${size}` : ""].filter(Boolean).join(" ")} {...rest}>
+      {children}
+    </button>
+  );
+}
+
+/* Segmentert velger med hvit indikator som glir til valgt knapp.
+   Bredden måles per knapp, så «Måned» og «År» får riktig størrelse. */
+function Seg({ value, onChange, options, label }) {
+  const wrap = React.useRef(null);
+  const [box, setBox] = React.useState(null);
+  const [slide, setSlide] = React.useState(false);
+  const idx = Math.max(0, options.findIndex(([v]) => v === value));
+
+  const measure = React.useCallback(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const btn = el.querySelectorAll("button")[idx];
+    if (btn) setBox({ left: btn.offsetLeft, width: btn.offsetWidth });
+  }, [idx]);
+
+  React.useLayoutEffect(() => {
+    measure();
+    /* Glidningen slås på etter første måling, så indikatoren ikke
+       animerer inn fra venstre når skjermen åpnes. */
+    const t = setTimeout(() => setSlide(true), 0);
+    return () => clearTimeout(t);
+  }, [measure]);
+
+  React.useEffect(() => {
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  return (
+    <div className="ad-seg" ref={wrap} role="group" aria-label={label}>
+      {box && (
+        <span className={`ad-seg__thumb${slide ? " slide" : ""}`} aria-hidden="true"
+              style={{ width: box.width, transform: `translateX(${box.left}px)` }} />
+      )}
+      {options.map(([v, l]) => (
+        <button type="button" key={v} className={value === v ? "on" : ""} aria-pressed={value === v} onClick={() => onChange(v)}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+function Tag({ variant = "navy", dot, children }) {
+  return <span className={`ad-tag ad-tag--${variant}`}>{dot && <span className="ad-dot" />}{children}</span>;
+}
+
+function Switch({ checked, onChange, label, id }) {
+  return (
+    <label className="ad-switch" htmlFor={id}>
+      <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span className="ad-switch__track" />
+      {label && <span>{label}</span>}
+    </label>
+  );
+}
+
+function Field({ label, help, children, id }) {
+  return (
+    <div className="ad-field">
+      {label && <label className="ad-label" htmlFor={id}>{label}</label>}
+      {children}
+      {help && <p className="ad-help">{help}</p>}
+    </div>
+  );
+}
+
+const Lupe = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+  </svg>
+);
+
+/* ---------- KPI ---------- */
+function Kpi({ label, value, delta, deltaLabel, navy, hint }) {
+  const dir = delta == null ? "flat" : delta > 0.005 ? "up" : delta < -0.005 ? "dn" : "flat";
+  const fmt = delta == null ? "—" : `${delta > 0 ? "+" : ""}${(delta * 100).toFixed(1).replace(".", ",")} %`;
+  return (
+    <div className={`ad-kpi${navy ? " ad-kpi--navy" : ""}`}>
+      <div className="ad-kpi__l">{label}</div>
+      <div className="ad-kpi__v">{value}</div>
+      <div className="ad-kpi__d">
+        {delta != null && <span className={`ad-kpi__chg ad-kpi__chg--${dir}`}>{dir === "up" ? "↑" : dir === "dn" ? "↓" : "→"} {fmt}</span>}
+        <span>{hint || deltaLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Stolpediagram ---------- */
+function niceMax(v) {
+  if (v <= 0) return 1000;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const step of [1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10]) if (v <= step * mag) return step * mag;
+  return 10 * mag;
+}
+
+function Chart({ data, valueKey = "sum", format }) {
+  const max = niceMax(Math.max(...data.map((d) => d[valueKey]), 0));
+  const peak = Math.max(...data.map((d) => d[valueKey]), 0);
+  const lines = [1, 0.75, 0.5, 0.25, 0];
+  return (
+    <React.Fragment>
+      <div className="ad-chart">
+        <div className="ad-chart__grid" aria-hidden="true">
+          {lines.map((f) => (
+            <i key={f} style={{ bottom: `${f * 100}%` }}>
+              <span className="ad-chart__gl">{f === 0 ? "0" : D.nok(Math.round(max * f))}</span>
+            </i>
+          ))}
+        </div>
+        {data.map((d, i) => (
+          <div className={`ad-bar${d[valueKey] === peak && peak > 0 ? " ad-bar--peak" : ""}${d.closed ? " ad-bar--dim" : ""}`} key={d.x + i}>
+            <span className="ad-bar__tip">
+              {d.full}: {format ? format(d[valueKey]) : D.kr(d[valueKey])}
+              {d.count != null && ` · ${d.count} ${d.count === 1 ? "ordre" : "ordrer"}`}
+              {d.closed ? " · stengt" : ""}
+            </span>
+            <span className="ad-bar__fill" style={{ height: `${(d[valueKey] / max) * 100}%` }} />
+            <span className="ad-bar__x">{d.x}</span>
+          </div>
+        ))}
+      </div>
+      <div className="ad-chart__legend">
+        <span><i style={{ background: "var(--brand-navy)" }} />Omsetning inkl. mva</span>
+        <span><i style={{ background: "var(--brand-red)" }} />Beste bøtte i perioden</span>
+        <span><i style={{ background: "var(--navy-24)" }} />Stengt</span>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ---------- Sidestolpe ---------- */
+const NAV = [
+  ["Drift", [
+    ["/", "Oversikt", "layout-dashboard"],
+    ["/bestillinger", "Bestillinger", "calendar"],
+  ]],
+  ["Salg", [
+    ["/rapport", "Salgsrapport", "trending-up"],
+    ["/tjenester", "Tjenester og priser", "sparkles"],
+  ]],
+  ["Innhold", [
+    ["/blogg", "Blogg og nyheter", "newspaper"],
+  ]],
+];
+
+function Rail({ route, go, open, close, counts }) {
+  return (
+    <aside className={`ad-rail${open ? " open" : ""}`}>
+      <div className="ad-rail__top">
+        <img src="../../assets/logo-white.png" alt="Handz On Auto Care" />
+        <span>Adminpanel</span>
+      </div>
+      <nav className="ad-rail__nav" aria-label="Adminmeny">
+        {NAV.map(([group, items]) => (
+          <React.Fragment key={group}>
+            <div className="ad-rail__group">{group}</div>
+            {items.map(([href, label, icon]) => (
+              <button type="button" key={href} className={`ad-navitem${route === href ? " on" : ""}`}
+                      onClick={() => { go(href); close(); }} aria-current={route === href ? "page" : undefined}>
+                <I n={icon} s={18} />
+                <span>{label}</span>
+                {counts && counts[href] != null && <span className="ad-navitem__count">{counts[href]}</span>}
+              </button>
+            ))}
+          </React.Fragment>
+        ))}
+      </nav>
+      <div className="ad-rail__foot">
+        <div className="ad-rail__user">
+          <span className="ad-rail__av">OH</span>
+          <div>
+            <div className="ad-rail__who">Ove Hagen</div>
+            <div className="ad-rail__role">Kjedeadministrator</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+/* ---------- Toppbar ---------- */
+function Top({ title, sub, right, onBurger }) {
+  return (
+    <header className="ad-top">
+      <button type="button" className="ad-burger" aria-label="Åpne meny" onClick={onBurger}><span /><span /><span /></button>
+      <div>
+        <div className="ad-top__title">{title}</div>
+        {sub && <div className="ad-top__sub">{sub}</div>}
+      </div>
+      {right && <div className="ad-top__right">{right}</div>}
+    </header>
+  );
+}
+
+/* ---------- Avdelingsvelger ---------- */
+function BranchPicker({ value, onChange, allLabel = "Hele kjeden (14 avdelinger)" }) {
+  return (
+    <select className="ad-select" aria-label="Velg avdeling" value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="alle">{allLabel}</option>
+      {D.locations.map((l) => <option key={l.slug} value={l.slug}>Handz On {l.name}</option>)}
+    </select>
+  );
+}
+
+/* ---------- Panel (drawer) ---------- */
+function Panel({ title, sub, onClose, foot, children }) {
+  React.useEffect(() => {
+    const esc = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  return (
+    <React.Fragment>
+      <div className="ad-scrim" onClick={onClose} />
+      <div className="ad-panel" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="ad-panel__top">
+          <div>
+            <div className="ad-panel__ttl">{title}</div>
+            {sub && <p className="ad-panel__sub">{sub}</p>}
+          </div>
+          <button type="button" className="ad-panel__x" onClick={onClose} aria-label="Lukk">✕</button>
+        </div>
+        <div className="ad-panel__body">{children}</div>
+        {foot && <div className="ad-panel__foot">{foot}</div>}
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ---------- Toast ---------- */
+function Toasts({ items, dismiss }) {
+  return (
+    <div className="ad-toasts" aria-live="polite">
+      {items.map((t) => (
+        <div key={t.id} className={`ad-toast ad-toast--${t.variant || "ok"}`}>
+          <I n={t.variant === "info" ? "info" : "check"} s={19} />
+          <div>
+            <div className="ad-toast__t">{t.title}</div>
+            {t.text && <p className="ad-toast__x">{t.text}</p>}
+          </div>
+          <button type="button" className="ad-panel__x" style={{ marginLeft: "auto", fontSize: 16 }} onClick={() => dismiss(t.id)} aria-label="Lukk melding">✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Empty({ icon = "search", title, text, action }) {
+  return (
+    <div className="ad-empty">
+      <I n={icon} s={38} />
+      <div className="ad-empty__t">{title}</div>
+      {text && <p>{text}</p>}
+      {action}
+    </div>
+  );
+}
+
+Object.assign(window, { ADIcon: I, ADBtn: Btn, ADSeg: Seg, ADTag: Tag, ADSwitch: Switch, ADField: Field, ADLupe: Lupe, ADKpi: Kpi, ADChart: Chart, ADRail: Rail, ADTop: Top, ADBranch: BranchPicker, ADPanel: Panel, ADToasts: Toasts, ADEmpty: Empty, AD_NAV: NAV });
+})();

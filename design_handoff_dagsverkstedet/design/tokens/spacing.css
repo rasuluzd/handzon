@@ -1,0 +1,33 @@
+/* Spacing — 4px-basis. Semantiske rytmer under. */
+:root{
+  --space-0:0px;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+  --space-16:64px;
+  --space-20:80px;
+
+  --pad-section-x:24px;
+  --pad-section-x-lg:clamp(24px,4vw,48px);
+  --pad-section-y:40px;
+  --pad-section-y-lg:clamp(48px,6vw,80px);
+  --pad-card:20px;
+  --pad-card-key:24px;
+  --gap-grid:14px;
+  --gap-stack:16px;
+
+  /* Layout */
+  --container:1180px; /* @kind other */
+  --container-wide:1280px; /* @kind other */
+  --container-booking:680px; /* @kind other */
+  --container-detail:760px; /* @kind other */
+  --breakpoint:900px; /* @kind other */
+  --tap-min:44px;
+  --header-h:64px;
+}

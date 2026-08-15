@@ -1,0 +1,147 @@
+/* Forside — hero, slik gjør du, populære tjenester, sesong, avdelinger, bevis, kundeklubb. */
+(function () {
+const D = window.HZ_DATA;
+const { DGBtn: Btn, DGTag: Tag, DGPrice: Price, DGIcon: I, DGTile: Tile, DGProof: Proof, DGTrust: Trust, DGReveal: Reveal, DG_HOURS } = window;
+
+const HOW = [
+  ["Lever nøkkelen", "Kom innom avdelingen på senteret. Vi tar imot bilen — ingen kø, ingen skjema."],
+  ["Gjør ærendene dine", "Handle, spis lunsj, ta en kaffe. Du får melding på SMS når bilen er klar."],
+  ["Hent en ren bil", "Bilen står klar, vasket for hånd og tørket. Du betaler når du henter."],
+];
+
+function Forside({ go }) {
+  const popular = ["vask-ut-innvendig-premium", "polering-basic", "keramisk-lakkforsegling"].map((id) => D.services.find((s) => s.id === id));
+  return (
+    <div>
+      <header className="dg-hero">
+        <div className="dg-hero__shot"><img src={D.PHOTOS + "komplett-bilpleie.webp"} alt="Skum som skylles av svart lakk hos Handz On" /></div>
+        <div className="dg-hero__card">
+          <span className="dg-eyebrow">14 avdelinger · book mens du handler</span>
+          <h1 className="dg-h1">Lever nøkkelen.<br />Hent bilen <em>ren.</em></h1>
+          <p className="dg-lead">Vi tar bilen mens du gjør ærendene dine på senteret. Håndvask med to bøtter, kontroll i lys før levering — og SMS når den står klar.</p>
+          <div className="dg-acts">
+            <Btn size="lg" onClick={() => go("/booking")}>Bestill time</Btn>
+            <Btn variant="s" size="lg" onClick={() => go("/avdelinger")}>Finn din avdeling</Btn>
+          </div>
+          <div className="dg-hero__trust"><I n="shield-check" />Registrert i Arbeidstilsynets godkjenningsordning for bilpleie</div>
+        </div>
+      </header>
+
+      <div className="dg-strip">
+        <div><b>14</b><span>avdelinger</span></div>
+        <div><b>120 000+</b><span>biler behandlet</span></div>
+        <div><b>4,8</b><span>av 5 i score</span></div>
+        <div><b>20 år</b><span>siden 2005</span></div>
+      </div>
+
+      <section className="dg-sec">
+        <div className="dg-eyebrow" style={{ marginBottom: 18 }}>Slik gjør du</div>
+        <div className="dg-how">
+          {HOW.map(([t, x], i) => (
+            <Reveal key={t} delay={i * 70}><div><b>{i + 1}</b><div><h3 className="dg-h3">{t}</h3><p>{x}</p></div></div></Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="dg-sec dg-sec--tight">
+        <div className="dg-sechead">
+          <h2 className="dg-h2">Populære tjenester</h2>
+          <a className="dg-sechead__more" href="/tjenester" onClick={(e) => { e.preventDefault(); go("/tjenester"); }}>Se hele katalogen →</a>
+        </div>
+        <div className="dg-grid dg-grid--3">
+          {popular.map((s, i) => (
+            <Reveal key={s.id} delay={i * 70}>
+              <Tile s={s} tall flag={i === 0 ? "Mest booket" : null} onClick={() => go("/tjeneste/" + s.id)} />
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      <section className="dg-sec dg-sec--tight">
+        <div style={{ display: "grid", gridTemplateColumns: "0.95fr 1fr", border: "1px solid var(--line-strong)", borderRadius: "var(--r-card-lg)", overflow: "hidden" }} className="dg-band">
+          <div style={{ position: "relative", minHeight: 300 }}>
+            <img src={D.PHOTOS + "detaljering.webp"} alt="Polering av panser" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          </div>
+          <div style={{ padding: "clamp(26px,3vw,42px)" }}>
+            <div className="dg-eyebrow">Sesongtilbud · Sommer</div>
+            <h2 className="dg-h2" style={{ margin: "14px 0 16px", fontSize: "clamp(24px,2.6vw,30px)" }}>Pollen, insekter og kvae — vekk før høsten</h2>
+            <ul className="dg-checks" style={{ gridTemplateColumns: "1fr", marginBottom: 24 }}>
+              {["Håndvask med to-bøtte-metode — ingen mikroriper i lakken.",
+                "Insektrester og kvae løses opp før de eter seg inn i klarlakken.",
+                "Ferdig mens du handler. Vi sender SMS når bilen er klar."].map((t) => (
+                <li key={t}><I n="check" />{t}</li>
+              ))}
+            </ul>
+            <div className="dg-acts" style={{ marginTop: 0 }}>
+              <Btn onClick={() => go("/booking")}>Book sommervask</Btn>
+              <Btn variant="g" onClick={() => go("/tjenester")}>Se poleringspakker →</Btn>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dg-sec dg-sec--tight">
+        <div className="dg-sechead">
+          <h2 className="dg-h2">Finn din avdeling</h2>
+          <a className="dg-sechead__more" href="/avdelinger" onClick={(e) => { e.preventDefault(); go("/avdelinger"); }}>Se alle 14 →</a>
+        </div>
+        <div className="dg-map" style={{ height: "clamp(220px,26vw,320px)", marginBottom: 16 }}>
+          <iframe title="Kart over Handz On-avdelinger" loading="lazy" src={D.mapUrlAll()} />
+        </div>
+        <div className="dg-grid">
+          {D.locations.slice(0, 4).map((l) => (
+            <div className="dg-card" key={l.slug}>
+              <div className="dg-branch__top">
+                <div>
+                  <div className="dg-branch__name">Handz On {l.name}</div>
+                  <p className="dg-branch__addr">{l.center} · {l.address}, {l.zip} {l.city}</p>
+                </div>
+                <span className="dg-branch__dist">{l.dist}</span>
+              </div>
+              <div className="dg-branch__meta">
+                <Tag variant={l.open ? "open" : "closed"} dot>{l.open ? "Åpen nå" : "Stengt nå"}</Tag>
+                {l.campaign && <Tag>{l.campaign}</Tag>}
+              </div>
+              <div className="dg-branch__acts">
+                <Btn size="sm" onClick={() => go("/booking")}>Book her</Btn>
+                <Btn size="sm" variant="g" onClick={() => go("/avdeling/" + l.slug)}>Se avdelingen →</Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <Proof go={go} />
+      <Trust />
+
+      <section className="dg-sec dg-sec--tight">
+        <div style={{ background: "var(--brand-navy)", borderRadius: "var(--r-card-lg)", padding: "clamp(26px,3vw,44px)", display: "grid", gridTemplateColumns: "1fr auto", gap: 40, alignItems: "center" }} className="dg-band">
+          <div>
+            <div className="dg-eyebrow" style={{ color: "var(--on-navy-eyebrow)" }}>Kundeklubb</div>
+            <h2 className="dg-h2" style={{ color: "#fff", margin: "14px 0 16px" }}>Få hver 6. vask gratis</h2>
+            <ul style={{ listStyle: "none", margin: "0 0 24px", padding: 0, display: "flex", flexDirection: "column", gap: 11 }}>
+              {["Hver 6. utvendige Basic-vask er gratis — etter 5 betalte vasker eller behandlinger.",
+                "Gratis påfyll av spylervæske hver gang du kjøper en bilpleietjeneste."].map((t) => (
+                <li key={t} style={{ display: "flex", gap: 11, fontSize: 16.5, lineHeight: 1.5, color: "var(--on-navy)" }}>
+                  <span style={{ color: "#fff", flex: "none", marginTop: 2 }}><I n="check" /></span>{t}
+                </li>
+              ))}
+            </ul>
+            <div className="dg-acts" style={{ marginTop: 0 }}>
+              <Btn variant="s" onClick={() => go("/min-side")}>Bli medlem — gratis</Btn>
+            </div>
+          </div>
+          <div className="dg-mobile-hide" style={{ display: "flex", flexWrap: "wrap", gap: 10, maxWidth: 300 }}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <span key={i} style={{ width: 44, height: 44, borderRadius: 999, display: "grid", placeItems: "center", background: "rgba(255,255,255,.14)", color: "#eaf0fb", fontSize: 18 }}>✓</span>
+            ))}
+            <span style={{ height: 44, padding: "0 18px", borderRadius: 999, display: "grid", placeItems: "center", background: "#fff", color: "var(--brand-navy)", fontFamily: "var(--font-heading)", fontSize: 13, fontWeight: 700, letterSpacing: ".06em", boxShadow: "0 0 0 3px rgba(255,255,255,.28)" }}>GRATIS</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+window.DGForside = Forside;
+})();

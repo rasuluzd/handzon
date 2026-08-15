@@ -1,0 +1,37 @@
+/* Typografi. Barlow bærer alt som skal føles konstruert (overskrifter, tall,
+   etiketter, knapper). Source Sans 3 bærer alt som skal leses.
+   Størrelser er oppgitt mobil-først; --fs-*-lg er desktopverdien (>=900px). */
+:root{
+  --fs-display:38px;
+  --fs-display-lg:clamp(42px,3.6vw,58px); /* @kind font */
+  --lh-display:1.08; /* @kind other */
+  --lh-display-lg:1.04; /* @kind other */
+
+  --fs-h1:30px; --fs-h1-lg:32px; --lh-h1:1.10; /* @kind other */
+  --fs-h2:25px; --fs-h2-lg:28px; --lh-h2:1.15; /* @kind other */
+  --fs-h3:19px; --fs-h3-lg:21px; --lh-h3:1.25; /* @kind other */
+  --fs-title:17px; --fs-title-lg:18px; --lh-title:1.30; /* @kind other */
+
+  --fs-body-lg:18px; --fs-body-lg-desktop:19px;
+  --fs-body:16px;    --fs-body-desktop:16.5px;
+  --fs-small:14px;
+  --fs-micro:12.5px;
+  --lh-body:1.55; /* @kind other */
+  --lh-reading:1.65; /* @kind other */
+
+  --fs-eyebrow:14px;
+  --ls-eyebrow:0.1em; /* @kind other */
+
+  --fs-price-inline:16px;
+  --fs-price-feature:28px;
+
+  --fw-regular:400; /* @kind other */
+  --fw-medium:500; /* @kind other */
+  --fw-semibold:600; /* @kind other */
+  --fw-bold:700; /* @kind other */
+
+  /* Maks lesebredde */
+  --measure:64ch; /* @kind other */
+  --measure-lead:56ch; /* @kind other */
+  --measure-article:68ch; /* @kind other */
+}

@@ -1,0 +1,187 @@
+/* Oversikt — dagens drift: nøkkeltall, dagens bestillinger, kapasitet,
+   siste 14 dager, og hurtiglenker. */
+(function () {
+const D = window.HZ_DATA;
+const S = window.HZ_SALES;
+const { ADIcon: I, ADBtn: Btn, ADTag: Tag, ADKpi: Kpi, ADChart: Chart, ADBranch: Branch, ADTop: Top } = window;
+
+function Oversikt({ loc, setLoc, go, onBurger, services }) {
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const rep = React.useMemo(() => S.report(loc, "dag", today), [loc]);
+  const month = React.useMemo(() => S.report(loc, "maaned", today), [loc]);
+
+  /* Siste 14 dager som stolper. */
+  const trend = React.useMemo(() => {
+    const out = [];
+    for (let i = 13; i >= 0; i -= 1) {
+      const d = S.addDays(today, -i);
+      const orders = S.ordersInRange(loc, d, d);
+      out.push({
+        x: String(d.getDate()),
+        full: d.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "short" }),
+        sum: orders.reduce((n, o) => n + o.total, 0),
+        count: orders.length,
+        closed: d.getDay() === 0,
+      });
+    }
+    return out;
+  }, [loc]);
+
+  const locName = loc === "alle" ? "Hele kjeden" : "Handz On " + D.locations.find((l) => l.slug === loc).name;
+  const capacity = loc === "alle" ? 112 : 9;
+  const used = rep.now.count;
+  const fill = Math.min(1, used / capacity);
+  const upcoming = rep.orders.filter((o) => o.hour >= today.getHours()).slice(0, 6);
+  const list = upcoming.length ? upcoming : rep.orders.slice(-6);
+
+  const draftCount = 2;
+
+  return (
+    <React.Fragment>
+      <Top title="Oversikt" sub={`${locName} · ${today.toLocaleDateString("nb-NO", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`}
+           onBurger={onBurger}
+           right={<React.Fragment>
+             <Branch value={loc} onChange={setLoc} />
+             <Btn onClick={() => go("/rapport")}><I n="trending-up" s={16} />Full rapport</Btn>
+           </React.Fragment>} />
+
+      <div className="ad-body">
+        <div className="ad-kpis">
+          <Kpi navy label="Omsetning i dag" value={D.kr(rep.now.sum)} delta={S.pct(rep.now.sum, rep.before.sum)} hint="mot samme dag i forrige uke" />
+          <Kpi label="Ordrer i dag" value={rep.now.count} delta={S.pct(rep.now.count, rep.before.count)} hint="mot i går" />
+          <Kpi label="Snittordre" value={D.kr(rep.now.avg)} delta={S.pct(rep.now.avg, rep.before.avg)} hint="mot i går" />
+          <Kpi label="Denne måneden" value={D.kr(month.now.sum)} delta={S.pct(month.now.sum, month.before.sum)} hint="mot forrige måned" />
+        </div>
+
+        <div className="ad-grid2">
+          <div className="ad-card">
+            <div className="ad-card__head">
+              <div>
+                <div className="ad-card__title">Omsetning siste 14 dager</div>
+                <p className="ad-card__sub">{locName} · inkl. mva</p>
+              </div>
+              <Btn variant="g" size="sm" onClick={() => go("/rapport")}>Se rapport →</Btn>
+            </div>
+            <Chart data={trend} />
+          </div>
+
+          <div className="ad-card">
+            <div className="ad-card__head">
+              <div className="ad-card__title">Kapasitet i dag</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+              <span style={{ fontFamily: "var(--font-heading)", fontSize: 34, fontWeight: 700, color: "var(--ink)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{used}</span>
+              <span style={{ fontSize: 15, color: "var(--body-soft)" }}>av {capacity} plasser booket</span>
+            </div>
+            <div className="ad-share" style={{ height: 10, marginTop: 14 }}>
+              <i style={{ width: `${fill * 100}%`, background: fill > 0.9 ? "var(--brand-red)" : "var(--brand-navy)" }} />
+            </div>
+            <p className="ad-note" style={{ marginTop: 12 }}>
+              {fill > 0.9 ? "Nesten fullt. Vurder å åpne kveldstider." : fill > 0.6 ? "God belegg. Ledige tider sent på dagen." : "Ledig kapasitet — vurder å pushe dagens kampanje."}
+            </p>
+
+            <div className="ad-secttl" style={{ marginTop: 24 }}>Fordeling i dag</div>
+            <div className="ad-list">
+              {rep.categories.slice(0, 5).map((r) => (
+                <div className="ad-li" key={r.cat.value}>
+                  <div className="ad-li__bd">
+                    <div className="ad-li__t">{r.cat.label}</div>
+                    <div className="ad-li__m">{r.count} {r.count === 1 ? "ordre" : "ordrer"}</div>
+                  </div>
+                  <span className="ad-li__n">{D.kr(r.sum)}</span>
+                </div>
+              ))}
+              {!rep.categories.length && <p className="ad-note">Ingen ordrer registrert i dag ennå.</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="ad-grid2">
+          <div className="ad-card ad-card--flush">
+            <div className="ad-card__head" style={{ padding: "20px 20px 0", marginBottom: 14 }}>
+              <div>
+                <div className="ad-card__title">{upcoming.length ? "Neste inn i dag" : "Siste inn i dag"}</div>
+                <p className="ad-card__sub">{rep.now.count} ordrer totalt · {D.kr(rep.now.sum)}</p>
+              </div>
+              <Btn variant="g" size="sm" onClick={() => go("/bestillinger")}>Alle bestillinger →</Btn>
+            </div>
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr><th>Tid</th><th>Tjeneste</th>{loc === "alle" && <th>Avdeling</th>}<th>Kanal</th><th className="num">Sum</th></tr>
+                </thead>
+                <tbody>
+                  {list.map((o) => {
+                    const svc = D.services.find((s) => s.id === o.serviceId);
+                    return (
+                      <tr key={o.id}>
+                        <td className="num" style={{ textAlign: "left" }}>{String(o.hour).padStart(2, "0")}:00</td>
+                        <td>
+                          <div className="nm">{svc.name}</div>
+                          <div className="meta">
+                            ca. {D.dur(svc.min)}
+                            {o.addOns.length ? " · " + o.addOns.map((id) => D.addOns.find((a) => a.id === id).name).join(", ") : ""}
+                          </div>
+                        </td>
+                        {loc === "alle" && <td>{D.locations.find((l) => l.slug === o.loc).name}</td>}
+                        <td>{o.member ? <Tag variant="ok">Medlem</Tag> : <Tag variant="off">{o.channel === "nett" ? "Nett" : o.channel === "skranke" ? "Skranke" : "Telefon"}</Tag>}</td>
+                        <td className="num">{D.kr(o.total)}</td>
+                      </tr>
+                    );
+                  })}
+                  {!list.length && <tr><td colSpan={loc === "alle" ? 5 : 4}><p className="ad-note">Ingen ordrer i dag — søndager er stengt.</p></td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="ad-card">
+            <div className="ad-card__head"><div className="ad-card__title">Å gjøre</div></div>
+            <div className="ad-list">
+              <div className="ad-li">
+                <span style={{ color: "var(--status-closed)" }}><I n="newspaper" s={20} /></span>
+                <div className="ad-li__bd">
+                  <div className="ad-li__t">{draftCount} blogginnlegg venter</div>
+                  <div className="ad-li__m">Utkast som ikke er publisert</div>
+                </div>
+                <Btn variant="s" size="sm" onClick={() => go("/blogg")}>Åpne</Btn>
+              </div>
+              <div className="ad-li">
+                <span style={{ color: "var(--brand-navy)" }}><I n="sparkles" s={20} /></span>
+                <div className="ad-li__bd">
+                  <div className="ad-li__t">{services.filter((s) => s.dirty).length || 0} prisendringer ulagret</div>
+                  <div className="ad-li__m">Endringer i tjenestekatalogen</div>
+                </div>
+                <Btn variant="s" size="sm" onClick={() => go("/tjenester")}>Åpne</Btn>
+              </div>
+              <div className="ad-li">
+                <span style={{ color: "var(--status-open)" }}><I n="shield-check" s={20} /></span>
+                <div className="ad-li__bd">
+                  <div className="ad-li__t">Arbeidstilsynet — godkjenning gyldig</div>
+                  <div className="ad-li__m">Neste fornyelse 12.03.2027</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="ad-secttl" style={{ marginTop: 24 }}>Beste tjenester denne måneden</div>
+            <div className="ad-list">
+              {month.services.slice(0, 4).map((r) => (
+                <div className="ad-li" key={r.service.id}>
+                  <img className="ad-thumb" src={r.service.img} alt="" />
+                  <div className="ad-li__bd">
+                    <div className="ad-li__t">{r.service.name}</div>
+                    <div className="ad-li__m">{r.count} solgt</div>
+                  </div>
+                  <span className="ad-li__n">{D.kr(r.sum)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+window.ADOversikt = Oversikt;
+})();

@@ -1,0 +1,145 @@
+/* Tjenester — katalog med sticky filter, og tjeneste-detalj med sticky booking-CTA. */
+(function () {
+const D = window.HZ_DATA;
+const { DGBtn: Btn, DGTag: Tag, DGPrice: Price, DGIcon: I, DGTile: Tile } = window;
+
+function Tjenester({ go }) {
+  const [cat, setCat] = React.useState(null);
+  const [sort, setSort] = React.useState("Populær");
+  const cats = D.categories.map((c) => ({ ...c, count: D.services.filter((s) => s.cat === c.value).length }));
+  let list = cat ? D.services.filter((s) => s.cat === cat) : D.services;
+  list = [...list].sort((a, b) =>
+    sort === "Pris lav–høy" ? a.price - b.price :
+    sort === "Pris høy–lav" ? b.price - a.price :
+    (b.popular ? 1 : 0) - (a.popular ? 1 : 0));
+
+  return (
+    <div>
+      <div className="dg-pagehead">
+        <div className="dg-eyebrow">Tjenester</div>
+        <h1 className="dg-h1" style={{ fontSize: "clamp(32px,4vw,46px)", marginTop: 14 }}>Alt innen bilpleie</h1>
+        <p className="dg-lead">Faste priser, ingen overraskelser. Lokale avvik vises per avdeling — endelig pris får du i bookingen.</p>
+        <div style={{ height: 24 }} />
+      </div>
+
+      <div className="dg-filterbar">
+        <div className="dg-chips">
+          <button type="button" className={`dg-chip${cat === null ? " on" : ""}`} onClick={() => setCat(null)}>Alle</button>
+          {cats.map((c) => (
+            <button type="button" key={c.value} className={`dg-chip${cat === c.value ? " on" : ""}`} onClick={() => setCat(c.value)}>
+              {c.label} <span style={{ opacity: .65 }}>{c.count}</span>
+            </button>
+          ))}
+        </div>
+        <select className="dg-select" aria-label="Sortering" value={sort} onChange={(e) => setSort(e.target.value)} style={{ marginLeft: "auto" }}>
+          {["Populær", "Pris lav–høy", "Pris høy–lav"].map((o) => <option key={o}>{o}</option>)}
+        </select>
+      </div>
+
+      <section className="dg-sec" style={{ paddingTop: 22 }}>
+        <p aria-live="polite" className="dg-note" style={{ marginBottom: 16 }}>
+          Viser {list.length} {list.length === 1 ? "tjeneste" : "tjenester"}{cat ? " i " + cats.find((c) => c.value === cat).label : ""}.
+        </p>
+        <div className="dg-grid dg-xfade" key={cat || "alle"}>
+          {list.map((s) => <Tile key={s.id} s={s} flag={s.popular ? "Populær" : null} onClick={() => go("/tjeneste/" + s.id)} />)}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+const INCLUDES = {
+  bilvask: ["Forvask og skumbad", "Håndvask med to-bøtte-metode", "Felgvask og dekkrens", "Skånsom tørk med mikrofiber"],
+  polering: ["Lakkrens og avfetting", "Maskinpolering i flere trinn", "Fjerning av svirvelmerker", "Beskyttende voks til slutt"],
+  lakkforsegling: ["Full lakkrens med leire", "Avfetting og IPA-tørk", "Graphene-basert coating", "Herding under kontrollerte forhold"],
+  "full-shine": ["Komplett vask ute og inne", "Lakkrens og polering", "Innvendig dyprens av alle flater", "Klimadesinfisering"],
+  interior: ["Grundig støvsuging", "Rens av alle harde flater", "Tekstil- eller skinnrens av seter", "Rens av vinduer innvendig"],
+  hjul: ["Demontering og montering", "Momenttrekk etter spesifikasjon", "Kontroll av dekktrykk", "Visuell kontroll av dekk"],
+};
+
+function TjenesteDetalj({ go, id }) {
+  const s = D.services.find((x) => x.id === id) || D.services[0];
+  const extras = (D.affinity[s.id] || ["dekkrens", "rute", "asfalt"]).map((a) => D.addOns.find((x) => x.id === a));
+  const related = D.services.filter((x) => x.cat === s.cat && x.id !== s.id).slice(0, 3);
+
+  return (
+    <div style={{ paddingBottom: 100 }}>
+      <div className="dg-banner">
+        <img src={s.hero} alt={s.name} />
+      </div>
+      <div style={{ maxWidth: 820, margin: "0 auto", padding: "26px var(--pad) 0" }} className="dg-w">
+        <nav aria-label="Sti" className="dg-note" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+          <a href="/" onClick={(e) => { e.preventDefault(); go("/"); }}>Forside</a><span>/</span>
+          <a href="/tjenester" onClick={(e) => { e.preventDefault(); go("/tjenester"); }}>Tjenester</a><span>/</span>
+          <span style={{ color: "var(--body-strong)" }}>{s.name}</span>
+        </nav>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          <Tag>{s.catLabel}</Tag>
+          {s.popular && <Tag variant="red">Mest booket</Tag>}
+          {s.guarantee && <Tag>{s.guarantee}</Tag>}
+        </div>
+        <h1 className="dg-h1" style={{ fontSize: "clamp(30px,3.6vw,42px)" }}>{s.name}</h1>
+        <p className="dg-lead" style={{ marginTop: 14, maxWidth: "58ch" }}>{s.desc}</p>
+
+        <dl className="dg-dl" style={{ marginTop: 26 }}>
+          <div><dt>Pris fra</dt><dd style={{ color: "var(--brand-navy)" }}>{D.kr(s.price)}</dd></div>
+          <div><dt>Varighet</dt><dd>ca. {D.dur(s.min)}</dd></div>
+          <div><dt>{s.guarantee ? "Garanti" : "Nivå"}</dt><dd>{s.guarantee || s.level || "Standard"}</dd></div>
+        </dl>
+
+        <h2 className="dg-h2" style={{ fontSize: 24, margin: "34px 0 14px" }}>Dette inngår</h2>
+        <ul className="dg-checks">
+          {INCLUDES[s.cat].map((t) => <li key={t}><I n="check" />{t}</li>)}
+        </ul>
+
+        <h2 className="dg-h2" style={{ fontSize: 24, margin: "34px 0 14px" }}>Ofte valgt sammen</h2>
+        <div className="dg-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
+          {extras.map((a) => (
+            <div className="dg-card" key={a.id}>
+              <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{a.name}</div>
+              <p style={{ margin: "5px 0 12px", fontSize: 14, lineHeight: 1.45, color: "var(--body-soft)" }}>{a.desc}</p>
+              <span className="dg-price" style={{ fontSize: 16 }}>+ {D.kr(a.price)}</span>
+            </div>
+          ))}
+        </div>
+
+        {related.length > 0 && (
+          <React.Fragment>
+            <h2 className="dg-h2" style={{ fontSize: 24, margin: "34px 0 14px" }}>Andre {s.catLabel.toLowerCase()}-tjenester</h2>
+            <div className="dg-rows">
+              {related.map((r) => (
+                <button type="button" key={r.id} className="dg-opt" onClick={() => go("/tjeneste/" + r.id)}>
+                  <img src={r.img} alt="" />
+                  <div className="dg-opt__bd">
+                    <div className="dg-opt__nm">{r.name}</div>
+                    <p className="dg-opt__ds">{r.desc}</p>
+                    <div className="dg-opt__mt">ca. {D.dur(r.min)}</div>
+                  </div>
+                  <div className="dg-opt__pr"><b>{D.kr(r.price)}</b></div>
+                </button>
+              ))}
+            </div>
+          </React.Fragment>
+        )}
+
+        <p className="dg-note" style={{ marginTop: 28 }}>
+          Prisen er kjedens standardpris inkl. mva. Enkelte avdelinger har egne lokalpriser — den endelige prisen vises i bookingen når du har valgt avdeling.
+        </p>
+      </div>
+
+      <div className="dg-sticky">
+        <div className="dg-sticky__in" style={{ maxWidth: 820 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="l">Valgt tjeneste</div>
+            <div className="v" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+          </div>
+          <span className="dg-sticky__tot">fra {D.kr(s.price)}</span>
+          <Btn size="lg" onClick={() => go("/booking?service=" + s.id)}>Bestill denne</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { DGTjenester: Tjenester, DGTjenesteDetalj: TjenesteDetalj });
+})();

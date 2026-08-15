@@ -1,0 +1,190 @@
+/* Avdelinger — oversikt med kart og liste, og avdelingsside per lokasjon. */
+(function () {
+const D = window.HZ_DATA;
+const { DGBtn: Btn, DGTag: Tag, DGIcon: I, DGProof: Proof, DG_HOURS } = window;
+
+function BranchCard({ l, go, active, onHover }) {
+  return (
+    <div className="dg-card" onMouseEnter={onHover} style={active ? { borderColor: "var(--brand-navy)" } : undefined}>
+      <div className="dg-branch__top">
+        <div>
+          <div className="dg-branch__name">Handz On {l.name}</div>
+          <p className="dg-branch__addr">{l.center} · {l.address}, {l.zip} {l.city}</p>
+        </div>
+        <span className="dg-branch__dist">{l.dist}</span>
+      </div>
+      <div className="dg-branch__meta">
+        <Tag variant={l.open ? "open" : "closed"} dot>{l.open ? "Åpen nå" : "Stengt nå"}</Tag>
+        {l.campaign && <Tag>{l.campaign}</Tag>}
+      </div>
+      <p className="dg-branch__hours">Man–ons 08–17 · Tors 08–18 · Fre 08–17 · Lør 10–15 · Søn stengt</p>
+      <div className="dg-branch__acts">
+        <Btn size="sm" onClick={() => go("/booking?loc=" + l.slug)}>Book her</Btn>
+        <Btn size="sm" variant="s" onClick={() => go("/avdeling/" + l.slug)}>Se avdelingen</Btn>
+      </div>
+    </div>
+  );
+}
+
+function Avdelinger({ go }) {
+  const [q, setQ] = React.useState("");
+  const [near, setNear] = React.useState(false);
+  const [active, setActive] = React.useState(D.locations[0].slug);
+  const [loading, setLoading] = React.useState(false);
+  /* Kartet dempes mens det nye utsnittet lastes, så det ikke blinker.
+     Med Google Maps JS API byttes dette mot panTo(). */
+  const focusOn = (slug) => {
+    if (slug === active) return;
+    setLoading(true);
+    setActive(slug);
+  };
+  const hit = (l) => [l.name, l.city, l.zip, l.region, l.center].join(" ").toLowerCase().includes(q.toLowerCase());
+  const found = q ? D.locations.filter(hit) : D.locations;
+  const list = found.length ? found : D.locations;
+  const focus = D.locations.find((l) => l.slug === active) || D.locations[0];
+
+  return (
+    <div>
+      <div className="dg-pagehead">
+        <div className="dg-eyebrow">Avdelinger</div>
+        <h1 className="dg-h1" style={{ fontSize: "clamp(32px,4vw,46px)", marginTop: 14 }}>14 avdelinger i Norge</h1>
+        <p className="dg-lead">Fra Sørlandssenteret i sør til Moa i nord. De fleste ligger på et kjøpesenter, så du kan gjøre ærendene mens vi jobber.</p>
+      </div>
+
+      <section className="dg-sec" style={{ paddingTop: 28 }}>
+        <div className="dg-two">
+          <div className="dg-sticky-col" style={{ position: "sticky", top: 92 }}>
+            <div className={`dg-map${loading ? " is-loading" : ""}`}>
+              <iframe title={"Kart — Handz On " + focus.name} loading="lazy" src={D.mapUrl(focus)} onLoad={() => setLoading(false)} />
+            </div>
+            <p className="dg-note" style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 9 }}>
+              <I n="map-pin" s={16} />Viser <strong style={{ color: "var(--ink)", fontWeight: 600 }}>Handz On {focus.name}</strong> · {focus.center}
+            </p>
+          </div>
+
+          <div>
+            <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+              <label className="dg-search" style={{ flex: 1 }}>
+                <span className="dg-search__ico"><I n="search" s={18} /></span>
+                <input className="dg-input" type="search" value={q} placeholder="By eller postnummer, f.eks. Bergen"
+                       aria-label="Søk etter avdeling" onChange={(e) => { setQ(e.target.value); setNear(false); }} />
+              </label>
+              <Btn variant="s" onClick={() => { setNear(true); setQ(""); }}><I n="map-pin" s={16} />Nær meg</Btn>
+            </div>
+            <p className="dg-note" style={{ marginBottom: 14 }}>
+              {near ? "Sortert etter avstand fra posisjonen din."
+                : q ? (found.length ? `${found.length} treff på «${q}».` : `Ingen treff på «${q}» — viser alle avdelinger.`)
+                : "14 avdelinger, sortert etter avstand fra Oslo sentrum."}
+            </p>
+            <div className="dg-rows">
+              {list.map((l) => (
+                <BranchCard key={l.slug} l={l} go={go} active={active === l.slug} onHover={() => focusOn(l.slug)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function Avdeling({ go, slug }) {
+  const l = D.locations.find((x) => x.slug === slug) || D.locations[0];
+  const today = new Date().getDay();
+  const popular = ["vask-ut-innvendig-premium", "polering-basic", "rens-innvendig"]
+    .map((id) => D.services.find((s) => s.id === id))
+    .filter((s) => D.availableAt(l.slug, s.id));
+  const missing = D.services.filter((s) => !D.availableAt(l.slug, s.id));
+
+  return (
+    <div>
+      <div className="dg-banner" style={{ height: "clamp(180px,22vw,280px)" }}>
+        <img src={D.PHOTOS + "utvendig-handvask.webp"} alt={"Handz On " + l.name} />
+      </div>
+      <div className="dg-pagehead">
+        <nav aria-label="Sti" className="dg-note" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          <a href="/" onClick={(e) => { e.preventDefault(); go("/"); }}>Forside</a><span>/</span>
+          <a href="/avdelinger" onClick={(e) => { e.preventDefault(); go("/avdelinger"); }}>Avdelinger</a><span>/</span>
+          <span style={{ color: "var(--body-strong)" }}>{l.name}</span>
+        </nav>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+          <Tag variant={l.open ? "open" : "closed"} dot>{l.open ? "Åpen nå" : "Stengt nå"}</Tag>
+          {l.campaign && <Tag>{l.campaign}</Tag>}
+        </div>
+        <h1 className="dg-h1" style={{ fontSize: "clamp(32px,4vw,46px)" }}>Handz On {l.name}</h1>
+        <p className="dg-lead">{l.center} · {l.address}, {l.zip} {l.city}. Lever nøkkelen i skranken, gjør ærendene dine på senteret, og hent en ren bil.</p>
+        <div className="dg-acts">
+          <Btn size="lg" onClick={() => go("/booking?loc=" + l.slug)}>Bestill time her</Btn>
+          <Btn variant="s" size="lg" onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Handz On " + l.name + " " + l.address + " " + l.city)}`, "_blank")}>Veibeskrivelse ↗</Btn>
+        </div>
+      </div>
+
+      <section className="dg-sec" style={{ paddingTop: 34 }}>
+        <div className="dg-two">
+          <div>
+            <h2 className="dg-h2" style={{ fontSize: 24, marginBottom: 14 }}>Åpningstider</h2>
+            <table className="dg-hours">
+              <tbody>
+                {DG_HOURS.map(([d, h], i) => (
+                  <tr key={d} className={i + 1 === (today === 0 ? 7 : today) ? "now" : ""}>
+                    <td>{d}{i + 1 === (today === 0 ? 7 : today) ? " (i dag)" : ""}</td>
+                    <td>{h}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <dl className="dg-dl" style={{ marginTop: 22 }}>
+              <div><dt>Telefon</dt><dd style={{ fontSize: 17 }}>{l.phone}</dd></div>
+              <div><dt>Region</dt><dd style={{ fontSize: 17 }}>{l.region}</dd></div>
+            </dl>
+            <p className="dg-note" style={{ marginTop: 16 }}>
+              Handz On {l.name} AS er en egen juridisk enhet og selvstendig franchisetaker. Org. 923 456 787.
+            </p>
+          </div>
+          <div>
+            <div className="dg-map" style={{ height: "clamp(260px,32vw,380px)" }}>
+              <iframe title={"Kart — Handz On " + l.name} loading="lazy" src={D.mapUrl(l, 15)} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="dg-sec dg-sec--tight">
+        <div className="dg-sechead">
+          <h2 className="dg-h2">Populært hos oss</h2>
+          <a className="dg-sechead__more" href="/tjenester" onClick={(e) => { e.preventDefault(); go("/tjenester"); }}>Se alle tjenester →</a>
+        </div>
+        <div className="dg-rows">
+          {popular.map((s) => {
+            const p = D.priceAt(l.slug, s.id);
+            const local = p !== s.price;
+            return (
+              <button type="button" key={s.id} className="dg-opt" onClick={() => go("/tjeneste/" + s.id)}>
+                <img src={s.img} alt="" />
+                <div className="dg-opt__bd">
+                  <div className="dg-opt__nm">{s.name}{local && <Tag>Lokalpris</Tag>}</div>
+                  <p className="dg-opt__ds">{s.desc}</p>
+                  <div className="dg-opt__mt">{s.catLabel} · ca. {D.dur(s.min)}</div>
+                </div>
+                <div className="dg-opt__pr">
+                  {local && <s>{D.kr(s.price)}</s>}
+                  <b>{D.kr(p)}</b>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        {missing.length > 0 && (
+          <p className="dg-note" style={{ marginTop: 16 }}>
+            Ikke tilgjengelig her: {missing.map((s) => s.name).join(", ")}. Nærmeste avdeling som tilbyr dette er Handz On {D.locations.find((x) => x.slug !== l.slug).name}.
+          </p>
+        )}
+      </section>
+
+      <Proof heading={"Anmeldelser fra " + l.name} go={go} />
+    </div>
+  );
+}
+
+Object.assign(window, { DGAvdelinger: Avdelinger, DGAvdeling: Avdeling });
+})();

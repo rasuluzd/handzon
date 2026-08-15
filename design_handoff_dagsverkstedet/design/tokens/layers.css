@@ -1,0 +1,11 @@
+/* Z-indeks. */
+:root{
+  --z-base:0; /* @kind other */
+  --z-raised:10; /* @kind other */
+  --z-sticky:30; /* @kind other */
+  --z-header:40; /* @kind other */
+  --z-pop:50; /* @kind other */
+  --z-mobilenav:60; /* @kind other */
+  --z-toast:70; /* @kind other */
+  --z-modal:80; /* @kind other */
+}

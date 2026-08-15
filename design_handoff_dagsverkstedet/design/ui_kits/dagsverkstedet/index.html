@@ -1,0 +1,38 @@
+<!-- @dsCard group="Dagsverkstedet" viewport="1180x820" name="Handz On demo — hele flyten" subtitle="Klikkbar demo i valgt retning: forside, tjenester, detalj, avdelinger, avdelingsside, om oss, 7-stegs booking og Min side" -->
+<!-- @startingPoint section="Dagsverkstedet" subtitle="Komplett kundedemo — nettside, booking og Min side" viewport="1180x820" -->
+<!doctype html>
+<html lang="nb"><head><meta charset="utf-8"><title>Handz On Auto Care — demo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../styles.css">
+<link rel="stylesheet" href="dagslys.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+<script src="../../ds-boot.js"></script>
+<!-- Sett kundens egen Google Maps Embed-nøkkel her, så byttes OSM-fallbacken ut:
+     <script>window.HZ_GOOGLE_MAPS_KEY = "…";</script> -->
+<script src="../data.js"></script>
+<style>
+body{background:var(--canvas);margin:0}
+#app{max-width:var(--container);margin:0 auto;background:#fff;min-height:100vh;box-shadow:var(--shadow-app)}
+.dg-band{grid-template-columns:0.95fr 1fr}
+@media(max-width:899px){.dg-band{grid-template-columns:1fr!important}.dg-band>div:first-child{min-height:220px!important}.dg-mobile-hide{display:none}}
+</style>
+</head><body>
+<div id="app"></div>
+<script>
+window.HZ.boot('../../').then(function(NS){
+  window.HZ_COMPONENTS = NS;
+  ['chrome.jsx.txt','screen-forside.jsx.txt','screen-tjenester.jsx.txt','screen-avdelinger.jsx.txt','screen-om-oss.jsx.txt','screen-booking-a.jsx.txt','screen-booking-b.jsx.txt','screen-min-side.jsx.txt','app.jsx.txt']
+    .reduce(function(p,f){
+      return p.then(function(){
+        return fetch(f).then(function(r){return r.text()}).then(function(code){
+          (0,eval)(Babel.transform(code,{presets:['react']}).code);
+        });
+      });
+    }, Promise.resolve())
+    .catch(function(e){ console.error('Demo failed to load:', e); });
+});
+</script>
+</body></html>

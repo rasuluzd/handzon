@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="nb"><head><meta charset="utf-8"><title>Dagsverkstedet — designprototyper</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="styles.css">
+<style>
+body{background:var(--canvas);margin:0}
+.w{max-width:900px;margin:0 auto;padding:clamp(40px,7vw,88px) clamp(24px,4vw,48px)}
+.eb{font-family:var(--font-heading);font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--brand-navy)}
+h1{font-family:var(--font-heading);font-size:clamp(32px,4.4vw,52px);font-weight:700;letter-spacing:-.03em;line-height:1.03;margin:14px 0 0;color:var(--ink)}
+.lead{margin:16px 0 0;max-width:60ch;font-size:18.5px;line-height:1.6;color:var(--body)}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:36px}
+.c{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-card-lg);box-shadow:var(--shadow-card);overflow:hidden;color:inherit;transition:transform var(--dur) var(--ease-standard),box-shadow var(--dur) var(--ease-standard)}
+.c:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-hover);color:inherit}
+.c__ph{height:140px;overflow:hidden;background:var(--surface-sunken)}
+.c__ph img{width:100%;height:100%;object-fit:cover}
+.c__ph--navy{background:var(--brand-navy-deep);display:grid;place-items:center}
+.c__ph--navy img{width:auto;height:38px;object-fit:contain}
+.c__b{padding:22px}
+.c__k{font-family:var(--font-heading);font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--body-soft)}
+.c h2{font-family:var(--font-heading);font-size:24px;font-weight:700;letter-spacing:-.02em;margin:8px 0 0;color:var(--ink)}
+.c p{margin:9px 0 0;font-size:15px;line-height:1.55;color:var(--body-soft)}
+.c__go{margin-top:16px;font-family:var(--font-heading);font-size:14.5px;font-weight:600;color:var(--brand-navy)}
+.docs{margin-top:40px;padding-top:26px;border-top:1px solid var(--line)}
+.docs h3{font-family:var(--font-heading);font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--body-soft);margin:0 0 14px}
+.docs ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
+.docs li{font-size:15px;line-height:1.5;color:var(--body)}
+.docs b{font-family:var(--font-heading);color:var(--ink)}
+.note{margin-top:32px;padding:16px 18px;border-left:3px solid var(--brand-red);background:var(--surface-alt);font-size:15px;line-height:1.6}
+@media(max-width:760px){.cards,.docs ul{grid-template-columns:1fr}}
+</style>
+</head><body>
+<div class="w">
+  <div class="eb">Designprototyper</div>
+  <h1>Dagsverkstedet</h1>
+  <p class="lead">To klikkbare prototyper: kundeflaten og det interne adminpanelet. Alt innhold er ekte — ekte tjenestenavn, ekte priser, ekte avdelinger. Åpne dem side om side med koden mens du implementerer.</p>
+
+  <div class="cards">
+    <a class="c" href="ui_kits/dagsverkstedet/index.html">
+      <div class="c__ph"><img src="assets/photos/komplett-bilpleie.webp" alt=""></div>
+      <div class="c__b">
+        <div class="c__k">Kundeflaten</div>
+        <h2>Nettside, booking, Min side</h2>
+        <p>Forside, tjenestekatalog, tjeneste-detalj, avdelinger, avdelingsside, om oss, de sju bookingstegene og kundeportalen.</p>
+        <div class="c__go">Åpne prototypen →</div>
+      </div>
+    </a>
+    <a class="c" href="ui_kits/admin/index.html">
+      <div class="c__ph c__ph--navy"><img src="assets/logo-white.png" alt=""></div>
+      <div class="c__b">
+        <div class="c__k">Internt verktøy</div>
+        <h2>Adminpanel</h2>
+        <p>Oversikt, bestillinger med statusflyt, salgsrapport for dag/uke/måned/år per avdeling, tjeneste- og prisredigering, og bloggverktøy.</p>
+        <div class="c__go">Åpne prototypen →</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="docs">
+    <h3>Spesifikasjonene ligger ett nivå opp</h3>
+    <ul>
+      <li><b>README.md</b> — start her. Seks PR-er i rekkefølge</li>
+      <li><b>TOKENS.md</b> — hver token med hex og Tailwind-klasse</li>
+      <li><b>COMPONENTS.md</b> — anatomi og tilstander per primitiv</li>
+      <li><b>SCREENS.md</b> — kundeflaten skjerm for skjerm</li>
+      <li><b>ADMIN.md</b> — adminpanelet skjerm for skjerm</li>
+      <li><b>MOTION.md</b> — hver animasjon med varighet og utløser</li>
+      <li><b>CONTENT.md</b> — språkregler med eksempler</li>
+      <li><b>code/</b> — ferdig TypeScript, lim inn direkte</li>
+    </ul>
+  </div>
+
+  <p class="note"><strong>Prototypene er designreferanser, ikke produksjonskode.</strong> De kjører på plain React + Babel i nettleseren uten byggesteg. Bruk dem til å se utseende, tilstander og oppførsel — hent verdiene fra TOKENS.md og COMPONENTS.md.</p>
+</div>
+</body></html>

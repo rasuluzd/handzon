@@ -1,0 +1,299 @@
+/* Dagsverkstedet — delt chrome: nav, footer, ikon, småkomponenter. */
+(function () {
+const D = window.HZ_DATA;
+
+const NAV = [
+  { href: "/", label: "Forside" },
+  { href: "/tjenester", label: "Tjenester" },
+  { href: "/avdelinger", label: "Avdelinger" },
+  { href: "/om-oss", label: "Om oss" },
+  { href: "/min-side", label: "Min side" },
+];
+
+const I = ({ n, s = 18, style }) => (
+  <i data-lucide={n} aria-hidden="true" style={{ display: "inline-flex", width: s, height: s, flex: "none", ...style }} />
+);
+
+const reduced = () => typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* On-scroll reveal. Brukes sparsomt — bare på forsidens hovedblokker.
+   Enkel rulle-lytter framfor IntersectionObserver: den fanger også hopp i
+   rullefeltet, så ingenting kan bli stående usynlig. */
+function Reveal({ delay = 0, as: Tag = "div", className = "", children, ...rest }) {
+  const ref = React.useRef(null);
+  const [shown, setShown] = React.useState(false);
+  React.useEffect(() => {
+    if (reduced()) { setShown(true); return undefined; }
+    const el = ref.current;
+    if (!el) return undefined;
+    let done = false;
+    const check = () => {
+      if (done || !ref.current) return;
+      if (ref.current.getBoundingClientRect().top < window.innerHeight * 0.9) {
+        done = true;
+        setShown(true);
+        window.removeEventListener("scroll", check);
+        window.removeEventListener("resize", check);
+      }
+    };
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    check();
+    return () => {
+      done = true;
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, []);
+  return (
+    <Tag ref={ref} className={`dg-reveal${shown ? " in" : ""} ${className}`.trim()} style={{ "--d": `${delay}ms` }} {...rest}>
+      {children}
+    </Tag>
+  );
+}
+
+/* Teller et beløp opp eller ned når summen endrer seg. */
+function useCountUp(target, dur = 340) {
+  const [v, setV] = React.useState(target);
+  const shown = React.useRef(target);
+  React.useEffect(() => { shown.current = v; }, [v]);
+  React.useEffect(() => {
+    const a = shown.current;
+    if (a === target) return undefined;
+    if (reduced()) { setV(target); return undefined; }
+    const t0 = performance.now();
+    let raf;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      setV(Math.round(a + (target - a) * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, dur]);
+  return v;
+}
+
+function Btn({ variant = "p", size, block, loading, children, ...rest }) {
+  const cls = ["dg-btn", `dg-btn--${variant}`, size ? `dg-btn--${size}` : "", block ? "dg-btn--block" : ""].filter(Boolean).join(" ");
+  return (
+    <button type="button" className={cls} disabled={loading || rest.disabled} {...rest}>
+      {loading && <span className="dg-spin" aria-hidden="true" />}
+      {loading ? "Henter…" : children}
+    </button>
+  );
+}
+
+function Tag({ variant = "navy", dot, children }) {
+  return (
+    <span className={`dg-tag dg-tag--${variant}`}>
+      {dot && <span className="dg-dot" />}
+      {children}
+    </span>
+  );
+}
+
+function Price({ amount, from, size }) {
+  return (
+    <span className="dg-price" style={size ? { fontSize: size } : undefined}>
+      {from && <small>fra</small>}{D.kr(amount)}
+    </span>
+  );
+}
+
+function Nav({ route, go }) {
+  const [open, setOpen] = React.useState(false);
+  const [shrunk, setShrunk] = React.useState(false);
+  const base = "/" + route.split("/")[1];
+  const jump = (href) => (e) => { e.preventDefault(); setOpen(false); go(href); };
+  /* Krymper etter 40 px rulling — stilen gjelder bare under 900 px.
+     Lytter på både window og document: i innrammede visninger blir
+     rulle-hendelsen ikke alltid levert til window. */
+  React.useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        setShrunk(y > 40);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  return (
+    <React.Fragment>
+      <nav className={`dg-nav${shrunk ? " is-shrunk" : ""}`}>
+        <a className="dg-nav__logo" href="/" onClick={jump("/")} aria-label="Handz On Auto Care – til forsiden">
+          <img src="../../assets/logo-original.webp" alt="Handz On Auto Care" />
+        </a>
+        <div className="dg-nav__links">
+          {NAV.map((l) => (
+            <a key={l.href} href={l.href} onClick={jump(l.href)}
+               className={base === l.href || (l.href === "/tjenester" && base === "/tjeneste") || (l.href === "/avdelinger" && base === "/avdeling") ? "on" : ""}
+               aria-current={base === l.href ? "page" : undefined}>{l.label}</a>
+          ))}
+        </div>
+        <Btn onClick={() => go("/booking")}>Bestill time</Btn>
+        <button type="button" className="dg-nav__burger" aria-label="Åpne meny" aria-expanded={open} onClick={() => setOpen(true)}>
+          <span /><span /><span />
+        </button>
+      </nav>
+      {open && (
+        <div className="dg-sheet" role="dialog" aria-modal="true" aria-label="Meny">
+          <div className="dg-sheet__top">
+            <img src="../../assets/logo-original.webp" alt="Handz On Auto Care" />
+            <button type="button" className="dg-sheet__x" onClick={() => setOpen(false)} aria-label="Lukk meny">✕</button>
+          </div>
+          <nav aria-label="Mobilmeny">
+            {NAV.concat([{ href: "/gavekort", label: "Gavekort" }]).map((l) => (
+              <a key={l.href} href={l.href} onClick={jump(l.href)}>{l.label}</a>
+            ))}
+          </nav>
+          <div className="dg-sheet__foot">
+            <Btn size="lg" block onClick={() => { setOpen(false); go("/booking"); }}>Bestill time</Btn>
+            <p>14 avdelinger over hele Norge</p>
+          </div>
+        </div>
+      )}
+    </React.Fragment>
+  );
+}
+
+const FOOT = [
+  ["Informasjon", ["Om oss", "Bli franchisetaker", "Bli medlem", "Jobb hos oss", "Kontakt oss"]],
+  ["Tjenester", ["Bilvask", "Polering", "Lakkforsegling", "Full Shine", "Interiør", "Dekk & Felg"]],
+  ["Mine sider", ["Logg inn", "Ny kunde", "Gavekort", "Bilpleie-guiden"]],
+];
+
+function Footer({ go }) {
+  const jump = (label) => (e) => {
+    e.preventDefault();
+    const map = { "Om oss": "/om-oss", "Logg inn": "/min-side", "Ny kunde": "/min-side", Bilvask: "/tjenester", Polering: "/tjenester", Lakkforsegling: "/tjenester", "Full Shine": "/tjenester", Interiør: "/tjenester", "Dekk & Felg": "/tjenester" };
+    if (map[label]) go(map[label]);
+  };
+  return (
+    <React.Fragment>
+      <footer className="dg-foot">
+        <div>
+          <img src="../../assets/logo-white.png" alt="Handz On Auto Care" />
+          <p>Book på 60 sekunder. Lever nøkkelen på senteret, hent en ren bil når du er ferdig å handle.</p>
+        </div>
+        {FOOT.map(([title, links]) => (
+          <div key={title}>
+            <h4>{title}</h4>
+            <ul>{links.map((l) => <li key={l}><a href="#" onClick={jump(l)}>{l}</a></li>)}</ul>
+          </div>
+        ))}
+      </footer>
+      <div className="dg-legal">
+        <div>
+          <span>© 2026 Handz On Auto Care · Hver avdeling drives av egen juridisk enhet.</span>
+          <span>Handz On Norway AS, Laguneveien 7, 5239 Rådal · Org. 821 230 152 MVA</span>
+          <span>Registrert i Arbeidstilsynets godkjenningsordning for bilpleie.</span>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* Sosialt bevis — gjenbrukes på forside og avdelingsside. */
+const REVS = [
+  ["MR", "Marius R.", "Lambertseter · aug. 2026", "#1e3a70", "Leverte bilen før frokost og hentet den etter handleturen. De fant tjæreflekkene jeg hadde gitt opp.", "Vask ut-/innvendig – Premium"],
+  ["IT", "Ingvild T.", "Lagunen · juli 2026", "#236b45", "De tok bilder underveis og forklarte hva som var svirvelmerker og hva som var riper. Ærlig råd, null press.", "Full Shine – Pro"],
+  ["HB", "Håkon B.", "Forus · juni 2026", "#e41830", "Seks års garanti, og bilen er selvrensende i regnet. Verdt hver krone.", "Keramisk lakkforsegling"],
+  ["NS", "Nina S.", "Sørlandssenteret · mai 2026", "#0c6f96", "To barn og en hund. De fikk bort ting jeg trodde var permanent.", "Rens innvendig"],
+];
+
+function Proof({ heading = "Det kundene sier", revs = REVS, go }) {
+  return (
+    <section className="dg-sec dg-sec--alt">
+      <div className="dg-sechead">
+        <h2 className="dg-h2">{heading}</h2>
+        <a className="dg-sechead__more" href="#" onClick={(e) => e.preventDefault()}>Les gjesteboka →</a>
+      </div>
+      <div className="dg-proof">
+        <div className="dg-rate">
+          <b>4,8</b>
+          <div className="st">★★★★★</div>
+          <p className="of">2 140 vurderinger fra Google, Trustpilot og gjesteboka vår.</p>
+          <div className="src">
+            <div><span>Google</span><span>4,8 · 1 612</span></div>
+            <div><span>Trustpilot</span><span>4,7 · 421</span></div>
+            <div><span>Gjestebok</span><span>4,9 · 107</span></div>
+          </div>
+        </div>
+        <div className="dg-revs">
+          {revs.map(([ini, who, where, col, txt, svc]) => (
+            <div className="dg-rev" key={who}>
+              <div className="dg-rev__top">
+                <span className="dg-rev__av" style={{ background: col }}>{ini}</span>
+                <div>
+                  <div className="dg-rev__who">{who}</div>
+                  <div className="dg-rev__where">{where}</div>
+                </div>
+              </div>
+              <p>«{txt}»</p>
+              <span className="dg-tag dg-tag--out">{svc}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+const TRUST = [
+  ["Godkjent bilpleie", "Alle 14 avdelinger er registrert i Arbeidstilsynets godkjenningsordning for bilpleievirksomhet.", "Se godkjenningen", "https://www.arbeidstilsynet.no/bilpleievirksomhet/"],
+  ["Seriøse fagfolk", "Godkjent verkstedstandard for hjul- og dekktjenester — sjekk oss hos Statens vegvesen.", "Finn godkjent verksted", "https://www.vegvesen.no/kjoretoy/eie-og-vedlikeholde/finn-godkjent-verksted/"],
+  ["20 år, 120 000 biler", "Familiedrevet siden 2005. Hver avdeling drives av en lokal franchisetaker som kan bilene i sitt nabolag.", null, null],
+];
+
+function TrustBand() {
+  return (
+    <section className="dg-sec dg-sec--tight" style={{ paddingTop: 0 }}>
+      <div className="dg-trust">
+        {TRUST.map(([t, x, cta, href]) => (
+          <div key={t}>
+            <h3><I n="shield-check" s={20} />{t}</h3>
+            <p>{x}</p>
+            {href && <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`${cta} (åpnes i ny fane)`}>{cta} ↗</a>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ServiceTile({ s, onClick, tall, flag }) {
+  return (
+    <button type="button" className={`dg-tile${tall ? " dg-tile--tall" : ""}`} onClick={onClick}>
+      <div className="dg-tile__ph"><img src={s.hero} alt={s.name} /></div>
+      {flag && <span className="dg-tile__flag"><Tag variant="red">{flag}</Tag></span>}
+      <div className="dg-tile__bd">
+        <div className="dg-tile__cat">{s.catLabel} · ca. {D.dur(s.min)}</div>
+        <h3 className="dg-h3">{s.name}</h3>
+        <p>{s.desc}</p>
+        {s.guarantee && <span style={{ alignSelf: "flex-start" }}><Tag>{s.guarantee}</Tag></span>}
+        <div className="dg-tile__ft">
+          <Price amount={s.price} from />
+          <span className="dg-tile__see">Se mer →</span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+const HOURS = [
+  ["Mandag", "08–17"], ["Tirsdag", "08–17"], ["Onsdag", "08–17"],
+  ["Torsdag", "08–18"], ["Fredag", "08–17"], ["Lørdag", "10–15"], ["Søndag", "Stengt"],
+];
+
+Object.assign(window, { DGNav: Nav, DGFooter: Footer, DGProof: Proof, DGTrust: TrustBand, DGTile: ServiceTile, DGBtn: Btn, DGTag: Tag, DGPrice: Price, DGIcon: I, DGReveal: Reveal, dgUseCountUp: useCountUp, DG_NAV: NAV, DG_REVS: REVS, DG_HOURS: HOURS });
+})();

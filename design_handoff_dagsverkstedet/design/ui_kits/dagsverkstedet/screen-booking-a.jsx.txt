@@ -1,0 +1,289 @@
+/* Booking steg 1–4: avdeling, bilen din, tjeneste, tidspunkt. */
+(function () {
+const D = window.HZ_DATA;
+const { DGBtn: Btn, DGTag: Tag, DGIcon: I } = window;
+
+const Vipps = ({ onClick, label = "Logg inn med" }) => (
+  <button type="button" className="hz-vipps" onClick={onClick}>
+    <span>{label}</span>
+    <span className="hz-vipps__mark" aria-hidden="true">Vipps<i /></span>
+  </button>
+);
+
+function Head({ title, help }) {
+  return (
+    <div className="dg-stephead">
+      <h1>{title}</h1>
+      {help && <p>{help}</p>}
+    </div>
+  );
+}
+
+/* ---------- Steg 1: avdeling ---------- */
+function S1({ state, set }) {
+  const [q, setQ] = React.useState("");
+  const [near, setNear] = React.useState(false);
+  const hit = (l) => [l.name, l.city, l.zip, l.region, l.center].join(" ").toLowerCase().includes(q.toLowerCase());
+  const found = q ? D.locations.filter(hit) : D.locations;
+  const list = found.length ? found : D.locations;
+  return (
+    <div>
+      <Head title="Velg avdeling" help="Der du leverer og henter bilen." />
+      <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+        <label className="dg-search" style={{ flex: 1 }}>
+          <span className="dg-search__ico"><I n="search" s={18} /></span>
+          <input className="dg-input" type="search" value={q} placeholder="By eller postnummer"
+                 aria-label="Søk etter avdeling" onChange={(e) => { setQ(e.target.value); setNear(false); }} />
+        </label>
+        <Btn variant="s" onClick={() => { setNear(true); setQ(""); }}><I n="map-pin" s={16} />Nær meg</Btn>
+      </div>
+      <p className="dg-note" style={{ marginBottom: 16 }}>
+        {near ? "Sortert etter avstand fra posisjonen din."
+          : q && !found.length ? `Ingen treff på «${q}» — viser alle avdelinger.`
+          : "14 avdelinger over hele Norge."}
+      </p>
+      <div className="dg-rows">
+        {list.map((l) => {
+          const sel = state.location === l.slug;
+          return (
+            <button type="button" key={l.slug} className={`dg-card dg-card--pick${sel ? " sel" : ""}`}
+                    onClick={() => set({ location: l.slug, date: null, time: null, service: state.service && D.availableAt(l.slug, state.service) ? state.service : null, step: 2 })}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div className="dg-branch__name">
+                    Handz On {l.name}
+                    {near && <span style={{ marginLeft: 9, fontSize: 14, color: "var(--brand-navy)" }}>{l.dist}</span>}
+                  </div>
+                  <p className="dg-branch__addr">{l.center} · {l.address}, {l.zip} {l.city}</p>
+                  <div className="dg-branch__meta">
+                    <Tag variant={l.open ? "open" : "closed"} dot>{l.open ? "Åpen nå" : "Stengt nå"}</Tag>
+                    {l.campaign && <Tag>{l.campaign}</Tag>}
+                  </div>
+                </div>
+                <span className={`dg-tick${sel ? " on" : ""}`}>✓</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Steg 2: bilen din ---------- */
+const valid = (v) => /^[A-Z]{2}\d{5}$/.test(String(v || "").toUpperCase());
+
+function S2({ state, set }) {
+  const [status, setStatus] = React.useState(state.vehicle ? "found" : "idle");
+  const [make, setMake] = React.useState("");
+  const [model, setModel] = React.useState("");
+  const ok = valid(state.regNr);
+
+  const lookup = () => {
+    setStatus("loading");
+    setTimeout(() => {
+      const v = D.vehicles[state.regNr];
+      if (v) { set({ vehicle: v }); setStatus("found"); } else setStatus("error");
+    }, 750);
+  };
+
+  return (
+    <div>
+      <Head title="Bilen din" help="Vi henter merke og modell fra Statens vegvesen." />
+      <label className="dg-label" htmlFor="regnr">Registreringsnummer</label>
+      <input id="regnr" className={`dg-regnr${status === "error" ? " err" : ""}`} value={state.regNr} placeholder="EB12345"
+             maxLength={7} inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false}
+             onChange={(e) => { set({ regNr: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 7), vehicle: null }); setStatus("idle"); }} />
+      <p className="dg-help">To bokstaver og fem sifre. Prøv EB12345, DR34567 eller FE11111 for feiltilfellet.</p>
+
+      {status !== "found" && (
+        <Btn size="lg" block style={{ marginTop: 18 }} disabled={!ok} loading={status === "loading"} onClick={lookup}>Hent bilinfo</Btn>
+      )}
+
+      {status === "found" && state.vehicle && (
+        <React.Fragment>
+          <div className="dg-card dg-unfold" style={{ borderColor: "var(--brand-navy)", background: "var(--navy-06)" }}>
+            <div className="dg-note" style={{ color: "var(--body-soft)" }}>Vi fant bilen din</div>
+            <div style={{ marginTop: 5, fontFamily: "var(--font-heading)", fontSize: 21, fontWeight: 700, color: "var(--ink)" }}>
+              {state.vehicle.make} {state.vehicle.model} ({state.vehicle.year})
+            </div>
+            <p className="dg-note" style={{ marginTop: 4 }}>{state.vehicle.fuel} · {state.vehicle.color} · {state.regNr}</p>
+          </div>
+          <Btn size="lg" block style={{ marginTop: 18 }} onClick={() => set({ step: 3 })}>Dette stemmer — gå videre</Btn>
+        </React.Fragment>
+      )}
+
+      {status === "error" && (
+        <div className="dg-card" style={{ marginTop: 20, borderColor: "var(--danger)", background: "var(--danger-bg)" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 15, lineHeight: 1.55, color: "var(--body-strong)" }}>
+            Vi fikk ikke svar fra motorvognregisteret. Fyll inn bilinfo manuelt, så går bestillingen like fint.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <input className="dg-input" placeholder="Merke" aria-label="Merke" value={make} onChange={(e) => setMake(e.target.value)} />
+            <input className="dg-input" placeholder="Modell" aria-label="Modell" value={model} onChange={(e) => setModel(e.target.value)} />
+          </div>
+          <Btn variant="s" block style={{ marginTop: 14 }}
+               onClick={() => set({ vehicle: { make: make || "Ukjent merke", model, year: "", fuel: "", color: "" }, step: 3 })}>
+            Fortsett uten oppslag
+          </Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Steg 3: tjeneste ---------- */
+function S3({ state, set }) {
+  const loc = state.location;
+  const locName = D.locations.find((l) => l.slug === loc).name;
+  const [cat, setCat] = React.useState(null);
+  const cats = cat ? D.categories.filter((c) => c.value === cat) : D.categories;
+  return (
+    <div>
+      <Head title="Velg tjeneste" help={`${state.vehicle ? state.vehicle.make + " " + state.vehicle.model + " · " : ""}${state.regNr} · Handz On ${locName}`} />
+
+      {state.member ? (
+        <div className="dg-mem" style={{ borderColor: "var(--brand-navy)", background: "var(--navy-06)" }}>
+          <div>
+            <div className="t" style={{ color: "var(--brand-navy)" }}>Medlemspris aktiv</div>
+            <p className="s">10 % avslag er trukket fra prisene under.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="dg-mem">
+          <div>
+            <div className="t">Medlem? Få 10 % på tjenesten.</div>
+            <p className="s">Gratis medlemskap — hver 6. Basic-vask er gratis.</p>
+          </div>
+          <Vipps onClick={() => set({ member: true, contact: { name: "Kari Nordmann", phone: "912 34 567" } })} />
+        </div>
+      )}
+
+      <div className="dg-chips" style={{ marginBottom: 18 }}>
+        <button type="button" className={`dg-chip${cat === null ? " on" : ""}`} onClick={() => setCat(null)}>Alle</button>
+        {D.categories.map((c) => (
+          <button type="button" key={c.value} className={`dg-chip${cat === c.value ? " on" : ""}`} onClick={() => setCat(c.value)}>{c.label}</button>
+        ))}
+      </div>
+
+      {cats.map((c) => {
+        const items = D.services.filter((s) => s.cat === c.value);
+        return (
+          <div key={c.value}>
+            <div className="dg-cat">{c.label}</div>
+            <div className="dg-rows">
+              {items.map((s) => {
+                const p = D.priceAt(loc, s.id);
+                const off = p === null;
+                const mem = off ? 0 : p - Math.round(p * 0.1);
+                const sel = state.service === s.id;
+                return (
+                  <button type="button" key={s.id} className={`dg-opt${sel ? " sel" : ""}`} disabled={off}
+                          onClick={() => set({ service: s.id, date: null, time: null, step: 4 })}>
+                    <img src={s.img} alt="" />
+                    <div className="dg-opt__bd">
+                      <div className="dg-opt__nm">
+                        {s.name}
+                        {s.guarantee && <Tag>{s.guarantee}</Tag>}
+                        {off && <Tag variant="mute">Ikke tilgjengelig her</Tag>}
+                      </div>
+                      <p className="dg-opt__ds">{s.desc}</p>
+                      <div className="dg-opt__mt">Varighet ca. {D.dur(s.min)}</div>
+                    </div>
+                    <div className="dg-opt__pr" key={state.member ? "m" : "n"}>
+                      {!off && (state.member
+                        ? <React.Fragment><s>{D.kr(p)}</s><b>{D.kr(mem)}</b></React.Fragment>
+                        : <b>{D.kr(p)}</b>)}
+                    </div>
+                    <span className={`dg-tick${sel ? " on" : ""}`}>✓</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      <p className="dg-note" style={{ marginTop: 24 }}>
+        Prisene gjelder Handz On {locName} og er inkl. mva. Tillegg som asfaltfjerning (+450,-) og seterens (+500,-) velger du i steg 5.
+      </p>
+    </div>
+  );
+}
+
+/* ---------- Steg 4: tidspunkt ---------- */
+const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+const MO = ["jan", "feb", "mar", "apr", "mai", "jun", "jul", "aug", "sep", "okt", "nov", "des"];
+
+function S4({ state, set }) {
+  const days = React.useMemo(() => {
+    const out = [];
+    for (let i = 1; i <= 14; i += 1) { const d = new Date(); d.setDate(d.getDate() + i); out.push(d); }
+    return out;
+  }, []);
+  const [day, setDay] = React.useState(state.date ? new Date(state.date + "T12:00:00") : days[0]);
+  const key = day.toISOString().slice(0, 10);
+  const closed = day.getDay() === 0;
+  const svc = D.services.find((s) => s.id === state.service);
+
+  const slots = React.useMemo(() => {
+    if (closed) return [];
+    let seed = 2166136261;
+    for (const ch of key + state.location) { seed ^= ch.charCodeAt(0); seed = Math.imul(seed, 16777619); }
+    const rnd = () => {
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const out = [];
+    const last = day.getDay() === 6 ? 13 : 15;
+    for (let h = 8; h <= last; h += 1) {
+      for (const m of [0, 30]) {
+        const left = Math.floor(rnd() * 4);
+        if (left > 0) out.push({ t: `${String(h).padStart(2, "0")}:${m ? "30" : "00"}`, left });
+      }
+    }
+    return out;
+  }, [key, state.location, closed, day]);
+
+  return (
+    <div>
+      <Head title="Velg tidspunkt" help={`${svc.name} · ca. ${D.dur(svc.min)}. Vi tar bilen mens du er på senteret.`} />
+      <div className="dg-days">
+        {days.map((d) => {
+          const sel = d.toDateString() === day.toDateString();
+          return (
+            <button type="button" key={d.toISOString()} className={`dg-day${sel ? " on" : ""}`} onClick={() => setDay(d)}>
+              <div className="wd">{WD[d.getDay()]}</div>
+              <div className="dd">{d.getDate()}</div>
+              <div className="mo">{MO[d.getMonth()]}</div>
+            </button>
+          );
+        })}
+      </div>
+      <p style={{ margin: "0 0 14px", fontSize: 15, color: "var(--body-soft)" }}>
+        Ledige tider {WD[day.getDay()]}dag {day.getDate()}. {MO[day.getMonth()]}
+      </p>
+      {slots.length === 0 ? (
+        <div className="dg-empty">
+          <I n="calendar" s={40} />
+          <div className="t">{closed ? "Stengt på søndager" : "Ingen ledige tider denne dagen"}</div>
+          <p>Prøv en annen dag — det er som regel god plass tidlig i uka.</p>
+          <Btn variant="s" onClick={() => setDay(days.find((d) => d.getDay() !== 0))}>Vis neste ledige dag</Btn>
+        </div>
+      ) : (
+        <div className="dg-slots">
+          {slots.map((s, i) => (
+            <button type="button" key={s.t} className="dg-slot" style={{ "--d": `${Math.min(i, 12) * 20}ms` }} onClick={() => set({ date: key, time: s.t, step: 5 })}>
+              <b>{s.t}</b>
+              <span className={s.left === 1 ? "low" : ""}>{s.left === 1 ? "1 plass igjen" : s.left + " plasser"}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { DGS1: S1, DGS2: S2, DGS3: S3, DGS4: S4, DGStepHead: Head, DGVipps: Vipps });
+})();

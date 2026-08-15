@@ -1,0 +1,323 @@
+/* Blogg og nyheter — liste, redigering, publisering, forhåndsvisning. */
+(function () {
+const D = window.HZ_DATA;
+const { ADIcon: I, ADBtn: Btn, ADSeg: Seg, ADTag: Tag, ADSwitch: Switch, ADField: Field, ADLupe: Lupe, ADTop: Top, ADPanel: Panel, ADEmpty: Empty } = window;
+
+const CATS = ["Bilpleie-guiden", "Nyheter", "Kampanje", "Bak kulissene"];
+const PHOTOS = ["utvendig-handvask.webp", "utvendig-vask-og-voks.webp", "innvendig-rens.webp", "polering.webp", "keramisk-coating.webp", "komplett-bilpleie.webp", "detaljering.webp", "lyktesliping.webp", "hero-hjulskift.webp"];
+
+const slugify = (s) => s.toLowerCase().trim()
+  .replace(/æ/g, "ae").replace(/ø/g, "oe").replace(/å/g, "aa")
+  .replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+
+const POSTS = [
+  {
+    id: "p1", title: "Derfor ripes lakken i vaskehallen — og hva vi gjør annerledes",
+    slug: "derfor-ripes-lakken-i-vaskehallen", cat: "Bilpleie-guiden", author: "Ove Hagen",
+    date: "2026-08-06", published: true, hero: "utvendig-handvask.webp", reads: 3140,
+    excerpt: "Roterende børster samler sand fra bilen før deg. Vi vasker for hånd med to bøtter — her er forskjellen i praksis.",
+    body: `De fine, halvmåneformede ripene du ser når sola står lavt kalles svirvelmerker. De kommer nesten aldri fra én dramatisk hendelse. De kommer fra vask.
+
+## Børsten husker forrige bil
+En automatvask kjører samme børste over hundrevis av biler i døgnet. Sand og veistøv fra bilen før deg sitter fortsatt i børstehårene når de treffer lakken din. På svart og mørkeblå lakk ser du resultatet med én gang.
+
+## To bøtter, én klut per panel
+Vi bruker to-bøtte-metoden: én bøtte med såpe, én med rent skyllevann. Kluten skylles mellom hvert panel, så skitten havner i bøtta og ikke tilbake på bilen. Panelene tas i rekkefølge ovenfra og ned, fordi nederste tredjedel av bilen alltid er skitnest.
+
+## Tørking er halve jobben
+Mange gjør alt riktig og ødelegger det på slutten. Vi tørker med plysjmikrofiber uten trykk, og går aldri i sirkler. Til slutt kontrollerer vi bilen i arbeidslys — det er der du ser det øyet ikke fanger opp i dagslys.
+
+Har lakken allerede fått svirvelmerker, er polering det som fjerner dem. Vask fjerner skitt, polering fjerner riper.`,
+  },
+  {
+    id: "p2", title: "Keramisk coating: hva du faktisk får for 9 990,-",
+    slug: "keramisk-coating-hva-du-faar", cat: "Bilpleie-guiden", author: "Ove Hagen",
+    date: "2026-07-22", published: true, hero: "keramisk-coating.webp", reads: 2410,
+    excerpt: "Seks års garanti, selvrensende lakk og dyp glans. Vi går gjennom hva behandlingen innebærer, og når den ikke er verdt pengene.",
+    excerptOnly: false,
+    body: `Keramisk lakkforsegling er den behandlingen vi får flest spørsmål om. Her er det ærlige svaret.
+
+## Hva du får
+Et graphene-basert lag som binder seg kjemisk til klarlakken. Vann perler av og tar med seg støv, så bilen holder seg ren lenger mellom vaskene. Glansen blir dypere, og lakken blir enklere å vaske. Vi gir seks års garanti på behandlingen.
+
+## Hva du ikke får
+Coating er ikke panserplate. Den stopper ikke steinsprut og fjerner ikke riper som allerede er der. Derfor poleres bilen alltid først — coating over svirvelmerker låser dem inne.
+
+## Når vi sier nei
+Er bilen leaset og skal leveres inn om et år, sier vi det rett ut: ta en polering med voks i stedet. Er lakken svært slitt, må vi vurdere om det er polering og ikke coating som gir mest for pengene.
+
+Behandlingen tar en full dag, og bilen må herde tørt i 24 timer etterpå.`,
+  },
+  {
+    id: "p3", title: "Handz On Asker er åpnet — 15 % på første bestilling",
+    slug: "handz-on-asker-er-aapnet", cat: "Nyheter", author: "Ove Hagen",
+    date: "2026-07-01", published: true, hero: "komplett-bilpleie.webp", reads: 1870,
+    excerpt: "Avdeling nummer 14 står klar på Trekanten i Asker. Ny lokal franchisetaker, samme faste priser.",
+    body: `Vi har åpnet på Trekanten i Asker — avdeling nummer 14 i kjeden.
+
+Avdelingen drives av en lokal franchisetaker, slik alle Handz On-avdelinger gjør, og tilbyr hele katalogen: vask ut- og innvendig, polering, keramisk lakkforsegling, interiørrens og hjultjenester.
+
+## Åpningstilbud
+Nye kunder får 15 % på første bestilling ut august. Rabatten legges på automatisk i bookingen når du velger Asker.
+
+## Åpningstider
+Mandag til onsdag 08–17, torsdag 08–18, fredag 08–17 og lørdag 10–15. Søndag stengt.
+
+Lever nøkkelen i skranken, gjør ærendene dine på senteret, og hent en ren bil.`,
+  },
+  {
+    id: "p4", title: "Slik gjør du bilen klar for høsten", slug: "slik-gjoer-du-bilen-klar-for-hoesten",
+    cat: "Bilpleie-guiden", author: "Ove Hagen", date: "2026-08-12", published: false,
+    hero: "polering.webp", reads: 0,
+    excerpt: "Insektrester, kvae og pollen etter sommeren gjør reell skade om de får stå. Fire ting vi anbefaler før første frost.",
+    body: `Sommeren setter spor i lakken som ikke synes før det er for sent.
+
+## 1. Få bort insekter og kvae nå
+Insektrester er sure og eter seg inn i klarlakken. Kvae herder og blir vanskeligere for hver uke. Begge løses opp skånsomt — ikke skrap.
+
+## 2. Vurder forsegling før saltet kommer
+En forseglet lakk slipper saltet lettere. Det gjør vintervaskene enklere og reduserer risikoen for begynnende korrosjon rundt steinsprut.
+
+## 3. Rens under panseret og i dørkarmene
+Det er der løv og skitt samler seg og holder fuktighet mot metall.
+
+## 4. Bytt til vinterhjul i tid
+Vi legger om og balanserer mens du handler. Husk å ta vask av de løse hjulene før de settes bort — salt og bremsestøv jobber hele vinteren i lagerrommet.`,
+  },
+  {
+    id: "p5", title: "Vi gjenbruker vaskevannet — dette er tallene",
+    slug: "vi-gjenbruker-vaskevannet", cat: "Bak kulissene", author: "Ove Hagen",
+    date: "2026-06-14", published: false, hero: "detaljering.webp", reads: 0,
+    excerpt: "Renseanlegget vårt betyr at en full håndvask hos oss bruker mindre vann enn en hjemmevask med hageslange.",
+    body: `Folk blir overrasket når vi sier at håndvask bruker mindre vann enn en hageslange hjemme. Her er regnestykket.
+
+## Anlegget
+Vaskevannet går gjennom oljeavskiller og rensetrinn, og brukes om igjen i forvask. Bare siste skylling er ferskvann.
+
+## Hva det betyr i praksis
+En hageslange på full åpning gir rundt 15 liter i minuttet. En halvtimes vask hjemme kan fort bruke over 300 liter — og vannet går rett i overvannsnettet med olje, asfalt og bremsestøv.
+
+## Ikke bare vann
+Vi doserer miljømerkede produkter i stedet for å øse på, og dekkposene våre er i resirkulert plast.
+
+Vi er registrert i Arbeidstilsynets godkjenningsordning for bilpleie, og det stiller krav til både kjemikaliehåndtering og avløp.`,
+  },
+];
+
+function Blogg({ onBurger, posts, setPosts, toast }) {
+  const [q, setQ] = React.useState("");
+  const [filter, setFilter] = React.useState("alle");
+  const [draft, setDraft] = React.useState(null);
+  const [slugLocked, setSlugLocked] = React.useState(true);
+
+  let list = [...posts].sort((a, b) => (a.date < b.date ? 1 : -1));
+  if (filter === "publisert") list = list.filter((p) => p.published);
+  if (filter === "utkast") list = list.filter((p) => !p.published);
+  if (q) {
+    const t = q.toLowerCase();
+    list = list.filter((p) => (p.title + " " + p.excerpt + " " + p.cat).toLowerCase().includes(t));
+  }
+
+  const drafts = posts.filter((p) => !p.published).length;
+
+  const open = (p) => { setDraft({ ...p }); setSlugLocked(true); };
+  const close = () => setDraft(null);
+
+  function addNew() {
+    setDraft({
+      id: "p" + (posts.length + 1), title: "", slug: "", cat: "Bilpleie-guiden", author: "Ove Hagen",
+      date: new Date().toISOString().slice(0, 10), published: false, hero: PHOTOS[0], reads: 0,
+      excerpt: "", body: "", isNew: true,
+    });
+    setSlugLocked(false);
+  }
+
+  function save(publish) {
+    const next = { ...draft, published: publish != null ? publish : draft.published };
+    delete next.isNew;
+    setPosts((prev) => (prev.some((p) => p.id === next.id) ? prev.map((p) => (p.id === next.id ? next : p)) : [...prev, next]));
+    toast(publish
+      ? { title: "Innlegget er publisert", text: `«${next.title}» ligger nå på handzon.no/nyheter.` }
+      : { variant: "info", title: "Utkast lagret", text: "Innlegget er ikke synlig for kunder ennå." });
+    close();
+  }
+
+  function remove() {
+    setPosts((prev) => prev.filter((p) => p.id !== draft.id));
+    toast({ variant: "info", title: "Innlegget er slettet", text: `«${draft.title || "Uten tittel"}» er fjernet.` });
+    close();
+  }
+
+  function togglePublished(p) {
+    setPosts((prev) => prev.map((x) => (x.id === p.id ? { ...x, published: !x.published } : x)));
+    toast(p.published
+      ? { variant: "info", title: "Innlegget er avpublisert", text: `«${p.title}» vises ikke lenger på nettsiden.` }
+      : { title: "Innlegget er publisert", text: `«${p.title}» er nå live.` });
+  }
+
+  function wrap(before, after) {
+    const ta = document.getElementById("b-body");
+    if (!ta) return;
+    const { selectionStart: a, selectionEnd: b, value } = ta;
+    const next = value.slice(0, a) + before + value.slice(a, b) + (after || "") + value.slice(b);
+    setDraft((d) => ({ ...d, body: next }));
+    requestAnimationFrame(() => { ta.focus(); ta.setSelectionRange(a + before.length, b + before.length); });
+  }
+
+  const words = draft ? draft.body.trim().split(/\s+/).filter(Boolean).length : 0;
+
+  return (
+    <React.Fragment>
+      <Top title="Blogg og nyheter" sub={`${posts.length} innlegg · ${drafts} ${drafts === 1 ? "utkast" : "utkast"}`} onBurger={onBurger}
+           right={<React.Fragment>
+             <Seg label="Filter" value={filter} onChange={setFilter}
+                  options={[["alle", "Alle"], ["publisert", "Publisert"], ["utkast", "Utkast"]]} />
+             <Btn onClick={addNew}><I n="newspaper" s={16} />Nytt innlegg</Btn>
+           </React.Fragment>} />
+
+      <div className="ad-body">
+        <div className="ad-card" style={{ padding: 14 }}>
+          <label className="ad-search">
+            <Lupe />
+            <input className="ad-input" type="search" value={q} placeholder="Søk i tittel, ingress eller kategori"
+                   aria-label="Søk i innlegg" onChange={(e) => setQ(e.target.value)} />
+          </label>
+        </div>
+
+        {list.length === 0 ? (
+          <Empty icon="newspaper" title="Ingen innlegg her" text="Prøv et annet søk, eller skriv et nytt innlegg."
+                 action={<Btn onClick={addNew}>Nytt innlegg</Btn>} />
+        ) : (
+          <div className="ad-card ad-card--flush">
+            <div className="ad-scroll">
+              <table className="ad-table">
+                <thead>
+                  <tr><th>Innlegg</th><th>Kategori</th><th>Dato</th><th className="num">Lesninger</th><th>Status</th><th className="act" /></tr>
+                </thead>
+                <tbody>
+                  {list.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <img className="ad-thumb" src={D.PHOTOS + p.hero} alt="" />
+                          <div style={{ minWidth: 0, maxWidth: "46ch" }}>
+                            <div className="nm">{p.title || "Uten tittel"}</div>
+                            <div className="meta" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>/nyheter/{p.slug}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{p.cat}</td>
+                      <td className="num" style={{ textAlign: "left" }}>{p.date.split("-").reverse().join(".")}</td>
+                      <td className="num">{p.reads ? D.nok(p.reads) : "—"}</td>
+                      <td>{p.published ? <Tag variant="ok" dot>Publisert</Tag> : <Tag variant="warn">Utkast</Tag>}</td>
+                      <td className="act">
+                        <div style={{ display: "inline-flex", gap: 8 }}>
+                          <Btn variant="g" size="sm" onClick={() => togglePublished(p)}>{p.published ? "Avpubliser" : "Publiser"}</Btn>
+                          <Btn variant="s" size="sm" onClick={() => open(p)}>Rediger</Btn>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        <p className="ad-note">
+          Publiserte innlegg havner under «Nyheter» på handzon.no og i «Bilpleie-guiden» hvis kategorien er satt til det. Utkast er bare synlige her.
+        </p>
+      </div>
+
+      {draft && (
+        <Panel
+          title={draft.isNew ? "Nytt innlegg" : "Rediger innlegg"}
+          sub={draft.isNew ? "Lagres som utkast til du publiserer." : `${draft.cat} · ${draft.published ? "publisert" : "utkast"} · ${words} ord`}
+          onClose={close}
+          foot={<React.Fragment>
+            {!draft.isNew && <Btn variant="d" size="sm" onClick={remove}>Slett</Btn>}
+            <Btn variant="s" onClick={() => save(false)} disabled={!draft.title.trim()}>Lagre utkast</Btn>
+            <Btn onClick={() => save(true)} disabled={!draft.title.trim() || !draft.excerpt.trim() || !draft.body.trim()}>Publiser</Btn>
+          </React.Fragment>}
+        >
+          <Field label="Tittel" id="b-tittel" help="Sentence case. Konkret framfor kreativ — folk søker på problemet sitt.">
+            <input id="b-tittel" className="ad-input" value={draft.title} placeholder="Slik gjør du bilen klar for høsten"
+                   onChange={(e) => {
+                     const title = e.target.value;
+                     setDraft((d) => ({ ...d, title, slug: slugLocked && !d.published ? slugify(title) : d.slug }));
+                   }} />
+          </Field>
+
+          <Field label="Nettadresse" id="b-slug" help={`handzon.no/nyheter/${draft.slug || "…"}`}>
+            <input id="b-slug" className="ad-input" value={draft.slug} placeholder="slik-gjoer-du-bilen-klar-for-hoesten"
+                   onChange={(e) => { setSlugLocked(false); setDraft({ ...draft, slug: slugify(e.target.value) }); }} />
+          </Field>
+
+          <div className="ad-row2" style={{ marginTop: 16 }}>
+            <Field label="Kategori" id="b-kat">
+              <select id="b-kat" className="ad-select" style={{ width: "100%" }} value={draft.cat}
+                      onChange={(e) => setDraft({ ...draft, cat: e.target.value })}>
+                {CATS.map((c) => <option key={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="Publiseringsdato" id="b-dato">
+              <input id="b-dato" className="ad-input" type="date" value={draft.date}
+                     onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
+            </Field>
+          </div>
+
+          <Field label="Ingress" id="b-ing" help="Én til to setninger. Dette er teksten som vises i listen og i søk.">
+            <textarea id="b-ing" className="ad-textarea" style={{ minHeight: 80 }} value={draft.excerpt}
+                      placeholder="Insektrester, kvae og pollen etter sommeren gjør reell skade om de får stå."
+                      onChange={(e) => setDraft({ ...draft, excerpt: e.target.value })} />
+          </Field>
+
+          <div className="ad-field" style={{ marginTop: 16 }}>
+            <label className="ad-label" htmlFor="b-body">Innhold</label>
+            <div className="ad-mdbar">
+              <button type="button" onClick={() => wrap("## ", "")}>Mellomtittel</button>
+              <button type="button" onClick={() => wrap("**", "**")}>Fet</button>
+              <button type="button" onClick={() => wrap("*", "*")}>Kursiv</button>
+              <button type="button" onClick={() => wrap("\n- ", "")}>Punktliste</button>
+              <button type="button" onClick={() => wrap("[", "](https://)")}>Lenke</button>
+            </div>
+            <textarea id="b-body" className="ad-textarea" value={draft.body}
+                      placeholder={"Skriv innlegget her.\n\n## Mellomtittel\nBrødtekst i korte avsnitt."}
+                      onChange={(e) => setDraft({ ...draft, body: e.target.value })} />
+            <p className="ad-help">{words} ord · ca. {Math.max(1, Math.round(words / 200))} min lesetid. Markdown for mellomtitler, fet og lister.</p>
+          </div>
+
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+            <div className="ad-secttl">Hovedbilde</div>
+            <div className="ad-pickers">
+              {PHOTOS.map((p) => (
+                <button type="button" key={p} className={`ad-picker${draft.hero === p ? " on" : ""}`}
+                        onClick={() => setDraft({ ...draft, hero: p })} aria-label={p}>
+                  <img src={D.PHOTOS + p} alt="" />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid var(--line)" }}>
+            <div className="ad-secttl">Slik ser det ut i listen</div>
+            <div className="ad-preview">
+              <div className="ad-preview__img"><img src={D.PHOTOS + draft.hero} alt="" /></div>
+              <div className="ad-preview__bd">
+                <Tag>{draft.cat}</Tag>
+                <h3>{draft.title || "Uten tittel"}</h3>
+                <p>{draft.excerpt || "Ingressen vises her."}</p>
+                <p style={{ marginTop: 12, fontSize: 13, color: "var(--body-soft)" }}>
+                  {draft.author} · {draft.date.split("-").reverse().join(".")} · {Math.max(1, Math.round(words / 200))} min
+                </p>
+              </div>
+            </div>
+          </div>
+        </Panel>
+      )}
+    </React.Fragment>
+  );
+}
+
+Object.assign(window, { ADBlogg: Blogg, AD_POSTS: POSTS });
+})();

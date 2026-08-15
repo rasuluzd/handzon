@@ -1,0 +1,9 @@
+/* Radius. Stram stige — 6/8/10/12 og pille. */
+:root{
+  --r-badge:6px;
+  --r-control:8px;
+  --r-card:10px;
+  --r-card-lg:12px;
+  --r-media:12px;
+  --r-pill:999px;
+}
