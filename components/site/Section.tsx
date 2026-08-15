@@ -134,13 +134,18 @@ export function Breadcrumbs({
   return (
     <nav
       aria-label="Sti"
-      className={["flex flex-wrap gap-2 text-[13.5px] text-body-soft", className]
+      /* `items-center` + 44px på lenkene: brødsmulene var 20px høye, altså
+         under halve minstemålet, på sider der de faktisk vises på mobil. */
+      className={["flex flex-wrap items-center gap-2 text-[13.5px] text-body-soft", className]
         .filter(Boolean)
         .join(" ")}
     >
       {items.map((item) => (
-        <span key={item.href} className="flex gap-2">
-          <Link href={item.href} className="hover:text-navy">
+        <span key={item.href} className="flex items-center gap-2">
+          <Link
+            href={item.href}
+            className="inline-flex min-h-[44px] items-center hover:text-navy hz:min-h-0"
+          >
             {item.label}
           </Link>
           <span aria-hidden>/</span>

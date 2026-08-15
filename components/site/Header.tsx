@@ -124,7 +124,7 @@ export function Header() {
           <Link
             href="/"
             aria-label="Handz On Auto Care – til forsiden"
-            className="shrink-0"
+            className="inline-flex min-h-[44px] shrink-0 items-center hz:min-h-0"
           >
             <Image
               src={logo}
@@ -157,7 +157,10 @@ export function Header() {
           {/* Hovedhandlingen står i headeren også på mobil. Lå den bare bak
               hamburgeren, kostet hver booking to trykk og en menylesing. */}
           <div className="flex shrink-0 items-center gap-1">
-            <ButtonLink href="/booking" className="max-hz:min-h-[40px] max-hz:px-3.5 max-hz:text-[12px]">
+            {/* 44px, ikke 40. Dette er sidens viktigste trykkflate på hver
+                eneste side, og raden er uansett 44px høy fordi hamburgeren er
+                det — så minstemålet koster ingen headerhøyde. */}
+            <ButtonLink href="/booking" className="max-hz:min-h-[44px] max-hz:px-3.5 max-hz:text-[12px]">
               Bestill time
             </ButtonLink>
 

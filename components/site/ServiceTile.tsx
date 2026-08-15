@@ -63,7 +63,7 @@ export function ServiceTile({
         <h3 className="font-heading text-[17px] font-semibold leading-[1.2] text-ink hz:text-[21px] hz:leading-[1.25]">
           {service.name}
         </h3>
-        <p className="line-clamp-2 text-[13.5px] leading-[1.4] text-body-soft hz:line-clamp-none hz:text-[14.5px] hz:leading-[1.5]">
+        <p className="line-clamp-2 text-[14px] leading-[1.45] text-body-soft hz:line-clamp-none hz:text-[14.5px] hz:leading-[1.5]">
           {service.description}
         </p>
         {service.guarantee && (

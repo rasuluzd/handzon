@@ -77,7 +77,7 @@ export function Footer() {
                       måler — footerlenker ligger tett og bommes lett. */}
                   <Link
                     href={link.href}
-                    className="flex min-h-[38px] items-center text-[15px] hover:text-white hz:min-h-0 hz:py-[5px]"
+                    className="flex min-h-[44px] items-center text-[15px] hover:text-white hz:min-h-0 hz:py-[5px]"
                   >
                     {link.label}
                   </Link>
