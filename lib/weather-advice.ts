@@ -2,6 +2,7 @@ import { formatDayParts, formatIsoDateLower } from "./format";
 import { services } from "./mock-data";
 import type { Order } from "./sales";
 import type { Forecast, WeatherDay } from "./weather";
+import type { Region } from "./types";
 
 /**
  * Gjør et værvarsel om til ETT konkret råd (T-4).
@@ -46,7 +47,7 @@ export interface WeatherAdvice {
   /** Antall berørte bestillinger, når rådet gjelder konkrete ordrer. */
   affected?: number;
   /** Regionen rådet gjelder. Vises kun når man ser hele kjeden. */
-  region?: string;
+  region?: Region;
 }
 
 /*

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Newspaper, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { Chart } from "@/components/admin/Chart";
 import { Kpi } from "@/components/admin/Kpi";
+import { WeatherStrip } from "@/components/admin/WeatherStrip";
 import { BranchPicker, Top } from "@/components/admin/Top";
 import {
   AdButton,
@@ -102,9 +103,12 @@ export function OversiktScreen({
       found.find((item) => item.level === "varsel") ?? found[0] ?? null
     );
   }, [loc, now, branch, forecasts, fill]);
-  const forecastSource = branch
-    ? forecasts[branch.region]?.source
-    : forecasts["Østlandet"]?.source;
+  /* Stripa viser avdelingens region. Ser man hele kjeden finnes det tre — da
+     vises regionen rådet gjelder, ellers Østlandet, der ni av fjorten ligger. */
+  const stripRegion: Region = branch ? branch.region : (advice?.region ?? "Østlandet");
+  const stripForecast = forecasts[stripRegion];
+  const stripLabel = branch ? `Handz On ${branch.name} · ${stripRegion}` : stripRegion;
+  const forecastSource = stripForecast?.source;
   const drafts = posts.filter((post) => !post.published).length;
   const dirty = countDirty(catalog);
 
@@ -157,25 +161,104 @@ export function OversiktScreen({
         </div>
 
         <div className="grid items-start gap-4 admin-lg:grid-cols-[1.6fr_1fr]">
-          <AdCard>
-            <AdCardHead
-              title="Omsetning siste 14 dager"
-              sub={`${label} · inkl. mva`}
-              action={
-                <Link href="/admin/rapport">
-                  <AdButton variant="ghost" size="sm">
-                    Se rapport →
-                  </AdButton>
-                </Link>
-              }
-            />
-            <Chart data={trend} />
-          </AdCard>
+          {/* ÉN rad, to kolonner som hver er en sammenhengende stabel — ikke to
+              rutenettrader. Med `items-start` og to rader ble det dødrom ved
+              hver radgrense så snart kolonnene var ulikt høye: 135px tomt
+              under «Neste inn i dag» fordi «Å gjøre» var høyere. Nå flyter
+              hver kolonne uavbrutt, og eneste ubalanse havner nederst på
+              siden der den ikke leses som et hull. */}
+          <div className="flex flex-col gap-4">
+            <AdCard>
+              <AdCardHead
+                title="Omsetning siste 14 dager"
+                sub={`${label} · inkl. mva`}
+                action={
+                  <Link href="/admin/rapport">
+                    <AdButton variant="ghost" size="sm">
+                      Se rapport →
+                    </AdButton>
+                  </Link>
+                }
+              />
+              <Chart data={trend} />
+            </AdCard>
 
-          {/* Høyrekolonnen er ÉN flex-stabel, ikke to rutenettbarn. Med tre barn
-              i et to-kolonners rutenett falt kapasitetskortet ned i
-              venstrekolonnen og ble like bredt som omsetningsgrafen, med et
-              tomrom under værkortet. */}
+            <WeatherStrip forecast={stripForecast} label={stripLabel} />
+
+            <AdCard flush>
+              <AdCardHead
+                className="px-5 pt-5"
+                title={upcoming.length > 0 ? "Neste inn i dag" : "Siste inn i dag"}
+                sub={`${day.now.count} ordrer totalt · ${formatKr(day.now.sumOre)}`}
+                action={
+                  <Link href="/admin/bestillinger">
+                    <AdButton variant="ghost" size="sm">
+                      Alle bestillinger →
+                    </AdButton>
+                  </Link>
+                }
+              />
+              <AdTable>
+                <thead>
+                  <tr>
+                    <th className={adTh}>Tid</th>
+                    <th className={adTh}>Tjeneste</th>
+                    {loc === "alle" && <th className={adTh}>Avdeling</th>}
+                    <th className={adTh}>Kanal</th>
+                    <th className={`${adTh} text-right`}>Sum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((order) => {
+                    const service = services.find((item) => item.id === order.serviceId)!;
+                    return (
+                      <tr key={order.id}>
+                        <td className={`${adTd} font-heading font-semibold tabular text-ink`}>
+                          {String(order.hour).padStart(2, "0")}:00
+                        </td>
+                        <td className={adTd}>
+                          <p className={adName}>{service.name}</p>
+                          <p className={adMeta}>
+                            ca. {formatDuration(service.durationMin)}
+                            {order.addOnIds.length > 0
+                              ? ` · ${order.addOnIds.map((id) => addOns.find((a) => a.id === id)?.name).join(", ")}`
+                              : ""}
+                          </p>
+                        </td>
+                        {loc === "alle" && (
+                          <td className={adTd}>
+                            {locations.find((item) => item.slug === order.locationSlug)?.name}
+                          </td>
+                        )}
+                        <td className={adTd}>
+                          {order.member ? (
+                            <AdTag variant="ok">Medlem</AdTag>
+                          ) : (
+                            <AdTag variant="off">
+                              {order.channel === "nett"
+                                ? "Nett"
+                                : order.channel === "skranke"
+                                  ? "Skranke"
+                                  : "Telefon"}
+                            </AdTag>
+                          )}
+                        </td>
+                        <td className={`${adTd} ${adNum}`}>{formatKr(order.totalOre)}</td>
+                      </tr>
+                    );
+                  })}
+                  {list.length === 0 && (
+                    <tr>
+                      <td className={adTd} colSpan={loc === "alle" ? 5 : 4}>
+                        <AdNote>Ingen ordrer i dag — søndager er stengt.</AdNote>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </AdTable>
+            </AdCard>
+          </div>
+
           <div className="flex flex-col gap-4">
             {/* Værrådet står øverst når det finnes, og forsvinner helt når ingen
                 regel slår til. Et kort som alltid er der, slutter folk å lese —
@@ -247,83 +330,6 @@ export function OversiktScreen({
               )}
             </AdList>
             </AdCard>
-          </div>
-        </div>
-
-        <div className="grid items-start gap-4 admin-lg:grid-cols-[1.6fr_1fr]">
-          <AdCard flush>
-            <AdCardHead
-              className="px-5 pt-5"
-              title={upcoming.length > 0 ? "Neste inn i dag" : "Siste inn i dag"}
-              sub={`${day.now.count} ordrer totalt · ${formatKr(day.now.sumOre)}`}
-              action={
-                <Link href="/admin/bestillinger">
-                  <AdButton variant="ghost" size="sm">
-                    Alle bestillinger →
-                  </AdButton>
-                </Link>
-              }
-            />
-            <AdTable>
-              <thead>
-                <tr>
-                  <th className={adTh}>Tid</th>
-                  <th className={adTh}>Tjeneste</th>
-                  {loc === "alle" && <th className={adTh}>Avdeling</th>}
-                  <th className={adTh}>Kanal</th>
-                  <th className={`${adTh} text-right`}>Sum</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((order) => {
-                  const service = services.find((item) => item.id === order.serviceId)!;
-                  return (
-                    <tr key={order.id}>
-                      <td className={`${adTd} font-heading font-semibold tabular text-ink`}>
-                        {String(order.hour).padStart(2, "0")}:00
-                      </td>
-                      <td className={adTd}>
-                        <p className={adName}>{service.name}</p>
-                        <p className={adMeta}>
-                          ca. {formatDuration(service.durationMin)}
-                          {order.addOnIds.length > 0
-                            ? ` · ${order.addOnIds.map((id) => addOns.find((a) => a.id === id)?.name).join(", ")}`
-                            : ""}
-                        </p>
-                      </td>
-                      {loc === "alle" && (
-                        <td className={adTd}>
-                          {locations.find((item) => item.slug === order.locationSlug)?.name}
-                        </td>
-                      )}
-                      <td className={adTd}>
-                        {order.member ? (
-                          <AdTag variant="ok">Medlem</AdTag>
-                        ) : (
-                          <AdTag variant="off">
-                            {order.channel === "nett"
-                              ? "Nett"
-                              : order.channel === "skranke"
-                                ? "Skranke"
-                                : "Telefon"}
-                          </AdTag>
-                        )}
-                      </td>
-                      <td className={`${adTd} ${adNum}`}>{formatKr(order.totalOre)}</td>
-                    </tr>
-                  );
-                })}
-                {list.length === 0 && (
-                  <tr>
-                    <td className={adTd} colSpan={loc === "alle" ? 5 : 4}>
-                      <AdNote>Ingen ordrer i dag — søndager er stengt.</AdNote>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </AdTable>
-          </AdCard>
-
           <AdCard>
             <AdCardHead title="Å gjøre" />
             <AdList>
@@ -396,6 +402,7 @@ export function OversiktScreen({
               })}
             </AdList>
           </AdCard>
+          </div>
         </div>
       </AdminBody>
     </>
