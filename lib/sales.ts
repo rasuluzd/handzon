@@ -121,6 +121,31 @@ export function isoWeek(date: Date): number {
 const cache = new Map<string, Order[]>();
 
 /** Alle ordrer for én avdeling på én dag. */
+/**
+ * Gjennomsnittlig jobbtid brukt i kapasitetsregnestykket. Katalogen spenner fra
+ * 30 min (Basic-vask) til flere timer (lakkforsegling); 1,5 t er snittet en
+ * plass faktisk omsetter gjennom en dag.
+ */
+const AVG_JOB_HOURS = 1.5;
+
+/**
+ * Hvor mange biler avdelingen rekker på én dag: plasser × hvor mange jobber
+ * hver plass rekker innenfor åpningstiden.
+ *
+ * Tidligere var dette hardkodet til `maxConcurrentCars * 3`, som ikke fulgte
+ * åpningstidene og lå under det ordregeneratoren faktisk produserer — derfor
+ * kunne oversikten vise «12 av 9 plasser booket», altså flere biler enn
+ * plasser. Stengt dag gir 0.
+ */
+export function dayCapacity(location: Location, date: Date): number {
+  const hours = hoursForDay(location.openingHours, weekdayIndex(date));
+  if (!hours || hours.closed) return 0;
+  const open = Number(hours.open.slice(0, 2));
+  const close = Number(hours.close.slice(0, 2));
+  const perBay = Math.max(1, Math.floor((close - open) / AVG_JOB_HOURS));
+  return location.maxConcurrentCars * perBay;
+}
+
 export function ordersForDay(location: Location, date: string): Order[] {
   const key = `${location.slug}|${date}`;
   const cached = cache.get(key);
@@ -142,7 +167,18 @@ export function ordersForDay(location: Location, date: string): Order[] {
     (WEIGHT[location.slug] ?? 0.85) *
     SEASON[day.getMonth()] *
     WEEKDAY[weekdayIndex(day)];
-  const count = Math.max(1, Math.round(base + (random() - 0.5) * 3.2));
+  /* Ordremengden er klemt til ~90 % av dagens kapasitet. Uten dette tok
+     generatoren ingen hensyn til hvor mange biler avdelingen faktisk rekker,
+     og en lørdag med 10–15 åpent (9 plasser) kunne få 12 bestillinger — som
+     ga «12 av 9 plasser booket» på oversikten. 90 % og ikke 100 %: en
+     avdeling holder av litt slark til dropp-inn, og et belegg som treffer
+     taket hver eneste dag er ikke troverdig. */
+  const capacity = dayCapacity(location, day);
+  const ceiling = Math.max(1, Math.floor(capacity * 0.9));
+  const count = Math.min(
+    ceiling,
+    Math.max(1, Math.round(base + (random() - 0.5) * 3.2)),
+  );
   const available = services.filter((service) =>
     isServiceAvailable(service.id, location.id),
   );

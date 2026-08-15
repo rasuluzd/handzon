@@ -24,13 +24,22 @@ import {
   adTh,
 } from "@/components/admin/ui";
 import { formatDuration, formatKr } from "@/lib/format";
-import { addDays, ordersInRange, pct, report, today } from "@/lib/sales";
+import { addDays, dayCapacity, ordersInRange, pct, report, today } from "@/lib/sales";
+import { adviceFor } from "@/lib/weather-advice";
+import type { WeatherAdvice } from "@/lib/weather-advice";
+import type { Forecast } from "@/lib/weather";
 import { addOns, locations, services } from "@/lib/mock-data";
+import type { Region } from "@/lib/types";
 import { AdminBody } from "./admin-shell";
 import { countDirty, locationLabel, useAdmin } from "./admin-context";
 
 /** Oversikt (ADMIN.md § 2): dagens drift for én avdeling eller hele kjeden. */
-export function OversiktScreen() {
+export function OversiktScreen({
+  forecasts,
+}: {
+  /** Hentet i serverkomponenten — se app/admin/page.tsx. */
+  forecasts: Record<Region, Forecast>;
+}) {
   const { loc, setLoc, services: catalog, posts, setMenuOpen } = useAdmin();
   const now = today();
 
@@ -58,15 +67,44 @@ export function OversiktScreen() {
 
   const label = locationLabel(loc);
   const branch = locations.find((item) => item.slug === loc);
-  // Tre biler per plass gjennom en arbeidsdag — kapasiteten følger
-  // samtidighetstaket i avdelingsdataene, den er ikke hardkodet.
+  /* Dagskapasitet fra åpningstidene, ikke et fast tall — se `dayCapacity`.
+     `booked` er klemt til kapasiteten: et belegg over 100 % er ikke en
+     tilstand denne skjermen skal kunne vise. */
   const capacity = branch
-    ? branch.maxConcurrentCars * 3
-    : locations.reduce((sum, item) => sum + item.maxConcurrentCars * 3, 0);
-  const fill = capacity > 0 ? Math.min(1, day.now.count / capacity) : 0;
+    ? dayCapacity(branch, now)
+    : locations.reduce((sum, item) => sum + dayCapacity(item, now), 0);
+  const booked = Math.min(day.now.count, capacity);
+  const fill = capacity > 0 ? booked / capacity : 0;
 
   const upcoming = day.orders.filter((order) => order.hour >= new Date().getHours());
   const list = (upcoming.length > 0 ? upcoming : day.orders.slice(-6)).slice(0, 6);
+
+  /* Værrådet. For én avdeling gjelder regionens varsel. For hele kjeden
+     evalueres alle tre regioner, og det alvorligste rådet vinner — et
+     kjedekontor trenger å vite hvor det brenner, ikke et snitt. */
+  const advice = useMemo<WeatherAdvice | null>(() => {
+    const horizon = ordersInRange(loc, now, addDays(now, 4));
+    const regions: Region[] = branch
+      ? [branch.region]
+      : (Object.keys(forecasts) as Region[]);
+    const found = regions
+      .map((region) => {
+        const forecast = forecasts[region];
+        if (!forecast) return null;
+        const slugs = new Set(
+          locations.filter((item) => item.region === region).map((item) => item.slug),
+        );
+        const orders = horizon.filter((order) => slugs.has(order.locationSlug));
+        return adviceFor(forecast, orders, fill);
+      })
+      .filter((item): item is WeatherAdvice => item !== null);
+    return (
+      found.find((item) => item.level === "varsel") ?? found[0] ?? null
+    );
+  }, [loc, now, branch, forecasts, fill]);
+  const forecastSource = branch
+    ? forecasts[branch.region]?.source
+    : forecasts["Østlandet"]?.source;
   const drafts = posts.filter((post) => !post.published).length;
   const dirty = countDirty(catalog);
 
@@ -134,11 +172,49 @@ export function OversiktScreen() {
             <Chart data={trend} />
           </AdCard>
 
-          <AdCard>
+          {/* Høyrekolonnen er ÉN flex-stabel, ikke to rutenettbarn. Med tre barn
+              i et to-kolonners rutenett falt kapasitetskortet ned i
+              venstrekolonnen og ble like bredt som omsetningsgrafen, med et
+              tomrom under værkortet. */}
+          <div className="flex flex-col gap-4">
+            {/* Værrådet står øverst når det finnes, og forsvinner helt når ingen
+                regel slår til. Et kort som alltid er der, slutter folk å lese —
+                og da mister frostvarselet sin verdi den ene dagen det betyr noe. */}
+            {advice && (
+            <AdCard>
+              <AdCardHead
+                title="Vær og drift"
+                sub={
+                  forecastSource === "met.no"
+                    ? "Varsel fra MET Norway"
+                    : "Demovarsel — MET var ikke tilgjengelig"
+                }
+                action={
+                  <AdTag variant={advice.level === "varsel" ? "warn" : "ok"} dot>
+                    {advice.level === "varsel" ? "Krever handling" : "Mulighet"}
+                  </AdTag>
+                }
+              />
+              <p className="font-heading text-[17px] font-semibold leading-[1.25] text-ink">
+                {advice.title}
+                {!branch && advice.region ? ` · ${advice.region}` : ""}
+              </p>
+              <AdNote className="mt-1.5">{advice.body}</AdNote>
+              {advice.affected != null && (
+                <Link href="/admin/bestillinger" className="mt-3.5 inline-flex">
+                  <AdButton variant="secondary" size="sm">
+                    Se de {advice.affected} bestillingene
+                  </AdButton>
+                </Link>
+              )}
+            </AdCard>
+            )}
+
+            <AdCard>
             <AdCardHead title="Kapasitet i dag" />
             <div className="flex items-baseline gap-2.5">
               <span className="font-heading text-[34px] font-bold leading-none tabular text-ink">
-                {day.now.count}
+                {booked}
               </span>
               <span className="text-[15px] text-body-soft">av {capacity} plasser booket</span>
             </div>
@@ -170,7 +246,8 @@ export function OversiktScreen() {
                 <AdNote>Ingen ordrer registrert i dag ennå.</AdNote>
               )}
             </AdList>
-          </AdCard>
+            </AdCard>
+          </div>
         </div>
 
         <div className="grid items-start gap-4 admin-lg:grid-cols-[1.6fr_1fr]">

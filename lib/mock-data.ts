@@ -3,6 +3,7 @@ import type {
   Location,
   LocationServiceOverride,
   Organization,
+  Region,
   Service,
 } from "./types";
 
@@ -36,7 +37,7 @@ interface LocationSeed {
   address: string;
   postalCode: string;
   city: string;
-  region: string;
+  region: Region;
   phone: string;
   lat: number;
   lng: number;

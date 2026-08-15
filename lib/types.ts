@@ -20,6 +20,9 @@ export interface OpeningHours {
   closed?: boolean;
 }
 
+/** De tre landsdelene kjeden er i. Værvarselet hentes per region. */
+export type Region = "Østlandet" | "Vestlandet" | "Sørlandet";
+
 export interface Location {
   id: string;
   orgId: string;
@@ -30,7 +33,7 @@ export interface Location {
   address: string;
   postalCode: string;
   city: string;
-  region: string;
+  region: Region;
   phone: string;
   email: string;
   openingHours: OpeningHours[];
