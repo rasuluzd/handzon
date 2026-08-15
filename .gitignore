@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Kommersielle dokumenter — dette repoet er offentlig.
+# Kalkyle, timepriser og marginvurdering skal ikke ut. Fjern en linje her
+# bevisst hvis noe av det likevel skal deles.
+docs/KALKYLE-INTERN.md
+docs/TILBUD.md
+docs/TILBUD-KUNDE.md
+docs/tilbud.html
+docs/tilbud-kunde.html
+docs/tilbud-handzon.html

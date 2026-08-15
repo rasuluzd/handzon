@@ -434,8 +434,8 @@ export function BookingWizard({
       )}
 
       {/* Bekreftelsessiden får samme bunnbar som resten av trakten. De to
-          tingene folk faktisk vil gjøre etterpå — hente kvitteringen og se
-          bestillingen — lå nederst under et helt kvitteringskort. */}
+          tingene folk faktisk vil gjøre etterpå — hente bekreftelsen og se
+          bestillingen — lå nederst under et helt oppsummeringskort. */}
       {state.step === 7 && state.booking && (
         <BottomBar
           compact
@@ -1564,7 +1564,7 @@ function PriceLine({
 }
 
 /**
- * Kvitterings-PDF-en. Ligger på modulnivå og ikke inne i steget, fordi både
+ * Ordrebekreftelsen som PDF. Ligger på modulnivå og ikke inne i steget, fordi både
  * bekreftelsessiden og den sticky bunnbaren skal kunne utløse den — baren
  * rendres av `BookingWizard`, ikke av `StepConfirmation`.
  */
@@ -1649,7 +1649,7 @@ function StepConfirmation({
         <div className="flex items-center justify-between gap-3 bg-navy px-[22px] py-4">
           <Image src={logoWhite} alt="Handz On Auto Care" className="h-6 w-auto" />
           <span className="font-heading text-[12px] font-semibold uppercase tracking-[.14em] text-on-navy-eyebrow">
-            Kvittering
+            Ordrebekreftelse
           </span>
         </div>
         <div className="p-[22px]">
@@ -1702,7 +1702,8 @@ function StepConfirmation({
           />
           <p className="mt-3.5 text-[13.5px] leading-[1.6] text-body-soft">
             Utstedes av {organization?.legalName}, org. {formatOrgNr(booking.orgNr)}.
-            Kvitteringen legges på Min side etter utført behandling.
+            Dette er en bekreftelse på bestillingen, ikke en kvittering — den får du
+            i avdelingen når du betaler.
           </p>
         </div>
       </Card>
@@ -1730,10 +1731,10 @@ function StepConfirmation({
         </ul>
       </Card>
 
-      {/* «Last ned kvittering» og «Se på Min side» ligger i den sticky
-          bunnbaren, som i alle de andre stegene — de sto før nederst på en
-          side full av kvitteringsdetaljer, så man måtte rulle helt ned for å
-          finne dem. Her står bare den rolige veien ut. */}
+      {/* «Last ned PDF» og «Se på Min side» ligger i den sticky bunnbaren,
+          som i alle de andre stegene — de sto før nederst på en side full av
+          ordredetaljer, så man måtte rulle helt ned for å finne dem. Her står
+          bare den rolige veien ut. */}
       <ButtonLink href="/" variant="ghost" block className="mt-5">
         Til forsiden
       </ButtonLink>

@@ -1,8 +1,19 @@
 /**
- * Genererer en faktisk kvittering-PDF (ikke en utskrift av siden).
+ * Genererer en ordrebekreftelse som PDF (ikke en utskrift av siden).
  * jsPDF lastes dynamisk i klikk-handleren, så det ikke tynger hovedbundelen.
- * I produksjon hentes den offisielle PDF-kvitteringen fra Avio POS/ED (FR-4.3);
- * denne genereres lokalt for demoen.
+ *
+ * To varianter av samme dokument, styrt av `kind`:
+ *
+ *  - `bekreftelse` (bestillingsflyten): kunden har ikke betalt ennå, så arket
+ *    heter ORDREBEKREFTELSE og summen står som «Å betale ved henting».
+ *  - `kopi` (Min side): jobben er utført og betalt i avdelingen, så summen står
+ *    som «Betalt i avdelingen».
+ *
+ * Ingen av dem er en kassakvittering. Kvitteringen er beviset på gjennomført
+ * betaling og produseres av kassen — kassasystemer er produkterklæringspliktige
+ * til Skatteetaten, og uten grensesnitt mot Avio POS/ED (FR-4.3) har vi verken
+ * lov til eller data til å utstede en. Derfor sier begge variantene hva de er,
+ * og `kopi` peker videre på hvor den offisielle kvitteringen ligger.
  */
 
 export interface ReceiptLine {
@@ -13,6 +24,8 @@ export interface ReceiptLine {
 }
 
 export interface ReceiptData {
+  /** «bekreftelse» før betaling (bestilling), «kopi» etter (Min side). */
+  kind?: "bekreftelse" | "kopi";
   reference: string;
   sellerName: string;
   orgNr: string;
@@ -49,7 +62,8 @@ export async function downloadReceiptPdf(data: ReceiptData): Promise<void> {
   doc.setFont("helvetica", "normal");
   doc.setTextColor(183, 198, 228);
   doc.setFontSize(11);
-  doc.text("KVITTERING", right, 14, { align: "right" });
+  const copy = data.kind === "kopi";
+  doc.text(copy ? "ORDREKOPI" : "ORDREBEKREFTELSE", right, 14, { align: "right" });
   doc.setTextColor(214, 224, 241);
   doc.setFontSize(12);
   doc.text(data.reference, right, 22, { align: "right" });
@@ -120,7 +134,7 @@ export async function downloadReceiptPdf(data: ReceiptData): Promise<void> {
   doc.setTextColor(INK.r, INK.g, INK.b);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("Å betale ved henting", margin, y);
+  doc.text(copy ? "Betalt i avdelingen" : "Å betale ved henting", margin, y);
   doc.setFontSize(17);
   doc.text(data.total, right, y, { align: "right" });
   y += 16;
@@ -129,9 +143,10 @@ export async function downloadReceiptPdf(data: ReceiptData): Promise<void> {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(MUTED.r, MUTED.g, MUTED.b);
-  const note =
-    "Betaling skjer ved henting av bilen. Kvitteringen oppbevares i minimum 6 år i tråd med bokføringsloven og er tilgjengelig på Min side etter utført behandling.";
+  const note = copy
+    ? "Kopi av ordren, til din egen oversikt. Den offisielle kvitteringen ble utstedt av kassen i avdelingen da du betalte, og oppbevares der i tråd med bokføringsloven."
+    : "Dette er en bekreftelse på bestillingen, ikke en kvittering. Betaling skjer ved henting av bilen, og kvitteringen får du i avdelingen. Gratis avbestilling frem til 24 timer før avtalt tid.";
   doc.text(doc.splitTextToSize(note, pageWidth - margin * 2), margin, y);
 
-  doc.save(`kvittering-${data.reference}.pdf`);
+  doc.save(`${copy ? "ordrekopi" : "ordrebekreftelse"}-${data.reference}.pdf`);
 }

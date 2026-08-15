@@ -102,14 +102,18 @@ type Tab = "avtaler" | "historikk" | "kvitteringer" | "personvern";
 /**
  * Fanene ligger i et 2x2-rutenett under 900px. Som horisontal strimmel målte
  * raden ~435px mot 358px tilgjengelig, og fordi `.hz-scroll` skjuler
- * scrollbaren fantes ingen antydning om at «Kvitteringer» og «Personvern» lå
- * utenfor skjermkanten — de var i praksis usynlige. Den korte etiketten brukes
- * bare på mobil, der en halv kolonne er ~140px bred.
+ * scrollbaren fantes ingen antydning om at de to siste fanene lå utenfor
+ * skjermkanten — de var i praksis usynlige. Den korte etiketten brukes bare på
+ * mobil, der en halv kolonne er ~140px bred.
+ *
+ * Fanen heter «Ordrekopier», ikke «Kvitteringer». Kvitteringen produseres av
+ * kassen i avdelingen; å vise den her forutsetter et grensesnitt mot Avio
+ * POS/ED (FR-4.3). Det vi kan vise uten kassetilgang er vår egen ordre.
  */
 const tabs: Array<{ key: Tab; label: string; short: string }> = [
   { key: "avtaler", label: "Kommende avtaler", short: "Kommende" },
   { key: "historikk", label: "Historikk", short: "Historikk" },
-  { key: "kvitteringer", label: "Kvitteringer", short: "Kvitteringer" },
+  { key: "kvitteringer", label: "Ordrekopier", short: "Ordrekopier" },
   { key: "personvern", label: "Personvern", short: "Personvern" },
 ];
 
@@ -152,8 +156,8 @@ export function MinSide() {
           </p>
           <p className="mt-2.5 text-[15px] leading-[1.6] text-body-soft">
             Profilen og persondataene dine anonymiseres umiddelbart. Kvitteringer og
-            bokføringspliktige bilag må hver avdeling oppbevare i 6 år etter
-            bokføringsloven — de kan ikke lenger knyttes til deg som person.
+            bokføringspliktige bilag må hver avdeling oppbevare i fem år etter
+            regnskapsårets slutt — de kan ikke lenger knyttes til deg som person.
           </p>
           <Button
             variant="secondary"
@@ -278,7 +282,12 @@ export function MinSide() {
           past.map((booking) => <BookingRow key={booking.reference} booking={booking} />)}
 
         {tab === "kvitteringer" && (
-          <Card elevated flush>
+          <>
+            <p className="mb-3 text-[14px] leading-[1.5] text-body-soft hz:mb-3.5 hz:text-[14.5px]">
+              Oversikt over utførte behandlinger. Selve kvitteringen får du i avdelingen
+              når du betaler.
+            </p>
+            <Card elevated flush>
             {past.map((booking, index) => {
               const { location, service, totals } = details(booking);
               const organization = getOrganization(location.orgId);
@@ -315,7 +324,8 @@ export function MinSide() {
                 </div>
               );
             })}
-          </Card>
+            </Card>
+          </>
         )}
 
         {tab === "personvern" && (
@@ -344,8 +354,9 @@ export function MinSide() {
                 Slett profilen min
               </h2>
               <p className="text-[15px] leading-[1.6] text-body-soft hz:text-[15.5px]">
-                Profilen anonymiseres umiddelbart. Kvitteringer må oppbevares i 6 år etter
-                bokføringsloven, men kobles fra deg som person.
+                Profilen anonymiseres umiddelbart. Bokføringspliktige bilag må
+                avdelingen oppbevare i fem år etter regnskapsårets slutt, men de kobles
+                fra deg som person.
               </p>
               {/* Sletting er irreversibel og lå tidligere ett trykk unna, rett
                   under en identisk formatert seksjon. På touch er bomtrykk
@@ -389,7 +400,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
         Min side
       </h1>
       <p className="mt-2 text-[16.5px] leading-[1.55] text-body-soft hz:text-[17px]">
-        Se kommende avtaler, historikk per bil, kvitteringer og kundeklubb-status.
+        Se kommende avtaler, historikk per bil, ordrekopier og kundeklubb-status.
       </p>
       <Card elevated className="mt-6 grid gap-3 hz:mt-7">
         <VippsButton block onClick={onLogin} />
@@ -410,7 +421,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
             className="mt-px size-[18px] shrink-0 text-status-open"
             strokeWidth={1.75}
           />
-          Ny kunde? Du får automatisk en profil første gang du bestiller — kvitteringen
+          Ny kunde? Du får automatisk en profil første gang du bestiller — bestillingen
           ligger her etterpå.
         </p>
         <ButtonLink href="/booking" variant="secondary" size="lg" block className="mt-3.5">
@@ -530,6 +541,10 @@ function downloadReceipt(booking: PortalBooking) {
   const { location, service, chosenAddOns, totals } = details(booking);
   const organization = getOrganization(location.orgId);
   void downloadReceiptPdf({
+    /* Min side viser utførte, betalte jobber. Da er «Å betale ved henting»
+       feil, og «Kvittering» ville vært en påstand vi ikke kan innfri uten
+       grensesnitt mot kassen — dette er en ordrekopi. */
+    kind: "kopi",
     reference: booking.reference,
     sellerName: organization?.legalName ?? "Handz On Auto Care",
     orgNr: formatOrgNr(organization?.orgNr ?? ""),
