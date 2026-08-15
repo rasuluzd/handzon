@@ -179,16 +179,40 @@ export default async function LocationPage({ params }: PageProps<"/avdelinger/[s
             )}
           </div>
 
-          {/* Kartet er desktop-only. På mobil er «Veibeskrivelse ↗» over den
-              riktige veien videre — den åpner samme sted i Google Maps-appen,
-              som er der brukeren faktisk skal navigere fra. display:none gjør i
-              tillegg at det lazy-lastede iframet aldri lastes under 900px. */}
-          <div className="hz-map hidden overflow-hidden rounded-card-lg border border-line-strong bg-map-bg hz:block hz:h-[clamp(260px,32vw,380px)]">
-            <GoogleBranchMap
-              mode="place"
-              query={mapQuery}
-              title={`Kart – Handz On ${location.name}`}
-            />
+          {/* Kartet vises også på mobil — men bare her, ikke på /avdelinger.
+              Forskjellen er hvor det står: der lå iframen øverst i første
+              viewport og gjorde `loading="lazy"` til en no-op, mens den her
+              ligger under åpningstidene og faktisk lastes først når man ruller
+              ned til den. Én avdeling, ett kartutsnitt, ingen hover å savne.
+
+              På touch er selve iframen `pointer-events-none`. Et Google
+              Maps-innbygg spiser dratt-bevegelser og panorerer i stedet for å
+              rulle siden, så man blir stående fast midt i dokumentet. I stedet
+              ligger hele flaten som én lenke som åpner stedet i kartappen —
+              der man uansett skal navigere fra. */}
+          <div>
+            <h2 className="mb-2.5 font-heading text-[20px] font-bold tracking-[-.02em] text-ink hz:mb-3.5 hz:text-[24px]">
+              Slik finner du oss
+            </h2>
+            <div className="hz-map relative overflow-hidden rounded-card-lg border border-line-strong bg-map-bg max-hz:h-[190px] hz:h-[clamp(260px,32vw,380px)]">
+              <GoogleBranchMap
+                mode="place"
+                query={mapQuery}
+                title={`Kart – Handz On ${location.name}`}
+                className="max-hz:pointer-events-none"
+              />
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Åpne Handz On ${location.name} i Google Maps (åpnes i ny fane)`}
+                className="absolute inset-0 flex items-end justify-end p-2.5 hz:hidden"
+              >
+                <span className="rounded-full border border-line-strong bg-surface/95 px-3 py-1.5 font-heading text-[12px] font-semibold uppercase tracking-[.12em] text-navy shadow-[0_1px_4px_rgba(22,34,58,.16)]">
+                  Åpne i kart ↗
+                </span>
+              </a>
+            </div>
           </div>
         </div>
       </Section>

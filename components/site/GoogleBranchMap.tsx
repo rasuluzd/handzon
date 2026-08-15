@@ -11,12 +11,20 @@
  * nøkkel rendrer ikke pins). Sett nøkkelen på Vercel for pins i oversikten.
  *
  * MOBIL: kartet er en dyr passasjer — et eget dokument med egen JS, fliser og
- * 15–40 MB minne i en egen renderer-prosess. `loading="lazy"` hjelper ikke når
- * iframen står i første viewport, slik den gjorde på /avdelinger. Derfor er
- * kartkolonnene nå `hidden hz:block` hos kallerne: en lazy iframe inne i et
- * `display:none`-subtre kommer aldri inn i viewporten og lastes dermed aldri
- * under 900px. Det er grunnen til at komponenten ikke selv har en mobilgren —
- * den koster ingenting så lenge kalleren skjuler den.
+ * 15–40 MB minne i en egen renderer-prosess. Det avgjørende er ikke om kartet
+ * vises, men hvor det står, for `loading="lazy"` hjelper ingenting når iframen
+ * allerede er i første viewport. Derfor er det ulikt per kaller:
+ *
+ *  - `/avdelinger` og forsiden: `hidden hz:block`. Kartet lå øverst i kritisk
+ *    vei, og på touch finnes ingen hover å flytte utsnittet med — kartet var
+ *    låst til første avdeling uansett hva man søkte på.
+ *  - `/avdelinger/[slug]`: vises på mobil. Der ligger kartet under
+ *    åpningstidene, altså godt under folden, og gjelder den ene avdelingen
+ *    siden allerede handler om.
+ *
+ * Komponenten har derfor ingen egen mobilgren — den koster det kalleren lar
+ * den koste. Kallere som viser den på touch bør sette `pointer-events-none`
+ * og legge en lenke over: innbygget panorerer i stedet for å rulle siden.
  */
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
