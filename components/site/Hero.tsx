@@ -48,7 +48,7 @@ export function Hero() {
 
         <p className="mt-3 max-w-[42ch] text-[16.5px] leading-[1.5] text-body hz:mt-5 hz:text-[19px] hz:leading-[1.55]">
           Vi tar bilen mens du gjør ærendene dine på senteret. Håndvask med to bøtter,
-          kontroll i lys før levering — og SMS når den står klar.
+          kontroll i lys før levering, og SMS når den står klar.
         </p>
 
         {/* Én dominant handling. På mobil får den full bredde og 54px høyde;

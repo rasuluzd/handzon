@@ -475,7 +475,7 @@ export function RapportScreen() {
           </div>
           <AdNote className="mt-4">
             Alle beløp er inkl. mva. hvis ikke annet er oppgitt. Hver avdeling er en egen
-            juridisk enhet med eget regnskap — eksporten inneholder én linje per ordre og kan
+            juridisk enhet med eget regnskap. Eksporten inneholder én linje per ordre og kan
             leses rett inn i regnskapssystemet.
           </AdNote>
         </AdCard>

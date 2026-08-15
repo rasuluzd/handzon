@@ -543,7 +543,7 @@ export function pct(now: number, before: number): number | null {
 export function toCsv(rep: Report, locationLabel: string, periodLabel: string): string {
   const kr = (ore: number) => (ore / 100).toFixed(2).replace(".", ",");
   const rows: Array<Array<string | number>> = [
-    ["Handz On Auto Care — salgsrapport"],
+    ["Handz On Auto Care, salgsrapport"],
     ["Avdeling", locationLabel],
     ["Periode", periodLabel],
     ["Omsetning inkl. mva", kr(rep.now.sumOre)],

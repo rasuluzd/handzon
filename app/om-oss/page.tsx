@@ -10,11 +10,11 @@ import { aboutHeroImage, sustainabilityImage } from "@/lib/service-images";
 export const metadata: Metadata = {
   title: "Om oss",
   description:
-    "Norges største bilpleiekjede. 14 avdelinger drevet av lokale fagfolk, med godkjente prosesser og folk som bryr seg om detaljene.",
+    "Norges største bilpleiekjede. 14 avdelinger, hver drevet av sin egen lokale franchisetaker, alle registrert i Arbeidstilsynets godkjenningsordning.",
 };
 
 const values = [
-  ["H", "Handlekraft", "Vi tar bilen inn med en gang — ikke om tre uker."],
+  ["H", "Handlekraft", "Vi tar bilen inn med en gang, ikke om tre uker."],
   [
     "A",
     "Ansvarlig",
@@ -32,14 +32,14 @@ const values = [
 ] as const;
 
 const timeline = [
-  ["2005", "Ove Hagen åpner den første avdelingen — bilpleie inne på kjøpesenteret."],
+  ["2005", "Ove Hagen åpner den første avdelingen, inne på et kjøpesenter."],
   ["2014", "Franchisemodellen settes: hver avdeling er en egen lokal bedrift."],
   ["2021", "Renseanlegget settes i drift og gjenbruker vaskevannet."],
   ["2025", "20 år. 120 000 biler. 14 avdelinger fra Kristiansand til Ålesund."],
 ] as const;
 
 const sustainability = [
-  "Renseanlegg som gjenbruker vaskevannet — vi bruker en brøkdel av en hjemmevask med hageslange.",
+  "Renseanlegg som gjenbruker vaskevannet. En håndvask hos oss bruker mindre enn en hageslange hjemme.",
   "Miljømerkede produkter, doserte i stedet for øst på.",
   "Egne dekkposer i resirkulert plast, og færre engangsprodukter for hvert år.",
 ];
@@ -62,7 +62,7 @@ export default function AboutPage() {
 
       <PageHead
         eyebrow="Om oss"
-        title="Kvalitet du kan stole på"
+        title="Fjorten avdelinger, samme håndverk"
         lead={
           <>
             Handz On startet med én idé: at bilpleie skal passe inn i dagen din, ikke
@@ -72,7 +72,7 @@ export default function AboutPage() {
                 men på mobil er den to ekstra linjer foran første knapp. */}
             <span className="max-hz:hidden">
               {" "}
-              Visjonen er å samle alt innen bilpleie under ett tak — på Europas største
+              Visjonen er å samle alt innen bilpleie under ett tak, på Europas største
               kjøpesentre og lufthavner.
             </span>
           </>

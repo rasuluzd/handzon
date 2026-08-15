@@ -128,11 +128,11 @@ export default async function NewsArticlePage({ params }: PageProps<"/nyheter/[s
             Neste steg
           </p>
           <h2 className="my-2 font-heading text-[clamp(21px,2.6vw,30px)] font-bold leading-[1.12] tracking-[-.024em] text-white hz:my-3">
-            Klar for å bestille?
+            Vil du ha det gjort?
           </h2>
           <p className="mb-4 max-w-[52ch] text-[15px] leading-[1.5] text-on-navy hz:mb-6 hz:text-[16.5px] hz:leading-[1.55]">
             {service
-              ? `${service.name} koster fra ${formatKr(service.priceOre)} og tar ca. ${formatDuration(service.durationMin)}. Fast pris, ingen timepris — du får bekreftelsen med én gang.`
+              ? `${service.name} koster fra ${formatKr(service.priceOre)} og tar ca. ${formatDuration(service.durationMin)}. Fast pris, ingen timepris, og bekreftelsen kommer med én gang.`
               : "Fast pris på alle tjenester i 14 avdelinger. Lever nøkkelen mens du er på senteret, og hent en ferdig pleiet bil."}
           </p>
           <div className="flex flex-col items-start gap-3 hz:flex-row hz:items-center hz:gap-5">

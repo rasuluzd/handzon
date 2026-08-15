@@ -13,7 +13,7 @@ const items = [
   },
   {
     title: "Seriøse fagfolk",
-    text: "Godkjent verkstedstandard for hjul- og dekktjenester — sjekk oss hos Statens vegvesen.",
+    text: "Godkjent verkstedstandard for hjul- og dekktjenester. Sjekk oss i registeret til Statens vegvesen.",
     cta: "Finn godkjent verksted",
     href: "https://www.vegvesen.no/kjoretoy/eie-og-vedlikeholde/finn-godkjent-verksted/",
   },

@@ -99,7 +99,7 @@ export const services: Service[] = [
     name: "Vask utvendig – Basic",
     category: "Bilvask",
     description:
-      "Rask, skånsom utvendig håndvask med felgvask, skum og tørk. Perfekt til jevnt vedlikehold.",
+      "Håndvask utvendig med felgvask, skum og tørk. Den du tar mellom de store rundene.",
     priceOre: 54000,
     durationMin: 30,
     level: "Basic",
@@ -110,7 +110,7 @@ export const services: Service[] = [
     name: "Vask utvendig – Premium",
     category: "Bilvask",
     description:
-      "Grundig håndvask med to-bøtte-metode, felgvask og skånsom tørk – uten svirvelmerker.",
+      "To bøtter, ren klut per panel og tørk uten trykk. Slik slipper lakken svirvelmerker.",
     priceOre: 79000,
     durationMin: 50,
     level: "Premium",
@@ -121,7 +121,7 @@ export const services: Service[] = [
     name: "Vask innvendig – Premium",
     category: "Bilvask",
     description:
-      "Støvsuging, rens av alle flater, vinduer innvendig og avtørking av dashbord og konsoll.",
+      "Vi støvsuger, tørker av dashbord og konsoll, og pusser rutene innvendig.",
     priceOre: 79000,
     durationMin: 50,
     level: "Premium",
@@ -132,7 +132,7 @@ export const services: Service[] = [
     name: "Vask ut-/innvendig – Premium",
     category: "Bilvask",
     description:
-      "Komplett vask ute og inne: håndvask utvendig, støvsuging og avtørking av alle flater innvendig.",
+      "Begge Premium-vaskene i ett besøk. Håndvask ute, støvsuging og avtørking inne.",
     priceOre: 149000,
     durationMin: 75,
     level: "Premium",
@@ -145,7 +145,7 @@ export const services: Service[] = [
     name: "Polering – Basic",
     category: "Polering",
     description:
-      "Maskinpolering som fjerner lette riper og matthet, og gir lakken dybde og glans.",
+      "Maskinpolering som tar lette riper og matthet. Lakken får tilbake dybden.",
     priceOre: 199000,
     durationMin: 180,
     level: "Basic",
@@ -157,7 +157,7 @@ export const services: Service[] = [
     name: "Polering – Pro",
     category: "Polering",
     description:
-      "Flertrinns polering som fjerner dypere riper, svirvelmerker og oksidering.",
+      "Flertrinns polering for dypere riper, svirvelmerker og oksidert lakk.",
     priceOre: 299000,
     durationMin: 240,
     level: "Pro",
@@ -169,7 +169,7 @@ export const services: Service[] = [
     name: "Lakkrens + Polering – Pro",
     category: "Polering",
     description:
-      "Full lakkrens med leire og avfetting, deretter flertrinns polering – lakken føles som ny.",
+      "Først leire og avfetting, så flertrinns polering. Lakken blir glatt å ta på.",
     priceOre: 449000,
     durationMin: 390,
     level: "Pro",
@@ -182,7 +182,7 @@ export const services: Service[] = [
     name: "Keramisk lakkforsegling",
     category: "Lakkforsegling",
     description:
-      "Graphene-basert forsegling som beskytter lakken i årevis – selvrensende, med dyp glans.",
+      "Graphene-basert forsegling med seks års garanti. Vannet perler av og tar skitten med seg.",
     priceOre: 999000,
     durationMin: 480,
     popular: true,
@@ -194,7 +194,7 @@ export const services: Service[] = [
     name: "Kontrollvask & rebehandling",
     category: "Lakkforsegling",
     description:
-      "Vedlikeholdsvask og oppfrisking av eksisterende forsegling for varig beskyttelse.",
+      "For deg som allerede har forsegling. Vi vasker og frisker opp laget.",
     priceOre: 169000,
     durationMin: 150,
   },
@@ -205,7 +205,7 @@ export const services: Service[] = [
     name: "Full Shine – Basic",
     category: "Full Shine",
     description:
-      "Total renovering ute og inne: vask, lakkrens, polering og innvendig dyprens i én behandling.",
+      "Vask, lakkrens, polering og innvendig dyprens. Hele bilen på én dag.",
     priceOre: 649000,
     durationMin: 480,
     level: "Basic",
@@ -216,7 +216,7 @@ export const services: Service[] = [
     name: "Full Shine – Pro",
     category: "Full Shine",
     description:
-      "Vår mest komplette pakke: renovering ute og inne, klimadesinfisering og NANO-beskyttelse.",
+      "Alt i Basic, pluss klimadesinfisering og NANO-beskyttelse. Den mest komplette vi har.",
     priceOre: 749000,
     durationMin: 570,
     level: "Pro",
@@ -230,7 +230,7 @@ export const services: Service[] = [
     name: "Rens innvendig (dyprens)",
     category: "Interiør",
     description:
-      "Grundig dyprens: støvsuging, rens av alle flater, tekstil- og skinnrens av seter.",
+      "Setene renses i tekstil eller skinn, og alle flater vaskes. For bilen som har levd litt.",
     priceOre: 399000,
     durationMin: 330,
     popular: true,
@@ -241,7 +241,7 @@ export const services: Service[] = [
     name: "Skinn rens og behandling",
     category: "Interiør",
     description:
-      "Rens og næring av skinnseter som hindrer sprekker og holder skinnet mykt.",
+      "Skinnet renses og gis næring, så det holder seg mykt og slipper å sprekke.",
     priceOre: 199000,
     durationMin: 120,
   },
@@ -251,7 +251,7 @@ export const services: Service[] = [
     name: "Rens av enkelt sete",
     category: "Interiør",
     description:
-      "Flekkfjerning og dyprens av ett enkelt sete – for uhellet som skjedde.",
+      "Ett sete, dyprenset. Kaffen, iskremen eller hva det nå var.",
     priceOre: 59000,
     durationMin: 45,
     popular: true,
@@ -262,7 +262,7 @@ export const services: Service[] = [
     name: "Ozon / desinfisering",
     category: "Interiør",
     description:
-      "Ozonbehandling som fjerner lukt og desinfiserer kupeen – røyk, dyr og mat.",
+      "Ozon fjerner lukt som har satt seg i tekstilene. Røyk, våt hund, gammel mat.",
     priceOre: 169000,
     durationMin: 60,
   },
@@ -273,7 +273,7 @@ export const services: Service[] = [
     name: "Omlegg og balansering",
     category: "Dekk & Felg",
     description:
-      "Omlegging og balansering av hjulene for jevn slitasje og rolig kjøring.",
+      "Vi legger om og balanserer, så bilen går rolig og dekkene slites jevnt.",
     priceOre: 130000,
     durationMin: 75,
   },
@@ -283,7 +283,7 @@ export const services: Service[] = [
     name: "Skift av hjul",
     category: "Dekk & Felg",
     description:
-      "Rask og trygg omskodding mellom sommer- og vinterhjul mens du er på senteret.",
+      "Bytte mellom sommer- og vinterhjul mens du er innom senteret.",
     priceOre: 50000,
     durationMin: 30,
   },
@@ -293,7 +293,7 @@ export const services: Service[] = [
     name: "Vask av hjul (løse)",
     category: "Dekk & Felg",
     description:
-      "Vask av løse hjul – rene felger og dekk, klare til lagring eller ny montering.",
+      "Rene felger og dekk før settet settes bort. Salt og bremsestøv jobber videre i lagerrommet.",
     priceOre: 25000,
     durationMin: 20,
   },

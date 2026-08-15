@@ -8,7 +8,7 @@ import { KontaktForm } from "./kontakt-form";
 export const metadata: Metadata = {
   title: "Kontakt",
   description:
-    "Ta kontakt med Handz On — endring av booking, generelle spørsmål, reklamasjon eller samarbeid. Vi svarer vanligvis innen én til to virkedager.",
+    "Ta kontakt med Handz On om endring av booking, generelle spørsmål, reklamasjon eller samarbeid. Vi svarer vanligvis innen én til to virkedager.",
 };
 
 const infoCards = [
@@ -26,7 +26,7 @@ const infoCards = [
   },
   {
     title: "Bestille en tjeneste",
-    text: "Book bilpleie på senteret — velg avdeling, tjeneste og tidspunkt.",
+    text: "Book bilpleie på senteret. Velg avdeling, tjeneste og tidspunkt.",
     href: "/booking",
     cta: "Bestill time →",
   },

@@ -802,7 +802,7 @@ function StepVehicle({ state, dispatch, headingRef, direction }: StepProps) {
         />
       </form>
       <p className="mt-2 text-[13.5px] leading-[1.45] text-body-soft">
-        To bokstaver og fem sifre — for eksempel EB 12345.
+        To bokstaver og fem sifre, for eksempel EB 12345.
         {process.env.NODE_ENV !== "production" && (
           <span className="block text-muted-light">
             Demo: EB12345, DR34567, FE11111 (feiltilfelle).
@@ -844,7 +844,7 @@ function StepVehicle({ state, dispatch, headingRef, direction }: StepProps) {
             className="mt-[18px]"
             onClick={() => dispatch({ type: "continue" })}
           >
-            Dette stemmer — gå videre
+            Dette stemmer, gå videre
           </Button>
         </>
       )}
@@ -943,7 +943,7 @@ function StepService({ state, dispatch, headingRef, direction }: StepProps) {
               Medlem? Få 10 % på tjenesten.
             </p>
             <p className="mt-[3px] text-[14px] text-body-soft max-hz:hidden">
-              Gratis medlemskap — hver 6. Basic-vask er gratis.
+              Gratis medlemskap. Hver sjette Basic-vask er gratis.
             </p>
           </div>
           <VippsButton
@@ -1182,7 +1182,7 @@ function StepTime({ state, dispatch, headingRef, direction }: StepProps) {
                 key={day}
                 type="button"
                 aria-pressed={selected}
-                aria-label={`${formatIsoDate(day)}${empty ? " — ingen ledige tider" : ""}`}
+                aria-label={`${formatIsoDate(day)}${empty ? ", ingen ledige tider" : ""}`}
                 onClick={() => {
                   setSelectedDay(day);
                   setPageOverride(null);
@@ -1221,7 +1221,7 @@ function StepTime({ state, dispatch, headingRef, direction }: StepProps) {
         <EmptyState
           icon={<Calendar aria-hidden className="size-10" strokeWidth={1.75} />}
           title={closed ? "Stengt på søndager" : "Ingen ledige tider denne dagen"}
-          text="Prøv en annen dag — det er som regel god plass tidlig i uka."
+          text="Prøv en annen dag. Det er som regel god plass tidlig i uka."
           action={
             nextOpenDay ? (
               <Button variant="secondary" onClick={() => setSelectedDay(nextOpenDay)}>
@@ -1286,7 +1286,7 @@ function StepAddOns({ state, dispatch, headingRef, direction }: StepProps) {
     <div>
       <StepHead
         title="Vil du legge til noe?"
-        help="Vi gjør det mens bilen først står inne — du sparer en ekstra tur."
+        help="Vi gjør det mens bilen først står inne, så slipper du en ekstra tur."
         headingRef={headingRef}
         direction={direction}
       />
@@ -1502,7 +1502,7 @@ function StepSummary({
           man bekrefter. Selve knappen ligger i den sticky bunnbaren. */}
       <p className="mt-3.5 text-[13.5px] leading-[1.55] text-body-soft">
         Gratis avbestilling frem til 24 timer før avtalt tid. Du betaler i avdelingen når
-        du henter bilen{contactValid ? "" : " — fyll inn navn og mobilnummer for å bekrefte"}.
+        du henter bilen{contactValid ? "" : ". Fyll inn navn og mobilnummer for å bekrefte"}.
       </p>
       <HelpLine location={location} />
     </div>
@@ -1702,8 +1702,8 @@ function StepConfirmation({
           />
           <p className="mt-3.5 text-[13.5px] leading-[1.6] text-body-soft">
             Utstedes av {organization?.legalName}, org. {formatOrgNr(booking.orgNr)}.
-            Dette er en bekreftelse på bestillingen, ikke en kvittering — den får du
-            i avdelingen når du betaler.
+            Dette er en bekreftelse på bestillingen, ikke en kvittering. Kvitteringen
+            får du i avdelingen når du betaler.
           </p>
         </div>
       </Card>
@@ -1713,7 +1713,7 @@ function StepConfirmation({
         <ul className="flex flex-col gap-2.5">
           {[
             `Møt opp i skranken hos Handz On ${location.name} og lever nøkkelen.`,
-            "Gjør ærendene dine på senteret — vi sender SMS når bilen er klar.",
+            "Gjør ærendene dine på senteret. Vi sender SMS når bilen er klar.",
             "Du betaler ved henting. Gratis avbestilling til 24 timer før.",
           ].map((item) => (
             <li

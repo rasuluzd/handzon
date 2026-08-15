@@ -17,13 +17,13 @@ import { aboutHeroImage } from "@/lib/service-images";
 
 export const metadata: Metadata = {
   description:
-    "Lever nøkkelen, gjør ærendene dine, hent en skinnende ren bil. Book bilpleie på senteret hos 14 avdelinger over hele Norge — grundig, gjort for hånd.",
+    "Lever nøkkelen, gjør ærendene dine, hent en skinnende ren bil. Bilpleie på senteret hos 14 avdelinger i Norge, alt gjort for hånd.",
 };
 
 const how = [
   [
     "Lever nøkkelen",
-    "Kom innom avdelingen på senteret. Vi tar imot bilen — ingen kø, ingen skjema.",
+    "Kom innom avdelingen på senteret og gi fra deg nøkkelen i skranken. Det er hele seremonien.",
   ],
   [
     "Gjør ærendene dine",
@@ -36,13 +36,13 @@ const how = [
 ] as const;
 
 const seasonPoints = [
-  "Håndvask med to-bøtte-metode — ingen mikroriper i lakken.",
+  "Håndvask med to bøtter, så lakken slipper mikroriper.",
   "Insektrester og kvae løses opp før de eter seg inn i klarlakken.",
   "Ferdig mens du handler. Vi sender SMS når bilen er klar.",
 ];
 
 const clubPoints = [
-  "Hver 6. utvendige Basic-vask er gratis — etter 5 betalte vasker eller behandlinger.",
+  "Hver sjette utvendige Basic-vask er gratis, etter fem betalte vasker eller behandlinger.",
   "Gratis påfyll av spylervæske hver gang du kjøper en bilpleietjeneste.",
 ];
 
@@ -136,7 +136,7 @@ export default function HomePage() {
           <div className="p-4 hz:p-[clamp(26px,3vw,42px)]">
             <Eyebrow>Sesongtilbud · Sommer</Eyebrow>
             <h2 className="my-2.5 font-heading text-[clamp(21px,2.6vw,30px)] font-bold leading-[1.15] tracking-[-.024em] text-ink hz:my-4 hz:leading-[1.1]">
-              Pollen, insekter og kvae — vekk før høsten
+              Pollen, insekter og kvae: vekk før høsten
             </h2>
             {/* Luftigere rytme på mobil: hårlinja delte punktene, men 8px
                 over og 8px under gjorde at teksten klistret seg til streken. */}
@@ -234,7 +234,7 @@ export default function HomePage() {
             {/* `onNavy`, ikke `secondary`: dette er varianten som er laget for
                 navy flater (hvit knapp, navy tekst, hover mot on-navy-bright). */}
             <ButtonLink href="/kundeklubb" variant="onNavy" block className="hz:w-auto">
-              Bli medlem — gratis
+              Bli gratis medlem
             </ButtonLink>
           </div>
           <StampCard className="hidden hz:block" />

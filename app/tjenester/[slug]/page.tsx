@@ -205,7 +205,7 @@ export default async function ServiceDetailPage({
 
         <p className="mt-6 text-[13px] leading-[1.6] text-body-soft hz:mt-7 hz:text-[13.5px]">
           Prisen er kjedens standardpris inkl. mva. Enkelte avdelinger har egne
-          lokalpriser — den endelige prisen vises i bookingen når du har valgt avdeling.
+          lokalpriser. Den endelige prisen vises i bookingen når du har valgt avdeling.
         </p>
       </div>
 

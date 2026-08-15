@@ -90,7 +90,7 @@ export function TjenesterScreen() {
     toast({
       title: "Tjenesten er lagret",
       text: isDirty(saved)
-        ? `${draft.name} — endringen ligger som utkast til du publiserer.`
+        ? `${draft.name}: endringen ligger som utkast til du publiserer.`
         : `${draft.name} er tilbake slik den ligger publisert.`,
     });
     setDraft(null);
@@ -379,7 +379,7 @@ export function TjenesterScreen() {
 
         <AdNote>
           Kjedeprisen er standard for alle 14 avdelinger. Velg en avdeling øverst for å sette
-          lokalpris — den overstyrer kjedeprisen bare der. Tjenester uten lokalpris følger
+          lokalpris. Den overstyrer kjedeprisen bare der. Tjenester uten lokalpris følger
           kjedeprisen automatisk.
         </AdNote>
       </AdminBody>
@@ -445,7 +445,7 @@ export function TjenesterScreen() {
           <AdField
             label="Beskrivelse"
             htmlFor="t-desc"
-            help="To linjer maks. Konkret om hva som gjøres — ikke salgsspråk."
+            help="To linjer maks. Konkret om hva som gjøres, ikke salgsspråk."
             className="mt-4"
           >
             <textarea

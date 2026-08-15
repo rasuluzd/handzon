@@ -60,8 +60,8 @@ export function Footer() {
             className="mb-3 h-[28px] w-auto hz:mb-4 hz:h-[30px]"
           />
           <p className="max-w-[42ch] text-[14px] leading-[1.55] text-on-navy-soft hz:max-w-[32ch] hz:text-[14.5px] hz:leading-[1.6]">
-            Book på 60 sekunder. Lever nøkkelen på senteret, hent en ren bil når du er
-            ferdig å handle.
+            Book på 60 sekunder. Lever nøkkelen på senteret og hent en ren bil når du
+            er ferdig med å handle.
           </p>
         </div>
 

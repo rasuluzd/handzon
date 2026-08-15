@@ -229,7 +229,7 @@ export function OversiktScreen({
                   {list.length === 0 && (
                     <tr>
                       <td className={adTd} colSpan={loc === "alle" ? 5 : 4}>
-                        <AdNote>Ingen ordrer i dag — søndager er stengt.</AdNote>
+                        <AdNote>Ingen ordrer i dag. Søndager er stengt.</AdNote>
                       </td>
                     </tr>
                   )}
@@ -249,7 +249,7 @@ export function OversiktScreen({
                 sub={
                   forecastSource === "met.no"
                     ? "Varsel fra MET Norway"
-                    : "Demovarsel — MET var ikke tilgjengelig"
+                    : "Demovarsel. MET var ikke tilgjengelig"
                 }
                 action={
                   <AdTag variant={advice.level === "varsel" ? "warn" : "ok"} dot>
@@ -290,7 +290,7 @@ export function OversiktScreen({
                 ? "Nesten fullt. Vurder å åpne kveldstider."
                 : fill > 0.6
                   ? "God belegg. Ledige tider sent på dagen."
-                  : "Ledig kapasitet — vurder å pushe dagens kampanje."}
+                  : "Ledig kapasitet. Vurder å pushe dagens kampanje."}
             </AdNote>
 
             <AdSectionTitle className="mt-6">Fordeling i dag</AdSectionTitle>
@@ -351,7 +351,7 @@ export function OversiktScreen({
                     strokeWidth={1.75}
                   />
                 }
-                title="Arbeidstilsynet — godkjenning gyldig"
+                title="Arbeidstilsynet: godkjenning gyldig"
                 meta="Neste fornyelse 12.03.2027"
               />
             </AdList>

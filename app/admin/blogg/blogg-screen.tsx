@@ -354,7 +354,7 @@ export function BloggScreen() {
           <AdField
             label="Tittel"
             htmlFor="b-tittel"
-            help="Sentence case. Konkret framfor kreativ — folk søker på problemet sitt."
+            help="Sentence case. Konkret framfor kreativ, for folk søker på problemet sitt."
           >
             <input
               id="b-tittel"

@@ -330,7 +330,7 @@ export function BestillingerScreen() {
         )}
 
         <AdNote>
-          «Meld klar» sender SMS til kunden. Betaling registreres ved henting i avdelingen —
+          «Meld klar» sender SMS til kunden. Betaling registreres ved henting i avdelingen,
           bookingen tar ikke betalt på nett.
         </AdNote>
       </AdminBody>

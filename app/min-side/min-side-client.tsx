@@ -157,7 +157,7 @@ export function MinSide() {
           <p className="mt-2.5 text-[15px] leading-[1.6] text-body-soft">
             Profilen og persondataene dine anonymiseres umiddelbart. Kvitteringer og
             bokføringspliktige bilag må hver avdeling oppbevare i fem år etter
-            regnskapsårets slutt — de kan ikke lenger knyttes til deg som person.
+            regnskapsårets slutt, men de kan ikke lenger knyttes til deg som person.
           </p>
           <Button
             variant="secondary"
@@ -421,8 +421,8 @@ function Login({ onLogin }: { onLogin: () => void }) {
             className="mt-px size-[18px] shrink-0 text-status-open"
             strokeWidth={1.75}
           />
-          Ny kunde? Du får automatisk en profil første gang du bestiller — bestillingen
-          ligger her etterpå.
+          Ny kunde? Du får automatisk en profil første gang du bestiller, og
+          bestillingen ligger her etterpå.
         </p>
         <ButtonLink href="/booking" variant="secondary" size="lg" block className="mt-3.5">
           Bestill time

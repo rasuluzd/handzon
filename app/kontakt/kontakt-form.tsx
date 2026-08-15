@@ -110,10 +110,10 @@ export function KontaktForm() {
         <p className="max-w-[48ch] text-[16px] leading-[1.5] text-body-soft hz:text-[16.5px] hz:leading-[1.55]">
           Meldingen din er registrert. En av avdelingene tar kontakt på{" "}
           <span className="font-semibold text-ink">{values.epost.trim()}</span> så snart som
-          mulig — vanligvis innen én til to virkedager.
+          mulig, vanligvis innen én til to virkedager.
         </p>
         <p className="mt-3.5 rounded-control bg-surface-alt px-4 py-3 text-[13.5px] leading-[1.5] text-body-soft">
-          Dette er en demo — ingen melding blir faktisk sendt.
+          Dette er en demo. Ingen melding blir faktisk sendt.
         </p>
         <div className="mt-4 flex flex-col items-start gap-2 hz:flex-row hz:items-center hz:gap-3">
           {/* Kvitteringen var en blindvei. Den som venter på svar kan like

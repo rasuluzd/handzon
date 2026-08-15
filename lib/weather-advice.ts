@@ -117,7 +117,7 @@ export function adviceFor(
     return {
       level: "mulighet",
       title: `${today.condition === "regn" ? "Regn" : today.condition} i dag, ${today.precipMm} mm`,
-      body: `Belegget er ${Math.round(fill * 100)} %. Utvendig vask faller alltid i regn — push interiørrens og dekkskift i dag, de er ikke værutsatte.`,
+      body: `Belegget er ${Math.round(fill * 100)} %. Utvendig vask faller alltid i regn. Push interiørrens og dekkskift i dag, de er ikke værutsatte.`,
       region: forecast.region,
     };
   }
@@ -132,7 +132,7 @@ export function adviceFor(
       return {
         level: "mulighet",
         title: `Første tørre dag ${dayName(dryDay.date)}`,
-        body: `Etter ${wetBefore} dager med nedbør. Vaskepågangen tar seg opp på den første tørre dagen — vurder ekstra bemanning eller flere plasser.`,
+        body: `Etter ${wetBefore} dager med nedbør. Vaskepågangen tar seg opp på den første tørre dagen. Vurder ekstra bemanning eller flere plasser.`,
         region: forecast.region,
       };
     }

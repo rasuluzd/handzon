@@ -4,6 +4,12 @@
  *
  * Innholdet er skrevet i kjedens stemme: konkret fagkunnskap, ingen
  * selgerstemme, og ærlige «når vi sier nei»-avsnitt. Behold tonen.
+ *
+ * Skrivereglene som holder tonen ekte: tankestrek brukes nesten aldri (punktum,
+ * komma eller kolon gjør samme jobb uten å låte generert), sitater tilskrives en
+ * navngitt person og sier noe konkret, og påstander tåler et oppfølgings-
+ * spørsmål. «Travel hverdag», «fjerne friksjon» og «heve standarden» er ord
+ * ingen i en vaskehall bruker.
  * `body` er markdown-lett: `## ` gir mellomtittel, blank linje skiller avsnitt.
  */
 export type BlogCategory =
@@ -39,7 +45,7 @@ export const blogPosts: BlogPost[] = [
   {
     id: "p1",
     slug: "derfor-ripes-lakken-i-vaskehallen",
-    title: "Derfor ripes lakken i vaskehallen — og hva vi gjør annerledes",
+    title: "Derfor ripes lakken i vaskehallen",
     category: "Bilpleie-guiden",
     author: "Ove Hagen",
     date: "2026-08-06",
@@ -47,7 +53,7 @@ export const blogPosts: BlogPost[] = [
     image: "/tjenester/utvendig-handvask.webp",
     reads: 3140,
     excerpt:
-      "Roterende børster samler sand fra bilen før deg. Vi vasker for hånd med to bøtter — her er forskjellen i praksis.",
+      "Roterende børster samler sand fra bilen før deg. Vi vasker for hånd, med to bøtter. Her er forskjellen i praksis.",
     body: `De fine, halvmåneformede ripene du ser når sola står lavt kalles svirvelmerker. De kommer nesten aldri fra én dramatisk hendelse. De kommer fra vask.
 
 ## Børsten husker forrige bil
@@ -57,7 +63,7 @@ En automatvask kjører samme børste over hundrevis av biler i døgnet. Sand og 
 Vi bruker to-bøtte-metoden: én bøtte med såpe, én med rent skyllevann. Kluten skylles mellom hvert panel, så skitten havner i bøtta og ikke tilbake på bilen. Panelene tas i rekkefølge ovenfra og ned, fordi nederste tredjedel av bilen alltid er skitnest.
 
 ## Tørking er halve jobben
-Mange gjør alt riktig og ødelegger det på slutten. Vi tørker med plysjmikrofiber uten trykk, og går aldri i sirkler. Til slutt kontrollerer vi bilen i arbeidslys — det er der du ser det øyet ikke fanger opp i dagslys.
+Mange gjør alt riktig og ødelegger det på slutten. Vi tørker med plysjmikrofiber uten trykk, og går aldri i sirkler. Til slutt kontrollerer vi bilen i arbeidslys. Det er der du ser det dagslyset skjuler.
 
 Har lakken allerede fått svirvelmerker, er polering det som fjerner dem. Vask fjerner skitt, polering fjerner riper.`,
   },
@@ -79,7 +85,7 @@ Har lakken allerede fått svirvelmerker, er polering det som fjerner dem. Vask f
 Et graphene-basert lag som binder seg kjemisk til klarlakken. Vann perler av og tar med seg støv, så bilen holder seg ren lenger mellom vaskene. Glansen blir dypere, og lakken blir enklere å vaske. Vi gir seks års garanti på behandlingen.
 
 ## Hva du ikke får
-Coating er ikke panserplate. Den stopper ikke steinsprut og fjerner ikke riper som allerede er der. Derfor poleres bilen alltid først — coating over svirvelmerker låser dem inne.
+Coating er ikke panserplate. Den stopper ikke steinsprut og fjerner ikke riper som allerede er der. Derfor poleres bilen alltid først. Legger du coating over svirvelmerker, låser du dem inne.
 
 ## Når vi sier nei
 Er bilen leaset og skal leveres inn om et år, sier vi det rett ut: ta en polering med voks i stedet. Er lakken svært slitt, må vi vurdere om det er polering og ikke coating som gir mest for pengene.
@@ -89,7 +95,7 @@ Behandlingen tar en full dag, og bilen må herde tørt i 24 timer etterpå.`,
   {
     id: "p3",
     slug: "handz-on-asker-er-aapnet",
-    title: "Handz On Asker er åpnet — 15 % på første bestilling",
+    title: "Handz On Asker er åpnet: 15 % på første bestilling",
     category: "Nyheter",
     author: "Ove Hagen",
     date: "2026-07-01",
@@ -98,7 +104,7 @@ Behandlingen tar en full dag, og bilen må herde tørt i 24 timer etterpå.`,
     reads: 1870,
     excerpt:
       "Avdeling nummer 14 står klar på Trekanten i Asker. Ny lokal franchisetaker, samme faste priser.",
-    body: `Vi har åpnet på Trekanten i Asker — avdeling nummer 14 i kjeden.
+    body: `Vi har åpnet på Trekanten i Asker. Det er avdeling nummer 14 i kjeden.
 
 Avdelingen drives av en lokal franchisetaker, slik alle Handz On-avdelinger gjør, og tilbyr hele katalogen: vask ut- og innvendig, polering, keramisk lakkforsegling, interiørrens og hjultjenester.
 
@@ -125,7 +131,7 @@ Lever nøkkelen i skranken, gjør ærendene dine på senteret, og hent en ren bi
     body: `Sommeren setter spor i lakken som ikke synes før det er for sent.
 
 ## 1. Få bort insekter og kvae nå
-Insektrester er sure og eter seg inn i klarlakken. Kvae herder og blir vanskeligere for hver uke. Begge løses opp skånsomt — ikke skrap.
+Insektrester er sure og eter seg inn i klarlakken. Kvae herder og blir vanskeligere for hver uke. Begge deler løses opp skånsomt. Ikke skrap.
 
 ## 2. Vurder forsegling før saltet kommer
 En forseglet lakk slipper saltet lettere. Det gjør vintervaskene enklere og reduserer risikoen for begynnende korrosjon rundt steinsprut.
@@ -134,12 +140,12 @@ En forseglet lakk slipper saltet lettere. Det gjør vintervaskene enklere og red
 Det er der løv og skitt samler seg og holder fuktighet mot metall.
 
 ## 4. Bytt til vinterhjul i tid
-Vi legger om og balanserer mens du handler. Husk å ta vask av de løse hjulene før de settes bort — salt og bremsestøv jobber hele vinteren i lagerrommet.`,
+Vi legger om og balanserer mens du handler. Husk å få vasket de løse hjulene før de settes bort. Salt og bremsestøv jobber videre hele vinteren i lagerrommet.`,
   },
   {
     id: "p5",
     slug: "vi-gjenbruker-vaskevannet",
-    title: "Vi gjenbruker vaskevannet — dette er tallene",
+    title: "Vi gjenbruker vaskevannet: dette er tallene",
     category: "Bak kulissene",
     author: "Ove Hagen",
     date: "2026-06-14",
@@ -154,7 +160,7 @@ Vi legger om og balanserer mens du handler. Husk å ta vask av de løse hjulene 
 Vaskevannet går gjennom oljeavskiller og rensetrinn, og brukes om igjen i forvask. Bare siste skylling er ferskvann.
 
 ## Hva det betyr i praksis
-En hageslange på full åpning gir rundt 15 liter i minuttet. En halvtimes vask hjemme kan fort bruke over 300 liter — og vannet går rett i overvannsnettet med olje, asfalt og bremsestøv.
+En hageslange på full åpning gir rundt 15 liter i minuttet. En halvtimes vask hjemme kan fort bruke over 300 liter. Og vannet går rett i overvannsnettet, med olje, asfalt og bremsestøv i seg.
 
 ## Ikke bare vann
 Vi doserer miljømerkede produkter i stedet for å øse på, og dekkposene våre er i resirkulert plast.
@@ -173,16 +179,16 @@ Vi er registrert i Arbeidstilsynets godkjenningsordning for bilpleie, og det sti
     reads: 1420,
     excerpt:
       "I 2025 rundet kjeden 20 år. Fra ett vaskested til 14 avdelinger på noen av landets største kjøpesentre.",
-    body: `Handz On startet med en enkel idé: gjør grundig bilpleie enkelt for folk med en travel hverdag. Lever nøkkelen, gjør ærendene dine, og hent en skinnende ren bil.
+    body: `Det begynte med ett vaskested på ett kjøpesenter i 2005. Tanken var at ingen burde måtte sette av en formiddag for å få bilen ordentlig vasket.
 
-Tjue år senere er konseptet det samme, men kjeden teller nå 14 lokale avdelinger drevet av egne franchisetakere. Over 120 000 biler er behandlet av fagfolk som bryr seg om detaljene.
+Tjue år senere er konseptet uendret. Kjeden teller 14 avdelinger, hver drevet av sin egen franchisetaker, og over 120 000 biler har vært gjennom hallene.
 
-«Det viktigste har alltid vært håndverket og folkene. Vi feirer jubileet ved å fortsette å heve standarden for bilpleie i Norge,» sier ledelsen.`,
+«Vi har aldri satt inn en roterende børste, og vi kommer ikke til å gjøre det heller. Det er hele forskjellen,» sier Ove Hagen, som åpnet den første avdelingen.`,
   },
   {
     id: "p7",
     slug: "trygg-og-serios-bilpleie",
-    title: "Trygg og seriøs bilpleie — ditt valg gir effekt",
+    title: "Hva godkjenningsordningen faktisk krever",
     category: "Nyheter",
     author: "Ove Hagen",
     date: "2025-06-10",
@@ -190,12 +196,12 @@ Tjue år senere er konseptet det samme, men kjeden teller nå 14 lokale avdeling
     image: "/om-oss/detaljering.webp",
     reads: 980,
     excerpt:
-      "Når du velger en registrert og godkjent aktør, bidrar du til ryddige forhold i en bransje med useriøse aktører.",
-    body: `Bilpleiebransjen har dessverre sitt innslag av useriøse aktører. Handz On har fra start satset på det motsatte: registrerte virksomheter, ordnede lønninger og godkjente prosesser.
+      "Alle avdelingene våre står i Arbeidstilsynets register. Her er hva som skal til for å komme inn i det.",
+    body: `Bilpleie er lett å starte med og lett å kutte hjørner i. Godkjenningsordningen til Arbeidstilsynet finnes for å skille dem som gjør det riktig fra dem som ikke gjør det.
 
-Alle avdelinger er registrert i Arbeidstilsynets godkjenningsordning for bilpleievirksomhet. Det betyr trygghet for både ansatte og kunder.
+For å bli godkjent må virksomheten dokumentere lønns- og arbeidsvilkår, HMS-rutiner, håndtering av kjemikalier og hvor avløpsvannet tar veien. Godkjenningen føres i et offentlig register som hvem som helst kan søke i.
 
-Velger du en godkjent aktør, gir valget ditt effekt langt utover din egen bil.`,
+Alle våre 14 avdelinger står der. Sjekk oss gjerne. Sjekk konkurrenten også.`,
   },
   {
     id: "p8",
@@ -208,10 +214,12 @@ Velger du en godkjent aktør, gir valget ditt effekt langt utover din egen bil.`
     image: "/om-oss/detaljering.webp",
     reads: 760,
     excerpt:
-      "Godkjenningsordningen for bilpleie, dekk og karosseri har løftet standarden i hele bransjen.",
-    body: `Arbeidstilsynets godkjenningsordning stiller krav til HMS, arbeidsforhold og seriøsitet. Handz On har vært en pådriver for ordningen fra tidlig av.
+      "Kjemikalier, høytrykk og vått gulv i åtte timer. Verneutstyr er ikke pynt i denne bransjen.",
+    body: `Bilpleie ser uskyldig ut utenfra. Innenfor er det avfettingsmidler, felgrens, høytrykk og et gulv som er vått hele dagen.
 
-For kundene betyr det at bilen behandles av folk som jobber under ryddige forhold — og at kvaliteten er forutsigbar fra avdeling til avdeling.`,
+Godkjenningsordningen stiller krav til verneutstyr, avtrekk, kjemikaliehåndtering og arbeidstid, og den har hevet gulvet for hele bransjen. Kravene gjelder likt for alle 14 avdelingene.
+
+For deg som kunde er det derfor bilen får samme behandling i Ålesund som på Lambertseter.`,
   },
   {
     id: "p9",
@@ -225,9 +233,9 @@ For kundene betyr det at bilen behandles av folk som jobber under ryddige forhol
     reads: 1130,
     excerpt:
       "Konseptet er enkelt: lever bilen på senteret, gjør ærendene dine, og hent den ferdig pleiet.",
-    body: `Ideen bak Handz On er å fjerne friksjonen fra bilpleie. Du trenger ikke sette av en hel formiddag — du leverer bilen mens du uansett er på senteret.
+    body: `Den vanligste grunnen til at folk utsetter bilpleie er at det tar tid de ikke har. Så vi la avdelingene der folk allerede befinner seg.
 
-Plasseringen på kjøpesentre gjør at kundene kan handle, spise lunsj eller ta en kaffe mens fagfolkene jobber. Når du er ferdig, står bilen klar.`,
+Du leverer nøkkelen i skranken og går videre med det du kom for. Handler du i et par timer, står en utvendig Premium ferdig når du er tilbake. Skal bilen poleres eller forsegles, tar det lengre tid, og da avtaler vi henting.`,
   },
   {
     id: "p10",
@@ -240,10 +248,10 @@ Plasseringen på kjøpesentre gjør at kundene kan handle, spise lunsj eller ta 
     image: "/hero-hjulskift.webp",
     reads: 1540,
     excerpt:
-      "Handz On er nå på plass på Triaden i Lørenskog — enda et senter der du kan pleie bilen mens du handler.",
-    body: `Nyåpningen på Triaden føyer seg inn i rekken av avdelinger på sentrale kjøpesentre. Avdelingen tilbyr hele tjenestespekteret, fra Basic-vask til keramisk lakkforsegling.
+      "Handz On er nå på plass på Triaden i Lørenskog, med hele katalogen fra første dag.",
+    body: `Avdelingen på Triaden er i gang, med hele katalogen fra Basic-vask til keramisk lakkforsegling.
 
-Kombinert med søsteravdelingen Metro dekker Handz On nå Lørenskog-området godt. Velkommen innom!`,
+Med Metro fra før har vi to avdelinger i Lørenskog. Er det fullt hos den ene, er det som regel ledig hos den andre.`,
   },
   {
     id: "p11",
@@ -259,14 +267,14 @@ Kombinert med søsteravdelingen Metro dekker Handz On nå Lørenskog-området go
       "Skal du legge om? Rene hjul før lagring hindrer misfarging og gjør neste sesong enklere.",
     body: `Bremsestøv og veisalt setter seg i felgene og kan misfarge dem over tid. Når du legger om hjulene, er det derfor lurt å vaske dem grundig før de settes bort.
 
-Vi tilbyr vask av løse hjul samtidig som vi legger om — da er sommer- eller vinterhjulene klare og rene til neste sesong.
+Vi vasker de løse hjulene mens vi legger om, så settet står rent når du henter det fram igjen.
 
 Tips: kombiner gjerne hjulskift med en utvendig vask, så er hele bilen klar på ett besøk.`,
   },
   {
     id: "p12",
     slug: "tidlig-ute-med-hjulskift",
-    title: "Vær tidlig ute med hjulskift — kombiner med polering",
+    title: "Vær tidlig ute med hjulskiftet",
     category: "Bilpleie-guiden",
     author: "Ove Hagen",
     date: "2025-10-02",
@@ -274,7 +282,7 @@ Tips: kombiner gjerne hjulskift med en utvendig vask, så er hele bilen klar på
     image: "/tjenester/polering.webp",
     reads: 870,
     excerpt:
-      "Unngå køen i høysesongen. Å bestille tidlig gir bedre tid — og en fin anledning til å friske opp lakken.",
+      "Alle vil skifte i samme uke. Bestiller du før rushet, velger du tiden selv.",
     body: `Når været snur, vil alle skifte hjul samtidig. Er du tidlig ute, slipper du ventetiden og får den tiden som passer deg best.
 
 Sesongskiftet er også et godt tidspunkt for polering: lakken har fått en sesong med salt, bremsestøv og skitt. En polering fjerner matthet og legger et lag med beskyttelse før vinteren.`,
@@ -282,7 +290,7 @@ Sesongskiftet er også et godt tidspunkt for polering: lakken har fått en seson
   {
     id: "p13",
     slug: "salt-bremsestov-og-skitt",
-    title: "Fjerning av salt, bremsestøv og skitt — polering beskytter lakken",
+    title: "Slik får du vinteren av lakken",
     category: "Bilpleie-guiden",
     author: "Ove Hagen",
     date: "2026-01-20",
@@ -293,7 +301,7 @@ Sesongskiftet er også et godt tidspunkt for polering: lakken har fått en seson
       "Veisalt og bremsestøv sliter på lakken. Riktig vask og beskyttelse forlenger levetiden og glansen.",
     body: `Om vinteren utsettes bilen for salt, sand og bremsestøv som fester seg til lakk og felger. Over tid gir det matthet og små skader.
 
-Regelmessig, skånsom håndvask fjerner det verste. En polering med påfølgende forsegling — enten voks, NANO eller keramisk — legger et beskyttende lag som gjør bilen lettere å holde ren.
+Regelmessig, skånsom håndvask fjerner det verste. En polering med forsegling etterpå, enten voks, NANO eller keramisk, legger et lag som gjør bilen lettere å holde ren.
 
 Vil du ha maksimal beskyttelse, er keramisk lakkforsegling med Graphene et godt valg, med opptil seks års garanti.`,
   },

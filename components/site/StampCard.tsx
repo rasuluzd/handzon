@@ -35,7 +35,10 @@ export function StampCard({
         </span>
       </div>
       <span className="sr-only">
-        {filled} av {total + 1} stempler fylt — {filled >= total ? "neste" : `etter ${total - filled} vasker til er neste`} utvendige Basic-vask gratis.
+        {filled} av {total + 1} stempler fylt.{" "}
+        {filled >= total
+          ? "Neste utvendige Basic-vask er gratis."
+          : `Etter ${total - filled} vasker til er neste utvendige Basic-vask gratis.`}
       </span>
     </div>
   );

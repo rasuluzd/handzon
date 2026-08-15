@@ -7,13 +7,13 @@ import { StampCard } from "@/components/site/StampCard";
 export const metadata: Metadata = {
   title: "Kundeklubb",
   description:
-    "Bli medlem gratis: hver 6. utvendige Basic-vask er gratis etter 5 betalte, og du får gratis påfyll av spylervæske ved hvert kjøp av en bilpleietjeneste.",
+    "Medlemskapet er gratis. Hver sjette utvendige Basic-vask står på oss etter fem betalte, og spylervæsken fylles hver gang du kjøper en bilpleietjeneste.",
 };
 
 const steps = [
   {
-    title: "Bli medlem — gratis",
-    text: "Registrer deg med Vipps på Min side. Ingen kostnad, ingen binding.",
+    title: "Registrer deg",
+    text: "Med Vipps på Min side. Det tar under et minutt, og du binder deg ikke til noe.",
   },
   {
     title: "Book en tjeneste",
@@ -21,18 +21,18 @@ const steps = [
   },
   {
     title: "Vi stempler automatisk",
-    text: "Hvert besøk teller. Etter 5 betalte er din neste Basic-vask gratis.",
+    text: "Hvert besøk teller. Etter fem betalte står den sjette Basic-vasken på oss.",
   },
 ];
 
 const perks = [
   {
     title: "Hver 6. vask gratis",
-    text: "Etter 5 betalte utvendige Basic-vasker (eller behandlinger) er den 6. helt gratis. Stemplene følger deg på tvers av alle 14 avdelinger.",
+    text: "Etter fem betalte utvendige Basic-vasker, eller behandlinger, er den sjette helt gratis. Stemplene følger deg på tvers av alle 14 avdelinger.",
   },
   {
     title: "Gratis spylervæske",
-    text: "Ved hvert besøk der du kjøper en bilpleietjeneste, fyller vi spylervæske gratis. En liten ting som gjør hverdagen enklere.",
+    text: "Kjøper du en bilpleietjeneste, fyller vi spylervæsken før du henter bilen. Du trenger ikke be om det.",
   },
 ];
 
@@ -41,14 +41,14 @@ export default function KundeklubbPage() {
     <>
       <PageHead
         eyebrow="Kundeklubb"
-        title="Bli medlem — helt gratis"
+        title="Bli medlem. Det koster ingenting"
         lead={
           <>
             Fast kunde? Da lønner det seg. Som medlem samler du opp gratis vasker og får
-            gratis spylervæske ved hvert kjøp.
+            fylt spylervæsken hver gang.
             {/* Forbeholdet står igjen på desktop; på mobil er det to ekstra
                 linjer foran verveknappen, og h1 sier allerede «helt gratis». */}
-            <span className="max-hz:hidden"> Uten kostnad og uten binding.</span>
+            <span className="max-hz:hidden"> Ingen kontingent, ingen binding.</span>
           </>
         }
       >
@@ -56,7 +56,7 @@ export default function KundeklubbPage() {
             ~1 550px nede — to skjermhøyder forbi hele salgsargumentet.
             Verveknappen hører hjemme i første skjerm. */}
         <ButtonLink href="/min-side" size="lg" className="mt-5 max-hz:w-full hz:mt-6">
-          Bli medlem — gratis
+          Bli gratis medlem
         </ButtonLink>
       </PageHead>
 
@@ -125,7 +125,7 @@ export default function KundeklubbPage() {
             rader på 390px. Stablet i full bredde leser de som ett valgpar. */}
         <div className="flex flex-col gap-3 hz:flex-row hz:flex-wrap">
           <ButtonLink href="/min-side" size="lg" className="max-hz:w-full">
-            Bli medlem — gratis
+            Bli gratis medlem
           </ButtonLink>
           <ButtonLink
             href="/booking"
