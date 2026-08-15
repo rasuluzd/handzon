@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Newspaper, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { Chart } from "@/components/admin/Chart";
 import { Kpi } from "@/components/admin/Kpi";
-import { WeatherStrip } from "@/components/admin/WeatherStrip";
 import { BranchPicker, Top } from "@/components/admin/Top";
 import {
   AdButton,
@@ -80,35 +79,18 @@ export function OversiktScreen({
   const upcoming = day.orders.filter((order) => order.hour >= new Date().getHours());
   const list = (upcoming.length > 0 ? upcoming : day.orders.slice(-6)).slice(0, 6);
 
-  /* Værrådet. For én avdeling gjelder regionens varsel. For hele kjeden
-     evalueres alle tre regioner, og det alvorligste rådet vinner — et
-     kjedekontor trenger å vite hvor det brenner, ikke et snitt. */
+  /* Værrådet gjelder ÉN avdeling. Ser man hele kjeden, vises det ikke:
+     fjorten avdelinger i tre landsdeler har ikke ett felles vær, og et råd om
+     å flytte lakkforsegling gir bare mening for den som faktisk står med
+     bestillingen. Kjedeoversikten er uendret. */
   const advice = useMemo<WeatherAdvice | null>(() => {
-    const horizon = ordersInRange(loc, now, addDays(now, 4));
-    const regions: Region[] = branch
-      ? [branch.region]
-      : (Object.keys(forecasts) as Region[]);
-    const found = regions
-      .map((region) => {
-        const forecast = forecasts[region];
-        if (!forecast) return null;
-        const slugs = new Set(
-          locations.filter((item) => item.region === region).map((item) => item.slug),
-        );
-        const orders = horizon.filter((order) => slugs.has(order.locationSlug));
-        return adviceFor(forecast, orders, fill);
-      })
-      .filter((item): item is WeatherAdvice => item !== null);
-    return (
-      found.find((item) => item.level === "varsel") ?? found[0] ?? null
-    );
-  }, [loc, now, branch, forecasts, fill]);
-  /* Stripa viser avdelingens region. Ser man hele kjeden finnes det tre — da
-     vises regionen rådet gjelder, ellers Østlandet, der ni av fjorten ligger. */
-  const stripRegion: Region = branch ? branch.region : (advice?.region ?? "Østlandet");
-  const stripForecast = forecasts[stripRegion];
-  const stripLabel = branch ? `Handz On ${branch.name} · ${stripRegion}` : stripRegion;
-  const forecastSource = stripForecast?.source;
+    if (!branch) return null;
+    const forecast = forecasts[branch.region];
+    if (!forecast) return null;
+    const horizon = ordersInRange(branch.slug, now, addDays(now, 4));
+    return adviceFor(forecast, horizon, fill);
+  }, [branch, forecasts, now, fill]);
+  const forecastSource = branch ? forecasts[branch.region]?.source : undefined;
   const drafts = posts.filter((post) => !post.published).length;
   const dirty = countDirty(catalog);
 
@@ -182,9 +164,6 @@ export function OversiktScreen({
               />
               <Chart data={trend} />
             </AdCard>
-
-            <WeatherStrip forecast={stripForecast} label={stripLabel} />
-
             <AdCard flush>
               <AdCardHead
                 className="px-5 pt-5"
@@ -280,7 +259,6 @@ export function OversiktScreen({
               />
               <p className="font-heading text-[17px] font-semibold leading-[1.25] text-ink">
                 {advice.title}
-                {!branch && advice.region ? ` · ${advice.region}` : ""}
               </p>
               <AdNote className="mt-1.5">{advice.body}</AdNote>
               {advice.affected != null && (
