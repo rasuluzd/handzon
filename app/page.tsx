@@ -138,11 +138,13 @@ export default function HomePage() {
             <h2 className="my-2.5 font-heading text-[clamp(21px,2.6vw,30px)] font-bold leading-[1.15] tracking-[-.024em] text-ink hz:my-4 hz:leading-[1.1]">
               Pollen, insekter og kvae — vekk før høsten
             </h2>
-            <ul className="mb-4 flex flex-col gap-2 hz:mb-6 hz:gap-2.5">
+            {/* Luftigere rytme på mobil: hårlinja delte punktene, men 8px
+                over og 8px under gjorde at teksten klistret seg til streken. */}
+            <ul className="mb-5 flex flex-col gap-3 hz:mb-6 hz:gap-2.5">
               {seasonPoints.map((point) => (
                 <li
                   key={point}
-                  className="flex gap-2.5 border-t border-line pt-2 text-[15px] leading-[1.45] text-body hz:pt-[11px] hz:text-[16px] hz:leading-[1.5]"
+                  className="flex gap-3 border-t border-line pt-3 text-[15px] leading-[1.55] text-body hz:gap-2.5 hz:pt-[11px] hz:text-[16px] hz:leading-[1.5]"
                 >
                   <Check
                     aria-hidden
@@ -214,11 +216,11 @@ export default function HomePage() {
                 Det ble skjult fordi raden brøt på 390px; nå er stemplene 36px
                 og raden får plass (se StampCard). */}
             <StampCard className="mb-4 hz:hidden" />
-            <ul className="mb-4 flex flex-col gap-2 hz:mb-6 hz:gap-2.5">
+            <ul className="mb-5 flex flex-col gap-3.5 hz:mb-6 hz:gap-2.5">
               {clubPoints.map((point) => (
                 <li
                   key={point}
-                  className="flex gap-2.5 text-[15px] leading-[1.45] text-on-navy hz:text-[16.5px] hz:leading-[1.5]"
+                  className="flex gap-3 text-[15px] leading-[1.55] text-on-navy hz:gap-2.5 hz:text-[16.5px] hz:leading-[1.5]"
                 >
                   <Check
                     aria-hidden
