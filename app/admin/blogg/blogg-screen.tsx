@@ -217,11 +217,13 @@ export function BloggScreen() {
             <AdTable>
               <thead>
                 <tr>
+                  {/* Under 760px står bare innlegget og handlingene. Kategori,
+                      dato, lesninger og status flyttes ned i innleggscellen. */}
                   <th className={adTh}>Innlegg</th>
-                  <th className={adTh}>Kategori</th>
-                  <th className={adTh}>Dato</th>
-                  <th className={`${adTh} text-right`}>Lesninger</th>
-                  <th className={adTh}>Status</th>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Kategori</th>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Dato</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Lesninger</th>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Status</th>
                   <th className={`${adTh} text-right`} />
                 </tr>
               </thead>
@@ -235,20 +237,41 @@ export function BloggScreen() {
                           alt=""
                           width={44}
                           height={44}
-                          className="size-11 shrink-0 rounded-control object-cover"
+                          className="size-11 shrink-0 rounded-control object-cover max-admin-sm:hidden"
                         />
                         <div className="min-w-0 max-w-[46ch]">
                           <p className={adName}>{post.title || "Uten tittel"}</p>
-                          <p className={`${adMeta} truncate`}>/nyheter/{post.slug}</p>
+                          {/* Slug-en er ett langt ord med `nowrap` fra
+                              `truncate` — uten maksbredde blir den cellens
+                              min-content og sprenger tabellen på mobil. */}
+                          <p className={`${adMeta} truncate max-admin-sm:max-w-[170px]`}>
+                            /nyheter/{post.slug}
+                          </p>
+                          {/* Det de skjulte kolonnene bar. */}
+                          <span className="mt-1 block text-[12.5px] leading-[1.4] tabular text-body-soft admin-sm:hidden">
+                            {post.category} · {formatPostDateShort(post.date)}
+                            {post.reads ? ` · ${post.reads.toLocaleString("nb-NO")} lesninger` : ""}
+                          </span>
+                          <span className="mt-1.5 flex admin-sm:hidden">
+                            {post.published ? (
+                              <AdTag variant="ok" dot>
+                                Publisert
+                              </AdTag>
+                            ) : (
+                              <AdTag variant="warn">Utkast</AdTag>
+                            )}
+                          </span>
                         </div>
                       </div>
                     </td>
-                    <td className={adTd}>{post.category}</td>
-                    <td className={`${adTd} tabular`}>{formatPostDateShort(post.date)}</td>
-                    <td className={`${adTd} ${adNum}`}>
+                    <td className={`${adTd} max-admin-sm:hidden`}>{post.category}</td>
+                    <td className={`${adTd} tabular max-admin-sm:hidden`}>
+                      {formatPostDateShort(post.date)}
+                    </td>
+                    <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
                       {post.reads ? post.reads.toLocaleString("nb-NO") : "—"}
                     </td>
-                    <td className={adTd}>
+                    <td className={`${adTd} max-admin-sm:hidden`}>
                       {post.published ? (
                         <AdTag variant="ok" dot>
                           Publisert
@@ -257,8 +280,10 @@ export function BloggScreen() {
                         <AdTag variant="warn">Utkast</AdTag>
                       )}
                     </td>
-                    <td className={`${adTd} whitespace-nowrap text-right`}>
-                      <div className="inline-flex gap-2">
+                    <td className={`${adTd} whitespace-nowrap align-top text-right admin-sm:align-middle`}>
+                      {/* To knapper side ved side er ~180px — de stables på
+                          telefon så innleggstittelen får bredden. */}
+                      <div className="inline-flex gap-2 max-admin-sm:flex-col">
                         <AdButton
                           variant="ghost"
                           size="sm"

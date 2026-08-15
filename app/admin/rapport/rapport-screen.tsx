@@ -189,7 +189,8 @@ export function RapportScreen() {
                   <th className={adTh}>Tjeneste</th>
                   <th className={`${adTh} text-right`}>Antall</th>
                   <th className={`${adTh} text-right`}>Omsetning</th>
-                  <th className={`${adTh} w-[110px]`}>Andel</th>
+                  {/* Andelsstolpen er dekor med 110px fast bredde — desktop-only. */}
+                  <th className={`${adTh} w-[110px] max-admin-sm:hidden`}>Andel</th>
                 </tr>
               </thead>
               <tbody>
@@ -204,9 +205,9 @@ export function RapportScreen() {
                             alt=""
                             width={44}
                             height={44}
-                            className="size-11 shrink-0 rounded-control object-cover"
+                            className="size-11 shrink-0 rounded-control object-cover max-admin-sm:hidden"
                           />
-                          <div>
+                          <div className="min-w-0">
                             <p className={adName}>{row.service.name}</p>
                             <p className={adMeta}>
                               {row.service.category} · ca.{" "}
@@ -217,7 +218,7 @@ export function RapportScreen() {
                       </td>
                       <td className={`${adTd} ${adNum}`}>{row.count}</td>
                       <td className={`${adTd} ${adNum}`}>{formatKr(row.sumOre)}</td>
-                      <td className={adTd}>
+                      <td className={`${adTd} max-admin-sm:hidden`}>
                         <AdShare value={row.sumOre / topService} />
                         <p className={adMeta}>
                           {Math.round((row.sumOre / (rep.now.sumOre || 1)) * 100)} %
@@ -252,7 +253,9 @@ export function RapportScreen() {
                     >
                       {formatKr(serviceTotal)}
                     </td>
-                    <td className={`${adTd} border-t border-line-strong bg-surface-alt`} />
+                    <td
+                      className={`${adTd} border-t border-line-strong bg-surface-alt max-admin-sm:hidden`}
+                    />
                   </tr>
                 </tfoot>
               )}
@@ -331,9 +334,12 @@ export function RapportScreen() {
               <thead>
                 <tr>
                   <th className={adTh}>Avdeling</th>
-                  <th className={adTh}>Region</th>
-                  <th className={`${adTh} text-right`}>Ordrer</th>
-                  <th className={`${adTh} text-right`}>Snittordre</th>
+                  {/* Region og snittordre er desktop-only: seks kolonner
+                      sprengte bredden, og begge leses uansett ut av
+                      avdelingsnavnet og de to andre tallene. */}
+                  <th className={`${adTh} max-admin-sm:hidden`}>Region</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Ordrer</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Snittordre</th>
                   <th className={`${adTh} text-right`}>Omsetning</th>
                   <th className={`${adTh} text-right`} />
                 </tr>
@@ -342,12 +348,21 @@ export function RapportScreen() {
                 {rep.locations.map((row) => (
                   <tr key={row.location.slug}>
                     <td className={adTd}>
-                      <p className={adName}>Handz On {row.location.name}</p>
+                      {/* «Handz On» er likt for alle fjorten og er det eneste
+                          som gjør navnet for bredt for en telefon. */}
+                      <p className={adName}>
+                        <span className="max-admin-sm:hidden">Handz On </span>
+                        {row.location.name}
+                      </p>
                       <p className={adMeta}>{row.location.center}</p>
+                      <p className={`${adMeta} tabular admin-sm:hidden`}>
+                        {row.count} ordrer · snitt{" "}
+                        {formatKr(Math.round(row.sumOre / row.count))}
+                      </p>
                     </td>
-                    <td className={adTd}>{row.location.region}</td>
-                    <td className={`${adTd} ${adNum}`}>{row.count}</td>
-                    <td className={`${adTd} ${adNum}`}>
+                    <td className={`${adTd} max-admin-sm:hidden`}>{row.location.region}</td>
+                    <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>{row.count}</td>
+                    <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
                       {formatKr(Math.round(row.sumOre / row.count))}
                     </td>
                     <td className={`${adTd} ${adNum}`}>{formatKr(row.sumOre)}</td>
@@ -364,7 +379,23 @@ export function RapportScreen() {
                 ))}
               </tbody>
               <tfoot>
-                <tr>
+                {/* Egen mobilrad: ordre- og snittcellene er skjult under 760px,
+                    så uten denne mistet kjedesummen sin sammenheng. */}
+                <tr className="admin-sm:hidden">
+                  <td
+                    className={`${adTd} border-t border-line-strong bg-surface-alt`}
+                    colSpan={6}
+                  >
+                    <span className="flex items-center justify-between gap-3 font-heading font-bold text-ink">
+                      <span>Sum hele kjeden</span>
+                      <span className="tabular">{formatKr(rep.now.sumOre)}</span>
+                    </span>
+                    <span className="mt-0.5 block text-[12.5px] tabular text-body-soft">
+                      {rep.now.count} ordrer · snitt {formatKr(rep.now.avgOre)}
+                    </span>
+                  </td>
+                </tr>
+                <tr className="max-admin-sm:hidden">
                   <td
                     className={`${adTd} border-t border-line-strong bg-surface-alt font-heading font-bold text-ink`}
                     colSpan={2}

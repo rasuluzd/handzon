@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -176,69 +177,77 @@ export function Header() {
         </div>
       </header>
 
-      {open && (
-        <div
-          ref={sheetRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Meny"
-          className="hz-sheet fixed inset-0 z-[60] flex flex-col overflow-y-auto overscroll-contain bg-surface px-[clamp(16px,4vw,64px)] pb-[max(20px,env(safe-area-inset-bottom))] pt-2.5 hz:hidden"
-        >
-          <div className="flex items-center justify-between">
-            <Link href="/" onClick={() => setOpen(false)} aria-label="Til forsiden">
-              <Image src={logo} alt="Handz On Auto Care" className="h-[30px] w-auto" />
-            </Link>
-            <button
-              ref={closeRef}
-              type="button"
-              aria-label="Lukk meny"
-              onClick={() => setOpen(false)}
-              className="-mr-2 grid size-11 place-items-center text-navy"
-            >
-              <X aria-hidden className="size-6" strokeWidth={1.75} />
-            </button>
-          </div>
-
-          <nav aria-label="Mobilmeny" className="mt-4 flex flex-col">
-            {sheetLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                aria-current={pathname === link.href ? "page" : undefined}
-                className="flex items-center justify-between gap-3 border-b border-line py-[13px]"
-              >
-                <span className="min-w-0">
-                  <span
-                    className={`block font-heading text-[19px] font-semibold leading-tight ${
-                      isActive(link.href) ? "text-navy" : "text-ink"
-                    }`}
-                  >
-                    {link.label}
-                  </span>
-                  {link.note && (
-                    <span className="mt-0.5 block text-[13px] leading-tight text-body-soft">
-                      {link.note}
-                    </span>
-                  )}
-                </span>
-                <span aria-hidden className="shrink-0 text-[15px] text-muted-light">
-                  →
-                </span>
-              </Link>
-            ))}
-          </nav>
-
-          <div className="mt-auto pt-6">
-            <ButtonLink href="/booking" size="lg" block onClick={() => setOpen(false)}>
-              Bestill time
-            </ButtonLink>
-            <p className="mt-3 text-center text-[13.5px] text-body-soft">
-              Faste priser · gratis avbestilling til 24 timer før
-            </p>
-          </div>
+      {/* Arket er ALLTID montert og styres av `data-open`. Med betinget render
+          forsvant menyen på én frame når man lukket den — bare åpningen var
+          animert. Se `.hz-drawer` i globals.css: `visibility` er med i
+          transisjonen, så panelet er ute av tabrekkefølgen når det er lukket
+          uten at `display: none` dreper bevegelsen. */}
+      <div
+        ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Meny"
+        data-open={open}
+        className="hz-drawer hz-drawer-right fixed inset-0 z-[60] flex flex-col overflow-y-auto overscroll-contain bg-surface px-[clamp(16px,4vw,64px)] pb-[max(20px,env(safe-area-inset-bottom))] pt-2.5 hz:hidden"
+      >
+        <div className="flex items-center justify-between">
+          <Link href="/" onClick={() => setOpen(false)} aria-label="Til forsiden">
+            <Image src={logo} alt="Handz On Auto Care" className="h-[30px] w-auto" />
+          </Link>
+          <button
+            ref={closeRef}
+            type="button"
+            aria-label="Lukk meny"
+            onClick={() => setOpen(false)}
+            className="-mr-2 grid size-11 place-items-center text-navy"
+          >
+            <X aria-hidden className="size-6" strokeWidth={1.75} />
+          </button>
         </div>
-      )}
+
+        <nav aria-label="Mobilmeny" className="mt-4 flex flex-col">
+          {sheetLinks.map((link, index) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              aria-current={pathname === link.href ? "page" : undefined}
+              style={{ "--i": index } as CSSProperties}
+              className="hz-drawer-item flex items-center justify-between gap-3 border-b border-line py-[13px]"
+            >
+              <span className="min-w-0">
+                <span
+                  className={`block font-heading text-[19px] font-semibold leading-tight ${
+                    isActive(link.href) ? "text-navy" : "text-ink"
+                  }`}
+                >
+                  {link.label}
+                </span>
+                {link.note && (
+                  <span className="mt-0.5 block text-[13px] leading-tight text-body-soft">
+                    {link.note}
+                  </span>
+                )}
+              </span>
+              <span aria-hidden className="shrink-0 text-[15px] text-muted-light">
+                →
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        <div
+          className="hz-drawer-item mt-auto pt-6"
+          style={{ "--i": sheetLinks.length } as CSSProperties}
+        >
+          <ButtonLink href="/booking" size="lg" block onClick={() => setOpen(false)}>
+            Bestill time
+          </ButtonLink>
+          <p className="mt-3 text-center text-[13.5px] text-body-soft">
+            Faste priser · gratis avbestilling til 24 timer før
+          </p>
+        </div>
+      </div>
     </>
   );
 }

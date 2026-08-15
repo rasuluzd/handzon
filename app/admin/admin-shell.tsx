@@ -19,12 +19,14 @@ function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="grid min-h-screen bg-surface-alt admin-sm:grid-cols-[74px_1fr] admin-lg:grid-cols-[250px_1fr]">
-      {menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          className="fixed inset-0 z-[70] bg-[rgba(14,22,38,.55)] backdrop-blur-[4px] admin-sm:hidden"
-        />
-      )}
+      {/* Alltid montert og styrt av `data-open`, så bakteppet toner UT igjen
+          sammen med skuffen i stedet for å forsvinne på én frame. */}
+      <div
+        aria-hidden
+        data-open={menuOpen}
+        onClick={() => setMenuOpen(false)}
+        className="hz-scrim fixed inset-0 z-[70] bg-[rgba(14,22,38,.55)] backdrop-blur-[4px] admin-sm:hidden"
+      />
       <Rail open={menuOpen} onClose={() => setMenuOpen(false)} counts={counts} />
       <div className="flex min-w-0 flex-col">{children}</div>
       <Toasts items={toasts} dismiss={dismiss} />

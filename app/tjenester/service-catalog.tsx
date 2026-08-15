@@ -8,18 +8,21 @@ import { ServiceTile } from "@/components/site/ServiceTile";
 import { serviceCategories, services } from "@/lib/mock-data";
 
 /**
- * Tjenestekatalogen (SCREENS.md § Tjenester): sticky filterbar med kategori-chips
- * og sortering, antallslinje med `aria-live`, deretter grid av ServiceTile.
- *
- * Filterbaren fester seg rett under headeren — 61px på mobil, 79px fra 900px.
- * Headeren har fast høyde (ingen krympe-lytter), så tallene holder under scroll.
+ * Tjenestekatalogen (SCREENS.md § Tjenester): filterbar med kategori-chips og
+ * sortering, antallslinje med `aria-live`, deretter grid av ServiceTile.
  *
  * ## Mobilbudsjettet i denne baren
  *
- * Baren lå på ~123px fordi sorteringen tok en egen full rad. Sammen med
- * headeren var det 184px permanent chrome — en fjerdedel av skjermen — før
- * første tjeneste. Nå deler chips og sortering én rad (~67px): chip-stripa er
- * `flex-1 min-w-0`, sorteringen er en 44×44 ikonkontroll som ikke krymper.
+ * Baren har vært gjennom to runder. Først tok sorteringen en egen full rad
+ * (~123px); nå deler chips og sortering én rad, med sorteringen som en 44×44
+ * ikonkontroll som ikke krymper.
+ *
+ * Chipene brakk deretter fra rullestrimmel til flere rader — som strimmel var
+ * raden 726px bred i et 221px vindu, og fem av sju kategorier ble aldri
+ * oppdaget. Prisen er at baren blir ~165px høy på mobil, og derfor er den
+ * IKKE festet der: 165 + 61px header er 27 % av skjermen permanent opptatt av
+ * et valg man tar én gang. Fra 900px får alt plass på én rad, og da fester den
+ * seg under headeren (79px).
  */
 const sortOptions = ["Populær", "Pris lav–høy", "Pris høy–lav"] as const;
 type Sort = (typeof sortOptions)[number];
@@ -71,18 +74,21 @@ export function ServiceCatalog({ initialCategory }: { initialCategory: string | 
 
   return (
     <>
-      {/* Ugjennomsiktig på mobil, uskarp fra 900px. Baren er den andre sticky
-          flaten på skjermen: to backdrop-filter-lag oppå hverandre må resamples
-          hver eneste frame under rulling, og under baren ligger uansett hvit
-          flate — uskarpheten gir null visuell gevinst på telefonen. */}
-      <div className="sticky top-[61px] z-30 flex items-center gap-2.5 border-b border-line bg-surface px-[clamp(16px,4vw,64px)] py-2 hz:top-[79px] hz:gap-4 hz:bg-surface/95 hz:py-3 hz:backdrop-blur-[12px]">
-        {/* Stripa er ~773px bred i et 358px vindu, og `.hz-scroll` skjuler
-            scrollbaren. Uten en maske ser raden avsluttet ut, og «Interiør» og
-            «Dekk & Felg» blir aldri oppdaget. Masken toner ut de siste 34px så
-            det er synlig at det ligger mer bak kanten. `overscroll-x-contain`
-            hindrer at et sidedrag utløser iOS' tilbakesveip. */}
+      {/* IKKE festet på mobil. Med brekkende chips blir baren tre rader
+          (~165px), og festet til toppen sammen med headerens 61px ville et
+          filter man setter én gang okkupert 27 % av skjermen permanent. Nå
+          ruller den bort, og alle sju kategoriene er synlige mens man velger.
+          Fra 900px er det plass til én rad, og da er den festet — der er også
+          uskarpheten på: backdrop-filter på en sticky flate må resamples hver
+          eneste frame under rulling, og det er en desktop-luksus. */}
+      <div className="static z-30 flex items-center gap-2.5 border-b border-line bg-surface px-[clamp(16px,4vw,64px)] py-2 hz:sticky hz:top-[79px] hz:gap-4 hz:bg-surface/95 hz:py-3 hz:backdrop-blur-[12px]">
+        {/* Chipene BREKKER linje. Som rullestrimmel var raden 726px bred i et
+            221px vindu — man så «Alle» og halve «Bilvask», og de fem andre
+            kategoriene ble i praksis aldri oppdaget uansett hvor tydelig
+            kantmasken var. To rader koster 46px sticky chrome; fem skjulte
+            kategorier koster salg. */}
         <div
-          className="hz-scroll flex min-w-0 flex-1 gap-2 overflow-x-auto overscroll-x-contain py-0.5 [mask-image:linear-gradient(to_right,#000_calc(100%_-_34px),transparent)]"
+          className="flex min-w-0 flex-1 flex-wrap gap-2 py-0.5"
           role="group"
           aria-label="Filtrer på kategori"
         >
@@ -139,7 +145,7 @@ export function ServiceCatalog({ initialCategory }: { initialCategory: string | 
           lista rett under de to sticky flatene i stedet for bak dem. */}
       <section
         ref={listRef}
-        className="scroll-mt-[128px] px-[clamp(16px,4vw,64px)] pb-[clamp(30px,5vw,76px)] pt-4 hz:scroll-mt-[148px] hz:pt-[22px]"
+        className="scroll-mt-[72px] px-[clamp(16px,4vw,64px)] pb-[clamp(30px,5vw,76px)] pt-4 hz:scroll-mt-[148px] hz:pt-[22px]"
       >
         <p aria-live="polite" className="mb-3 text-[13.5px] text-body-soft hz:mb-4">
           {/* Krysstoningen ligger på TEKSTEN, ikke på gridet. Selve

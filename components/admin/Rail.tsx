@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { CSSProperties } from "react";
 import logoWhite from "@/public/logo-white.png";
 
 /**
@@ -37,6 +38,17 @@ const NAV: Array<[string, Array<[href: string, label: string, icon: LucideIcon]>
   ["Innhold", [["/admin/blogg", "Blogg og nyheter", Newspaper]]],
 ];
 
+/**
+ * Løpenummer på tvers av grupper, brukt til `--i` i skuffens forskyvning.
+ * Menypunktene ligger nestet under gruppene, så en `map`-indeks ville startet
+ * på null i hver gruppe og gitt tre punkter samme forsinkelse.
+ */
+const STAGGER = new Map<string, number>();
+NAV.forEach(([group, items]) => {
+  STAGGER.set(`gruppe:${group}`, STAGGER.size);
+  items.forEach(([href]) => STAGGER.set(href, STAGGER.size));
+});
+
 export function Rail({
   open,
   onClose,
@@ -49,10 +61,15 @@ export function Rail({
   const pathname = usePathname();
 
   return (
+    /* `data-open` i stedet for å bytte mellom `flex` og `hidden`: skuffen
+       glir inn fra venstre og GLIR UT IGJEN når den lukkes. Med display-bytte
+       forsvant den på én frame, uten at noe fortalte hvor den ble av.
+       `.hz-drawer-rail` gjelder bare under 760px — over det er dette en fast
+       sidestolpe som ikke skal forskyves. Se globals.css. */
     <aside
-      className={`on-dark sticky top-0 flex h-screen flex-col overflow-y-auto bg-navy-deep text-on-navy
-                  max-admin-sm:fixed max-admin-sm:inset-y-0 max-admin-sm:left-0 max-admin-sm:z-[80] max-admin-sm:w-[min(280px,86vw)]
-                  ${open ? "max-admin-sm:flex" : "max-admin-sm:hidden"}`}
+      data-open={open}
+      className="hz-drawer-rail on-dark sticky top-0 flex h-screen flex-col overflow-y-auto bg-navy-deep text-on-navy
+                 max-admin-sm:fixed max-admin-sm:inset-y-0 max-admin-sm:left-0 max-admin-sm:z-[80] max-admin-sm:w-[min(280px,86vw)]"
     >
       <div className="border-b border-on-navy-hair px-5 pb-[18px] pt-5 max-admin-lg:px-3.5 max-admin-lg:pt-[18px]">
         <Image
@@ -72,7 +89,8 @@ export function Rail({
         {NAV.map(([group, items]) => (
           <div key={group} className="contents">
             <p
-              className={`px-2.5 pb-2 pt-4 font-heading text-[10.5px] font-semibold uppercase tracking-[.18em] text-white/40 ${open ? "" : "max-admin-lg:hidden"}`}
+              style={{ "--i": STAGGER.get(`gruppe:${group}`) } as CSSProperties}
+              className={`hz-drawer-item px-2.5 pb-2 pt-4 font-heading text-[10.5px] font-semibold uppercase tracking-[.18em] text-white/40 ${open ? "" : "max-admin-lg:hidden"}`}
             >
               {group}
             </p>
@@ -85,7 +103,8 @@ export function Rail({
                   href={href}
                   onClick={onClose}
                   aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-[11px] rounded-control px-3 py-[11px] font-heading text-[14.5px] font-semibold transition-colors duration-[120ms] ease-standard
+                  style={{ "--i": STAGGER.get(href) } as CSSProperties}
+                  className={`hz-drawer-item flex items-center gap-[11px] rounded-control px-3 py-[11px] font-heading text-[14.5px] font-semibold transition-colors duration-[120ms] ease-standard
                               ${active ? "bg-navy text-white" : "text-on-navy hover:bg-white/8 hover:text-white"}
                               ${open ? "" : "max-admin-lg:justify-center max-admin-lg:px-0"}`}
                 >

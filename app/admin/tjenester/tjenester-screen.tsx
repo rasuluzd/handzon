@@ -244,14 +244,18 @@ export function TjenesterScreen() {
             <AdTable>
               <thead>
                 <tr>
+                  {/* Under 760px står bare tjenesten og handlingene. Kategori,
+                      varighet, pris, salgstall og status er flyttet ned i
+                      tjenestecellen — sju kolonner gjorde tabellen 957px bred
+                      i et 324px vindu, altså tre skjermbredder sidelengs. */}
                   <th className={adTh}>Tjeneste</th>
-                  <th className={adTh}>Kategori</th>
-                  <th className={`${adTh} text-right`}>Varighet</th>
-                  <th className={`${adTh} text-right`}>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Kategori</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Varighet</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>
                     {loc === "alle" ? "Kjedepris" : "Pris her"}
                   </th>
-                  <th className={`${adTh} text-right`}>Solgt 30 d.</th>
-                  <th className={adTh}>Status</th>
+                  <th className={`${adTh} text-right max-admin-sm:hidden`}>Solgt 30 d.</th>
+                  <th className={`${adTh} max-admin-sm:hidden`}>Status</th>
                   <th className={`${adTh} text-right`} />
                 </tr>
               </thead>
@@ -263,26 +267,55 @@ export function TjenesterScreen() {
                     <tr key={service.id}>
                       <td className={adTd}>
                         <div className="flex items-center gap-3">
+                          {/* Bildet er desktop-only: 44px + 12px luft er en
+                              fjerdedel av tekstbredden på en telefon, og det
+                              sier ingenting man ikke leser i navnet. */}
                           <Image
                             src={service.image}
                             alt=""
                             width={44}
                             height={44}
-                            className="size-11 shrink-0 rounded-control object-cover"
+                            className="size-11 shrink-0 rounded-control object-cover max-admin-sm:hidden"
                           />
                           <div className="min-w-0">
                             <p className={adName}>{service.name || "Uten navn"}</p>
-                            <p className={`${adMeta} max-w-[42ch] truncate`}>
+                            {/* `truncate` setter `white-space: nowrap`, så uten
+                                en definert maksbredde blir cellens min-content
+                                hele setningen — det var det som holdt tabellen
+                                957px bred. */}
+                            <p
+                              className={`${adMeta} max-w-[42ch] truncate max-admin-sm:max-w-[170px]`}
+                            >
                               {service.description || "Ingen beskrivelse"}
                             </p>
+                            {/* Det de skjulte kolonnene bar. */}
+                            <span className="mt-1 block text-[12.5px] leading-[1.4] text-body-soft admin-sm:hidden">
+                              {service.category} · {formatDuration(service.durationMin)} ·{" "}
+                              <span className="font-heading font-semibold tabular text-ink">
+                                {effective === null ? "Ikke tilbudt" : formatKr(effective)}
+                              </span>
+                              {" · "}
+                              {service.sold30} solgt
+                            </span>
+                            <span className="mt-1.5 flex flex-wrap gap-1.5 admin-sm:hidden">
+                              {service.active ? (
+                                <AdTag variant="ok" dot>
+                                  Aktiv
+                                </AdTag>
+                              ) : (
+                                <AdTag variant="off">Skjult</AdTag>
+                              )}
+                              {isDirty(service) && <AdTag variant="warn">Utkast</AdTag>}
+                              {local != null && local !== 0 && <AdTag>Lokalpris</AdTag>}
+                            </span>
                           </div>
                         </div>
                       </td>
-                      <td className={adTd}>{service.category}</td>
-                      <td className={`${adTd} ${adNum}`}>
+                      <td className={`${adTd} max-admin-sm:hidden`}>{service.category}</td>
+                      <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
                         {formatDuration(service.durationMin)}
                       </td>
-                      <td className={`${adTd} ${adNum}`}>
+                      <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
                         {effective === null ? (
                           <span className="text-body-soft">Ikke tilbudt</span>
                         ) : local != null && local !== service.priceOre ? (
@@ -296,8 +329,10 @@ export function TjenesterScreen() {
                           formatKr(effective)
                         )}
                       </td>
-                      <td className={`${adTd} ${adNum}`}>{service.sold30}</td>
-                      <td className={adTd}>
+                      <td className={`${adTd} ${adNum} max-admin-sm:hidden`}>
+                        {service.sold30}
+                      </td>
+                      <td className={`${adTd} max-admin-sm:hidden`}>
                         <div className="flex flex-wrap gap-1.5">
                           {service.active ? (
                             <AdTag variant="ok" dot>
@@ -311,8 +346,10 @@ export function TjenesterScreen() {
                           {service.guarantee && <AdTag>{service.guarantee}</AdTag>}
                         </div>
                       </td>
-                      <td className={`${adTd} whitespace-nowrap text-right`}>
-                        <div className="inline-flex items-center gap-2">
+                      <td
+                        className={`${adTd} whitespace-nowrap align-top text-right admin-sm:align-middle`}
+                      >
+                        <div className="inline-flex items-center gap-2 max-admin-sm:flex-col max-admin-sm:items-end">
                           <AdSwitch
                             id={`aktiv-${service.id}`}
                             checked={service.active}

@@ -53,8 +53,12 @@ export function Chart({ data }: { data: Bucket[] }) {
             key={`${bucket.x}-${index}`}
             className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end pb-[22px]"
           >
+            {/* Hover-forklaringen finnes ikke under 760px. Den er 213px bred
+                og `whitespace-nowrap`, så på de siste søylene stakk den utenfor
+                skjermkanten og utvidet dokumentet sidelengs — for en tilstand
+                som aldri inntreffer på en touch-skjerm. */}
             <span
-              className={`pointer-events-none absolute bottom-[calc(100%-18px)] z-[5] whitespace-nowrap rounded-badge bg-ink px-2.5 py-[7px] font-heading text-[12px] tabular text-white opacity-0 shadow-pop transition-opacity duration-[120ms] group-hover:opacity-100 ${anchor}`}
+              className={`pointer-events-none absolute bottom-[calc(100%-18px)] z-[5] hidden whitespace-nowrap rounded-badge bg-ink px-2.5 py-[7px] font-heading text-[12px] tabular text-white opacity-0 shadow-pop transition-opacity duration-[120ms] group-hover:opacity-100 admin-sm:block ${anchor}`}
             >
               {bucket.full}: {formatKr(bucket.sumOre)}
               {` · ${bucket.count} ${bucket.count === 1 ? "ordre" : "ordrer"}`}

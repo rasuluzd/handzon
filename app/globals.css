@@ -128,6 +128,9 @@
   --dur-fill: 420ms;
   --dur-xfade: 160ms;
   --reveal-shift: 14px;
+  /* Skuffene. Lang nok til å lese som bevegelse, kort nok til at den som
+     bare vil videre ikke venter på den. */
+  --dur-drawer: 280ms;
 }
 
 @theme inline {
@@ -339,9 +342,96 @@ body {
   animation: hz-in 240ms var(--ease-out-soft) both;
   animation-delay: var(--d, 0ms);
 }
-/* Mobilmenyen glir inn i stedet for å blinke fram. */
-.hz-sheet {
-  animation: hz-sheet 240ms var(--ease-out-soft) both;
+/* ------------------------------------------------------------------
+ * Skuffer — mobilmenyen på kundeflaten og sidestolpen i adminpanelet.
+ *
+ * Tre ting her er bevisste:
+ *
+ * 1. **Lukking animeres også.** Begge menyene ble før bare avmontert, så de
+ *    forsvant på én frame. En flate som glir inn og så blinker bort leser som
+ *    en feil, ikke som en lukking. Derfor er panelet alltid i DOM-en og styres
+ *    av `data-open`, ikke av en betinget render.
+ * 2. **`visibility` er med i transisjonen, ikke `display`.** Den forsinkes til
+ *    etter uttoningen når skuffen lukkes, og slår inn umiddelbart når den
+ *    åpnes. Da er panelet ute av tabrekkefølgen og skjermleseren når det er
+ *    lukket — uten `display: none`, som ville drept animasjonen.
+ * 3. **Menypunktene kommer inn etter hverandre.** 26ms mellom hvert punkt,
+ *    6px løft. Det er lite nok til at man ikke ser en animasjon, men nok til
+ *    at blikket trekkes nedover lista i lesserekkefølge i stedet for å lande
+ *    tilfeldig. Forsinkelsen starter først når panelet er ~60 % inne.
+ * ------------------------------------------------------------------ */
+/* Forskyvningen ligger på den LUKKEDE tilstanden, ikke på grunnklassen.
+   Motsatt vei — `transform: translateX(100%)` på klassen og `transform: none`
+   på den åpne — måtte oppheves via spesifisitet, og da ble panelet stående
+   forskjøvet med en transisjon som aldri fant sitt mål. */
+.hz-drawer {
+  transition:
+    transform var(--dur-drawer) var(--ease-out-soft),
+    visibility 0s;
+}
+.hz-drawer[data-open="false"] {
+  visibility: hidden;
+  transition:
+    transform var(--dur-drawer) var(--ease-out-soft),
+    visibility 0s linear var(--dur-drawer);
+}
+.hz-drawer-right[data-open="false"] {
+  transform: translateX(100%);
+}
+.hz-drawer-left[data-open="false"] {
+  transform: translateX(-100%);
+}
+
+/* Bakteppet toner inn, så siden bak synlig trekker seg tilbake. */
+.hz-scrim {
+  transition:
+    opacity var(--dur-drawer) var(--ease-standard),
+    visibility 0s;
+}
+.hz-scrim[data-open="false"] {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--dur-drawer) var(--ease-standard),
+    visibility 0s linear var(--dur-drawer);
+}
+
+.hz-drawer[data-open="true"] .hz-drawer-item {
+  animation: hz-drawer-item 300ms var(--ease-out-soft) both;
+  animation-delay: calc(var(--i, 0) * 26ms + 90ms);
+}
+
+/* Adminpanelets sidestolpe er skuff KUN under 760px — over det er den en fast
+   kolonne som aldri skal forskyves eller skjules. Derfor egen klasse i en
+   medieforespørsel i stedet for `.hz-drawer`.
+   NB: 760px må holdes i synk med --breakpoint-admin-sm i @theme over. */
+@media (max-width: 759.98px) {
+  .hz-drawer-rail {
+    transition:
+      transform var(--dur-drawer) var(--ease-out-soft),
+      visibility 0s;
+  }
+  .hz-drawer-rail[data-open="false"] {
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      transform var(--dur-drawer) var(--ease-out-soft),
+      visibility 0s linear var(--dur-drawer);
+  }
+  .hz-drawer-rail[data-open="true"] .hz-drawer-item {
+    animation: hz-drawer-item 300ms var(--ease-out-soft) both;
+    animation-delay: calc(var(--i, 0) * 26ms + 90ms);
+  }
+}
+@keyframes hz-drawer-item {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 /* Bilinfo-kortet folder seg ut når oppslaget treffer (booking steg 2). */
 .hz-unfold {
@@ -405,4 +495,13 @@ body {
     opacity: 1;
     transform: none;
   }
+  /* Av-bryteren nuller varigheter, ikke forsinkelser. Uten dette ville
+     skuffen blitt stående `visible` i 280ms etter at den var lukket. */
+  .hz-drawer,
+  .hz-drawer-rail,
+  .hz-scrim {
+    transition-delay: 0s !important;
+  }
 }
+
+/* tmp */
