@@ -17,29 +17,56 @@ function niceMax(value: number): number {
   return 10 * magnitude;
 }
 
+/**
+ * Hvor mange søyler som får datoen sin under seg. Antallet søyler er det vi
+ * har å gå på: en måned deler bredden på 31, en uke på 7. På et 390px
+ * adminkort er søylen 6px bred, og da får bare hver femte plass til et
+ * tosifret tall — på 1069px er annenhver rikelig.
+ */
+function labelStep(count: number, narrow: boolean): number {
+  if (count > 20) return narrow ? 5 : 2;
+  if (count >= 12) return narrow ? 2 : 1;
+  return 1;
+}
+
 export function Chart({ data }: { data: Bucket[] }) {
   const peak = Math.max(...data.map((bucket) => bucket.sumOre), 0);
   const max = niceMax(peak);
   const lines = [1, 0.75, 0.5, 0.25, 0];
+  const stepWide = labelStep(data.length, false);
+  const stepNarrow = labelStep(data.length, true);
+  /* Telles bakfra, så siste søyle ALLTID får datoen sin. Den er i dag på
+     oversiktens fjortendagers, og siste dag i måneden på rapporten — telt
+     forfra falt begge ut i en måned med tretti dager. */
+  const fromEnd = (index: number) => data.length - 1 - index;
 
   return (
     <>
-      <div className="relative flex h-[230px] items-end gap-0.5 pt-[26px] max-admin-sm:h-[190px]">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-[22px] top-[26px]">
-          {lines.map((fraction) => (
-            <span
-              key={fraction}
-              className={`absolute inset-x-0 block h-px ${fraction === 1 ? "bg-line-strong" : "bg-line"}`}
-              style={{ bottom: `${fraction * 100}%` }}
-            >
-              <span className="absolute right-0 -translate-y-1/2 bg-surface px-1 font-heading text-[10.5px] tabular text-body-soft">
-                {fraction === 0 ? "0" : formatKr(Math.round(max * fraction))}
-              </span>
-            </span>
-          ))}
-        </div>
+      {/* Skalaen har sin egen kolonne til høyre. Før lå tallene absolutt
+          plassert INNE i søyleflaten, på `right-0`, uten at noe holdt av plass
+          til dem — så siste søyle havnet under dem i hver eneste periode: «des»
+          i året, «søn» i uken, 30. og 31. i måneden. Og siden søylene kommer
+          etter etikettene i DOM-en, malte de seg dessuten over tallene.
 
-        {data.map((bucket, index) => {
+          Bredden på renna kommer fra en usynlig kopi av det største beløpet, ikke
+          fra et gjettet pikseltall. Da holder den like godt for «12 500,-» på én
+          avdeling som for «5 000 000,-» på hele kjeden. */}
+      <div className="flex h-[230px] max-admin-sm:h-[190px]">
+        <div className="relative flex min-w-0 flex-1 items-end gap-0.5 pt-[26px]">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-[22px] top-[26px]"
+          >
+            {lines.map((fraction) => (
+              <span
+                key={fraction}
+                className={`absolute inset-x-0 block h-px ${fraction === 1 ? "bg-line-strong" : "bg-line"}`}
+                style={{ bottom: `${fraction * 100}%` }}
+              />
+            ))}
+          </div>
+
+          {data.map((bucket, index) => {
           // Verktøytipset forankres innover i endene, ellers ville det stukket
           // ut av kortet og gitt siden en vannrett rullefelt.
           const anchor =
@@ -74,12 +101,40 @@ export function Chart({ data }: { data: Bucket[] }) {
               }`}
               style={{ height: `${(bucket.sumOre / max) * 100}%`, minHeight: 2 }}
             />
-            <span className="absolute inset-x-0 bottom-0 truncate text-center font-heading text-[10.5px] tabular text-body-soft">
+            {/* Sentrert på søyla og fri til å stikke ut over nabokolonnene,
+                i stedet for `inset-x-0 truncate`. Med 6px kolonne klippet
+                truncate hvert tosifret tall til første siffer, så andre
+                halvdel av måneden sto som «1 1 1 1». Naboene er skjult når
+                denne vises, så plassen er ledig. */}
+            <span
+              className={`pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-heading text-[10.5px] tabular text-body-soft ${
+                fromEnd(index) % stepWide === 0 ? "" : "hidden"
+              } ${fromEnd(index) % stepNarrow === 0 ? "max-admin-sm:block" : "max-admin-sm:hidden"}`}
+            >
               {bucket.x}
             </span>
           </div>
           );
         })}
+        </div>
+
+        <div aria-hidden className="relative shrink-0 pb-[22px] pl-2 pt-[26px]">
+          {/* Usynlig, men i flyten: den gir kolonnen bredden sin. */}
+          <span className="invisible block font-heading text-[10.5px] tabular">
+            {formatKr(max)}
+          </span>
+          <div className="absolute bottom-[22px] left-2 right-0 top-[26px]">
+            {lines.map((fraction) => (
+              <span
+                key={fraction}
+                className="absolute right-0 -translate-y-1/2 whitespace-nowrap font-heading text-[10.5px] tabular text-body-soft"
+                style={{ bottom: `${fraction * 100}%` }}
+              >
+                {fraction === 0 ? "0" : formatKr(Math.round(max * fraction))}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="mt-3.5 flex flex-wrap gap-[18px] border-t border-line pt-3.5 text-[13px] text-body-soft">

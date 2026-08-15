@@ -362,7 +362,11 @@ export function buckets(period: Period, anchor: Date, orders: Order[]): Bucket[]
       const date = iso(day);
       const list = orders.filter((order) => order.date === date);
       out.push({
-        x: i % 2 === 1 || days <= 20 ? String(i) : "",
+        /* Alle dagene får datoen sin. Hvor mange av dem som faktisk vises
+           avgjøres i Chart.tsx, som er det eneste stedet som vet hvor bred
+           søylen ble — her tynnet vi ut til annenhver uansett skjerm, og på
+           390px ble kolonnen 6px og alt fra 11 og oppover klippet til «1». */
+        x: String(i),
         full: day.toLocaleDateString("nb-NO", {
           weekday: "long",
           day: "numeric",
